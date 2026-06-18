@@ -1,0 +1,821 @@
+[
+  {
+    "id": "q-provision-001",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "hybrid-networking",
+      "vpc-design"
+    ],
+    "prompt": "A company runs an on-premises data center and wants a dedicated, private, SLA-backed connection to Google Cloud with 50 Gbps of guaranteed bandwidth that does **not** traverse the public internet. They want the highest level of resilience that Google publishes a 99.99% availability SLA for. Which approach should the architect recommend?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "A single Dedicated Interconnect connection terminated at one edge location"
+      },
+      {
+        "id": "b",
+        "text": "Dedicated Interconnect with at least two connections across two metropolitan availability zones at two separate edge locations"
+      },
+      {
+        "id": "c",
+        "text": "HA VPN with two tunnels over the public internet"
+      },
+      {
+        "id": "d",
+        "text": "Partner Interconnect with a single VLAN attachment"
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "**Correct: b.** Google's 99.99% SLA for Dedicated Interconnect requires a topology with at least two connections in two different *metropolitan availability zones* (different edge availability domains), each terminating in a separate Cloud Router/region path. This removes single points of failure at the physical and metro level.\n\n- **a** is wrong: a single connection has no SLA (or only a 99.9% configuration at best with proper redundancy in one metro) and is a single point of failure.\n- **c** is wrong: HA VPN traverses the public internet and tops out at much lower throughput per tunnel; it is not a private dedicated 50 Gbps path. HA VPN's SLA is 99.99% but the question explicitly requires a private, non-internet, high-bandwidth dedicated link.\n- **d** is wrong: Partner Interconnect is for sub-10 Gbps needs or when you cannot reach a colocation facility; a single VLAN attachment carries no 99.99% SLA. **Best practice:** size Dedicated Interconnect at 10/100 Gbps circuits, use redundant connections in two metros, and back it up with HA VPN for defense in depth.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-002",
+    "type": "multiple",
+    "domainId": "provision",
+    "concepts": [
+      "vpc-design",
+      "private-service-connect"
+    ],
+    "prompt": "An architect is designing connectivity so that workloads in a consumer VPC can reach a SaaS provider's service and a published Google API **privately**, without exposing the service via external IPs or using VPC Peering's transitive limitations. Which statements about Private Service Connect (PSC) are correct? (Select two.)",
+    "choices": [
+      {
+        "id": "a",
+        "text": "PSC lets a consumer create an internal endpoint (a forwarding rule with an internal IP) that maps to a producer's published service"
+      },
+      {
+        "id": "b",
+        "text": "PSC requires the consumer and producer VPCs to be connected by VPC Network Peering"
+      },
+      {
+        "id": "c",
+        "text": "PSC can be used to privately access supported Google APIs through a `googleapis.com` endpoint without going over the internet"
+      },
+      {
+        "id": "d",
+        "text": "PSC automatically makes routes transitive across all peered VPCs in the organization"
+      },
+      {
+        "id": "e",
+        "text": "PSC endpoints must use external (public) IP addresses to reach the producer service"
+      }
+    ],
+    "correct": [
+      "a",
+      "c"
+    ],
+    "explanation": "**Correct: a and c.** Private Service Connect creates a private, one-directional consumer-to-producer connection. The consumer deploys a PSC *endpoint* (a forwarding rule bound to an internal IP in the consumer VPC) that maps to the producer's *service attachment* (a). PSC also supports private access to Google and third-party APIs via a private endpoint resolving `*.googleapis.com`, keeping traffic off the internet (c).\n\n- **b** is wrong: PSC explicitly avoids the need for VPC Peering, eliminating IP-range overlap and transitivity problems.\n- **d** is wrong: PSC is point-to-point, not a transitivity mechanism.\n- **e** is wrong: PSC endpoints use *internal* IPs. **Best practice:** prefer PSC over peering for service exposure when you want IP independence, no route leakage, and tenant isolation.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-003",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "load-balancing"
+    ],
+    "prompt": "A global web application serves HTTPS traffic to users worldwide. The architect needs a single anycast IP, TLS termination at the edge, URL-based routing to different backend services, and integration with Cloud CDN. Which load balancer is the correct choice?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Regional external passthrough Network Load Balancer"
+      },
+      {
+        "id": "b",
+        "text": "Global external Application Load Balancer"
+      },
+      {
+        "id": "c",
+        "text": "Internal passthrough Network Load Balancer"
+      },
+      {
+        "id": "d",
+        "text": "Regional internal Application Load Balancer"
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "**Correct: b.** The global external Application Load Balancer (L7) provides a single global anycast IP, edge TLS termination, host/path URL maps for content-based routing, and native Cloud CDN integration. It is the canonical choice for global internet-facing HTTP(S).\n\n- **a** is wrong: a passthrough Network Load Balancer is L4, regional, does not terminate TLS or do URL routing, and is not a CDN origin in the same way.\n- **c** is wrong: internal passthrough NLB serves internal L4 traffic only.\n- **d** is wrong: a regional internal ALB is L7 but internal and regional, so no single global anycast IP for worldwide users. **Best practice:** pair the global external ALB with Cloud Armor for WAF/DDoS and Cloud CDN for caching.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-provision-004",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "firewall",
+      "intrusion-protection"
+    ],
+    "prompt": "A security team wants to apply consistent, hierarchical firewall rules across an entire folder of projects, and separately wants managed Layer 7 deep-packet intrusion detection on north-south and east-west traffic. Which combination correctly maps the requirements to Google Cloud features?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "VPC firewall rules per project for hierarchy; Cloud Armor for intrusion detection"
+      },
+      {
+        "id": "b",
+        "text": "Hierarchical firewall policies at the folder level; Cloud IDS for managed intrusion detection"
+      },
+      {
+        "id": "c",
+        "text": "Hierarchical firewall policies for IDS; Cloud NAT for hierarchy"
+      },
+      {
+        "id": "d",
+        "text": "Cloud Armor for hierarchy; VPC Service Controls for intrusion detection"
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "**Correct: b.** Hierarchical firewall policies attach at the organization or *folder* level and are inherited by all child projects/VPCs, giving consistent guardrails. Cloud IDS is Google's managed intrusion detection service (built on Palo Alto Networks threat signatures) that inspects traffic via packet mirroring for L7 threats.\n\n- **a** is wrong: per-project VPC rules are not hierarchical/inherited; Cloud Armor is a WAF/DDoS edge service, not an IDS.\n- **c** is wrong: hierarchical firewall policies are not IDS; Cloud NAT provides egress NAT, not hierarchy.\n- **d** is wrong: Cloud Armor is not a hierarchy mechanism; VPC Service Controls create data-exfiltration perimeters, not packet-level intrusion detection. **Best practice:** combine hierarchical policies (guardrails), Cloud IDS (detection), and Cloud Armor (edge WAF).",
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-005",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "storage-allocation",
+      "data-lifecycle"
+    ],
+    "prompt": "Logs are written to a Cloud Storage bucket and accessed heavily for 30 days, occasionally for the next 11 months, and almost never afterward but must be retained for 7 years for compliance. The architect wants to minimize cost while keeping the data in one bucket. What is the best configuration?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Store everything in Standard storage and delete after 7 years"
+      },
+      {
+        "id": "b",
+        "text": "Use Object Lifecycle Management to transition objects Standard -> Nearline at 30 days -> Coldline at 365 days -> Archive at ~1 year+, retaining 7 years"
+      },
+      {
+        "id": "c",
+        "text": "Store everything in Archive from day one to minimize cost"
+      },
+      {
+        "id": "d",
+        "text": "Use Autoclass but disable any transition to colder classes"
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "**Correct: b.** Object Lifecycle Management lets you define age-based rules to transition objects to progressively colder, cheaper classes that match the access pattern: Standard for the hot first 30 days, Nearline (30-day min) for occasional access, Coldline (90-day min) and finally Archive (365-day min) for long-term retention, with a delete rule at 7 years.\n\n- **a** is wrong: Standard for 7 years is far more expensive than tiering.\n- **c** is wrong: Archive has high retrieval cost and a 365-day minimum storage duration; objects accessed heavily for 30 days would incur early-deletion and retrieval charges.\n- **d** is wrong: Autoclass with no cold transitions defeats the purpose; Autoclass is actually a great hands-off alternative when access patterns are unpredictable, but disabling cold transitions removes the savings. **Best practice:** add a bucket retention policy/lock for the 7-year compliance hold so objects cannot be deleted early.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-006",
+    "type": "multiple",
+    "domainId": "provision",
+    "concepts": [
+      "data-retention",
+      "backup-recovery"
+    ],
+    "prompt": "An auditor requires that financial records in Cloud Storage be immutable and undeletable for exactly 5 years (WORM compliance), and that nobody — including project owners — can shorten the retention window. Which controls achieve this? (Select two.)",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Set a bucket retention policy of 5 years and apply a retention policy lock"
+      },
+      {
+        "id": "b",
+        "text": "Enable Object Versioning and rely on soft delete"
+      },
+      {
+        "id": "c",
+        "text": "Use Bucket Lock so the retention policy becomes permanently immutable and cannot be reduced or removed"
+      },
+      {
+        "id": "d",
+        "text": "Grant only the project owner storage.admin and trust them not to delete"
+      },
+      {
+        "id": "e",
+        "text": "Apply an IAM deny policy that blocks all reads for 5 years"
+      }
+    ],
+    "correct": [
+      "a",
+      "c"
+    ],
+    "explanation": "**Correct: a and c.** A bucket *retention policy* sets a minimum retention period during which objects cannot be deleted or overwritten (a). Applying a *retention policy lock* (Bucket Lock) makes the policy permanent: it can be increased but never decreased or removed, even by owners — satisfying WORM/immutability (c). Together these meet regulatory holds (SEC 17a-4-style).\n\n- **b** is wrong: Object Versioning and soft delete protect against accidental overwrite/delete but do not enforce a regulatory immutable window; versions can still be permanently removed.\n- **d** is wrong: trusting an admin is not a technical control and violates least-privilege/immutability requirements.\n- **e** is wrong: an IAM deny on reads does not make data immutable and would break legitimate audit access. **Best practice:** combine Bucket Lock with object holds (event-based/temporary) for per-object legal holds.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-007",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "storage-allocation",
+      "data-lifecycle"
+    ],
+    "prompt": "An architect must transfer 800 TB of archival video from an on-premises NAS to Cloud Storage. The site has a 1 Gbps internet link that is also needed for production traffic, and the migration must complete within two weeks. What is the most appropriate transfer method?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "gsutil/gcloud storage parallel composite uploads over the existing 1 Gbps link"
+      },
+      {
+        "id": "b",
+        "text": "Storage Transfer Service over the public internet"
+      },
+      {
+        "id": "c",
+        "text": "Transfer Appliance: ship a physical appliance, load data on-prem, and ship it back to Google"
+      },
+      {
+        "id": "d",
+        "text": "Set up a Dedicated Interconnect first, then copy with gcloud storage"
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "**Correct: c.** Transferring 800 TB over a contended 1 Gbps link is infeasible in two weeks (even saturated, ~1 Gbps moves roughly ~10 TB/day, and the link is shared with production). Transfer Appliance is purpose-built for large offline migrations: Google ships a rugged storage appliance, you copy data locally at LAN speed, and ship it back for ingestion into Cloud Storage.\n\n- **a** is wrong: parallel composite uploads still ride the same saturated 1 Gbps link.\n- **b** is wrong: Storage Transfer Service is great for cloud-to-cloud or online sources but is still bound by the WAN link for on-prem.\n- **d** is wrong: provisioning Dedicated Interconnect typically takes weeks and the lead time alone breaks the two-week deadline. **Best practice:** use the rule of thumb that anything beyond ~tens of TB on a modest WAN link is a Transfer Appliance candidate.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-008",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "compute-provisioning",
+      "spot-vs-standard"
+    ],
+    "prompt": "A batch image-rendering pipeline is fault-tolerant, checkpoints frequently, and can restart interrupted tasks. The team wants the lowest possible compute cost on Compute Engine and accepts that instances may be reclaimed at any time. Which provisioning model should they use?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Standard on-demand VMs with committed use discounts"
+      },
+      {
+        "id": "b",
+        "text": "Spot VMs in a managed instance group"
+      },
+      {
+        "id": "c",
+        "text": "Sole-tenant nodes"
+      },
+      {
+        "id": "d",
+        "text": "Reserved capacity with a 3-year commitment"
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "**Correct: b.** Spot VMs offer the deepest discounts (typically 60-91% off on-demand) in exchange for preemption with no SLA — ideal for fault-tolerant, checkpointed, restartable batch work. Running them in a managed instance group lets the MIG automatically recreate preempted instances.\n\n- **a** is wrong: CUDs lower cost for steady-state usage but require commitment and are far pricier than Spot for interruptible work.\n- **c** is wrong: sole-tenant nodes are for licensing/compliance isolation and are more expensive, not cheaper.\n- **d** is wrong: 3-year reservations optimize predictable, always-on workloads, the opposite of cheap interruptible batch. **Best practice:** combine Spot with checkpointing and a MIG; use the 30-second preemption notice to checkpoint gracefully.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-provision-009",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "gke",
+      "container-orchestration"
+    ],
+    "prompt": "A team wants Kubernetes on Google Cloud but does not want to manage node pools, node upgrades, capacity planning, or bin-packing; they want to pay per-Pod resource request and have Google operate the nodes. Which option fits best?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "GKE Standard with node auto-provisioning"
+      },
+      {
+        "id": "b",
+        "text": "GKE Autopilot"
+      },
+      {
+        "id": "c",
+        "text": "Self-managed Kubernetes (kubeadm) on Compute Engine"
+      },
+      {
+        "id": "d",
+        "text": "Cloud Run for Anthos on a user-managed cluster"
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "**Correct: b.** GKE Autopilot is the fully managed, hands-off mode: Google provisions and manages nodes, you are billed primarily for the CPU/memory/ephemeral storage your Pods *request*, and node operations, security hardening, and scaling are handled for you.\n\n- **a** is wrong: GKE Standard (even with node auto-provisioning) still leaves you responsible for node pool configuration, upgrades scheduling, and you pay per node.\n- **c** is wrong: self-managed Kubernetes maximizes operational burden.\n- **d** is wrong: it still requires you to manage the underlying cluster. **Best practice:** choose Autopilot when you want least operational overhead and a per-Pod cost model; choose Standard when you need privileged daemonsets, specific node hardware, or fine-grained control.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-provision-010",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "serverless",
+      "cloud-run"
+    ],
+    "prompt": "A stateless containerized REST API has spiky traffic, must scale to zero when idle, and should scale out automatically based on concurrent requests with minimal infrastructure management. The team already builds OCI container images. What is the best fit?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Cloud Run (services)"
+      },
+      {
+        "id": "b",
+        "text": "Compute Engine managed instance group with autoscaling"
+      },
+      {
+        "id": "c",
+        "text": "GKE Standard with the Horizontal Pod Autoscaler"
+      },
+      {
+        "id": "d",
+        "text": "App Engine flexible environment"
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "**Correct: a.** Cloud Run runs stateless containers serverlessly, scales to zero when idle, autoscales on concurrent requests, and requires no cluster or VM management — a perfect match for a spiky, stateless, containerized API.\n\n- **b** is wrong: MIGs do not scale to zero cleanly and require VM/image lifecycle management.\n- **c** is wrong: GKE Standard adds cluster management overhead and HPA does not scale the cluster to zero by default.\n- **d** is wrong: App Engine flexible runs on always-on VMs that do not scale to zero. **Best practice:** Cloud Run for request-driven containers; use Cloud Run jobs for run-to-completion batch, and set concurrency to tune cost vs. latency.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-provision-011",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "vmware-engine",
+      "hybrid-networking"
+    ],
+    "prompt": "An enterprise wants to lift-and-shift its VMware vSphere estate to Google Cloud with minimal changes, keeping vCenter, vSAN, and NSX, while gaining a path to modernize later. Which service is designed for this?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Migrate to Virtual Machines (formerly Migrate for Compute Engine)"
+      },
+      {
+        "id": "b",
+        "text": "Google Cloud VMware Engine"
+      },
+      {
+        "id": "c",
+        "text": "GKE on-prem (Anthos clusters on VMware)"
+      },
+      {
+        "id": "d",
+        "text": "Bare Metal Solution"
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "**Correct: b.** Google Cloud VMware Engine (GCVE) delivers a fully managed VMware Cloud Foundation stack (vSphere, vCenter, vSAN, NSX) running on dedicated nodes in Google Cloud, enabling true lift-and-shift of vSphere workloads without re-platforming, with later modernization paths.\n\n- **a** is wrong: Migrate to Virtual Machines converts VMware VMs into native Compute Engine instances — that is re-platforming away from vSphere, not keeping vCenter/vSAN/NSX.\n- **c** is wrong: that runs Kubernetes on existing on-prem VMware, not a managed VMware estate in Google Cloud.\n- **d** is wrong: Bare Metal Solution is for specialized workloads like Oracle, not a managed VMware SDDC. **Best practice:** use GCVE for fast migration and time-bound modernization, connected via Cloud VPN/Interconnect.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-012",
+    "type": "multiple",
+    "domainId": "provision",
+    "concepts": [
+      "infra-orchestration",
+      "terraform"
+    ],
+    "prompt": "An architect is standardizing infrastructure-as-code on Google Cloud and wants a managed way to run Terraform with state management, drift detection, and policy enforcement, while also offering teams reusable, validated blueprints. Which statements are accurate? (Select two.)",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Infrastructure Manager is Google Cloud's managed service for deploying Terraform configurations and storing state"
+      },
+      {
+        "id": "b",
+        "text": "Cloud Foundation Toolkit provides reusable, opinionated Terraform/blueprint modules aligned to Google best practices"
+      },
+      {
+        "id": "c",
+        "text": "Deployment Manager is the recommended go-forward IaC tool over Terraform for new projects"
+      },
+      {
+        "id": "d",
+        "text": "Terraform state must always be stored on the local engineer's laptop for security"
+      },
+      {
+        "id": "e",
+        "text": "Config Connector cannot manage Google Cloud resources from within Kubernetes"
+      }
+    ],
+    "correct": [
+      "a",
+      "b"
+    ],
+    "explanation": "**Correct: a and b.** Infrastructure Manager is Google Cloud's managed Terraform runner: it executes your configs, manages state, and integrates with IAM and service accounts (a). The Cloud Foundation Toolkit (CFT) ships curated, production-grade Terraform modules and blueprints encoding Google best practices (b).\n\n- **c** is wrong: Deployment Manager is legacy; Terraform (via Infrastructure Manager) is the recommended modern approach.\n- **d** is wrong: state should be stored remotely (e.g., in a Cloud Storage backend or managed by Infrastructure Manager) for collaboration and locking, not on a laptop.\n- **e** is wrong: Config Connector explicitly lets you manage Google Cloud resources declaratively as Kubernetes objects. **Best practice:** combine Infrastructure Manager + CFT modules + policy validation (e.g., policy-as-code) for governed IaC.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-013",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "patch-management",
+      "infra-orchestration"
+    ],
+    "prompt": "A fleet of hundreds of Compute Engine VMs across multiple projects needs scheduled OS patching with reporting on which VMs are compliant, plus the ability to run scripts on the fleet. Which Google Cloud capability should the architect use?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Manually SSH into each VM and run the package manager"
+      },
+      {
+        "id": "b",
+        "text": "VM Manager (OS patch management, OS config, and patch compliance reporting)"
+      },
+      {
+        "id": "c",
+        "text": "Cloud Build triggers that rebuild every VM image nightly"
+      },
+      {
+        "id": "d",
+        "text": "Cloud Scheduler invoking gcloud compute reset on each VM"
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "**Correct: b.** VM Manager provides OS patch management (scheduled patch jobs across projects via the OS Config agent), patch compliance reporting/dashboards, OS inventory, and OS policy/script execution at fleet scale.\n\n- **a** is wrong: manual SSH does not scale and provides no compliance reporting.\n- **c** is wrong: rebuilding all images nightly is wasteful and disruptive; image baking is for golden images, not routine patching of running fleets.\n- **d** is wrong: resetting VMs does not patch the OS. **Best practice:** combine VM Manager patch deployments with maintenance windows and a golden-image strategy for new instances.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-provision-014",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "gemini-agent-platform",
+      "ml-pipelines"
+    ],
+    "prompt": "A data science team wants to orchestrate a repeatable ML workflow — data preprocessing, training, evaluation, and conditional model deployment — as a managed, serverless, reproducible DAG on Google Cloud's AI platform (the Gemini Enterprise Agent Platform, formerly Vertex AI). Which component should they use?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Vertex AI / Gemini Enterprise Agent Platform Pipelines (managed Kubeflow/TFX pipelines)"
+      },
+      {
+        "id": "b",
+        "text": "A single long-running Compute Engine VM running a bash script"
+      },
+      {
+        "id": "c",
+        "text": "Cloud Functions chained manually with Pub/Sub for each step"
+      },
+      {
+        "id": "d",
+        "text": "BigQuery scheduled queries"
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "**Correct: a.** The platform's Pipelines feature runs ML workflows as serverless, containerized DAGs (built on Kubeflow Pipelines/TFX), giving you reproducibility, artifact + metadata lineage tracking, caching, and conditional steps for things like deploy-if-metrics-pass.\n\n- **b** is wrong: a hand-rolled script on a VM lacks reproducibility, lineage, and managed orchestration.\n- **c** is wrong: chaining Cloud Functions manually is brittle and gives no ML lineage/metadata tracking.\n- **d** is wrong: scheduled queries handle SQL, not full ML DAGs with training/eval/deploy steps. **Best practice:** use pipeline components from the SDK, enable caching to skip unchanged steps, and gate deployment on evaluation metrics.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-015",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "ai-hypercomputer",
+      "gpu-tpu"
+    ],
+    "prompt": "A research team is training a very large foundation model that needs thousands of accelerators with high-bandwidth interconnect and a tightly co-located, dense compute fabric optimized for large-scale training and inference. Which Google Cloud offering describes this integrated supercomputing architecture, and what accelerator is purpose-built by Google for it?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "AI Hypercomputer architecture, using Cloud TPUs (and GPUs) with high-bandwidth interconnect"
+      },
+      {
+        "id": "b",
+        "text": "A single n2-standard-2 VM with a software GPU emulator"
+      },
+      {
+        "id": "c",
+        "text": "Cloud Run with CPU-only autoscaling"
+      },
+      {
+        "id": "d",
+        "text": "Persistent Disk snapshots used as a training accelerator"
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "**Correct: a.** AI Hypercomputer is Google's integrated supercomputing architecture that combines performance-optimized hardware (Cloud TPUs and GPUs), high-bandwidth/low-latency networking, dense liquid-cooled pods, and a software stack tuned for large-scale training and serving. Cloud TPUs are Google's purpose-built accelerators for this; GPUs are also supported.\n\n- **b** is wrong: a tiny CPU VM with a 'GPU emulator' is not a thing for large-scale training.\n- **c** is wrong: Cloud Run CPU-only cannot train large foundation models.\n- **d** is wrong: Persistent Disk snapshots are backups, not accelerators. **Best practice:** use TPU/GPU slices with reservations or DWS (Dynamic Workload Scheduler) for capacity, and Cluster Director / managed orchestration for the fabric.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-016",
+    "type": "multiple",
+    "domainId": "provision",
+    "concepts": [
+      "prebuilt-ai-apis",
+      "model-garden"
+    ],
+    "prompt": "A product team wants to add AI features quickly without training models from scratch. Which statements about Google Cloud's prebuilt AI and model options are accurate? (Select two.)",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Model Garden is a catalog where teams can discover, test, and deploy first-party (Gemini), open, and third-party models"
+      },
+      {
+        "id": "b",
+        "text": "The Cloud Vision API can perform label detection, OCR, and object localization without custom training"
+      },
+      {
+        "id": "c",
+        "text": "Prebuilt APIs like Vision and Speech-to-Text require you to provision and manage GPU clusters yourself"
+      },
+      {
+        "id": "d",
+        "text": "NotebookLM is a low-level IaaS block-storage product"
+      },
+      {
+        "id": "e",
+        "text": "Using a prebuilt API guarantees zero ongoing cost regardless of usage"
+      }
+    ],
+    "correct": [
+      "a",
+      "b"
+    ],
+    "explanation": "**Correct: a and b.** Model Garden is the catalog/hub for discovering, evaluating, tuning, and deploying first-party (Gemini), open-source, and partner models (a). The Cloud Vision API offers ready-to-use capabilities — label detection, OCR/text detection, object localization, safe-search, etc. — via a simple API call with no model training (b).\n\n- **c** is wrong: prebuilt APIs are fully managed; you do not provision GPU clusters.\n- **d** is wrong: NotebookLM is an AI research/grounded-assistant tool (part of the Gemini Enterprise family), not block storage.\n- **e** is wrong: prebuilt APIs are usage-priced; cost scales with calls/volume. **Best practice:** start with prebuilt APIs for common tasks, move to Model Garden / tuned models when you need customization.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-provision-017",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "vpc-design",
+      "load-balancing"
+    ],
+    "caseStudyId": "altostrat-media",
+    "prompt": "Altostrat Media streams video globally and is consolidating multiple business units, each currently with its own project and overlapping RFC 1918 ranges, into a unified network. They want centralized control of subnets and firewall policy by the network team, while application teams deploy workloads in their own projects that share the same VPC. Which design should the architect recommend?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "A Shared VPC: a host project owns the VPC/subnets/firewalls, and service projects attach to consume them"
+      },
+      {
+        "id": "b",
+        "text": "VPC Network Peering between every pair of business-unit VPCs"
+      },
+      {
+        "id": "c",
+        "text": "One flat VPC where every team has full Owner on the network"
+      },
+      {
+        "id": "d",
+        "text": "Separate VPCs connected only by HA VPN tunnels in a full mesh"
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "**Correct: a.** Shared VPC fits exactly: a *host project* centrally owns the VPC, subnets, and firewall rules (network team), while *service projects* (application teams) attach and deploy resources into shared subnets. This gives centralized network/security governance with delegated app deployment, and a single coherent address space avoiding overlap.\n\n- **b** is wrong: full-mesh peering is operationally heavy, non-transitive, and does not resolve overlapping RFC 1918 ranges or centralize firewall control.\n- **c** is wrong: granting Owner to everyone violates least privilege and centralized control.\n- **d** is wrong: full-mesh VPN is complex, lower-throughput, and still leaves decentralized control. **Best practice:** Shared VPC + hierarchical firewall policies, with the network team managing subnets and IAM-scoped subnet access per team.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-018",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "backup-recovery",
+      "data-retention"
+    ],
+    "caseStudyId": "ehr-healthcare",
+    "prompt": "EHR Healthcare runs production databases on Compute Engine and Cloud SQL and must meet strict RPO/RTO and HIPAA-aligned retention. The team wants automated, policy-driven, application-consistent backups of Compute Engine disks across the organization with centralized retention and the ability to restore quickly. Which Google Cloud service is the best fit?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Backup and DR Service (with backup plans/vaults) plus Cloud SQL automated backups and PITR"
+      },
+      {
+        "id": "b",
+        "text": "A cron job that runs gcloud compute disks snapshot with no retention policy"
+      },
+      {
+        "id": "c",
+        "text": "Copying VM disks to a Standard Cloud Storage bucket manually each week"
+      },
+      {
+        "id": "d",
+        "text": "Relying solely on GKE etcd backups"
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "**Correct: a.** Google Cloud Backup and DR Service provides centralized, policy-driven backup plans with retention enforcement and application-consistent backups for Compute Engine (and other sources), plus fast restore and isolated backup vaults — ideal for regulated RPO/RTO needs. For Cloud SQL, enabling automated backups with point-in-time recovery (binary logging) meets the database RPO.\n\n- **b** is wrong: ad-hoc snapshots with no retention policy give no governance, no app-consistency guarantees, and risk uncontrolled growth/cost.\n- **c** is wrong: manual weekly copies yield poor RPO and are error-prone and not app-consistent.\n- **d** is wrong: etcd backups cover Kubernetes object state, not the application databases here. **Best practice:** define backup plans per workload tier with retention matching compliance, store in backup vaults, and regularly test restores against RTO.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-019",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "multicloud",
+      "hybrid-networking"
+    ],
+    "caseStudyId": "cymbal-retail",
+    "prompt": "Cymbal Retail runs analytics on Google Cloud but keeps a large transactional dataset in another public cloud. Analysts want to query that external data with minimal data movement and without standing up and managing their own ETL clusters. Which approach best matches a multicloud analytics requirement?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "BigQuery Omni to query data in other clouds (AWS/Azure) from BigQuery without moving it"
+      },
+      {
+        "id": "b",
+        "text": "Export the entire dataset nightly to Cloud Storage and re-import it"
+      },
+      {
+        "id": "c",
+        "text": "Run a self-managed Spark cluster on Compute Engine that pulls all data each query"
+      },
+      {
+        "id": "d",
+        "text": "Set up VPC Peering between the two clouds and query over the peering link"
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "**Correct: a.** BigQuery Omni lets analysts run BigQuery (using the BigQuery engine via Anthos/managed infrastructure) directly against data residing in AWS or Azure, minimizing data movement and avoiding self-managed clusters — the canonical managed multicloud analytics pattern.\n\n- **b** is wrong: nightly full exports are slow, costly, increase data duplication/staleness, and defeat 'minimal movement.'\n- **c** is wrong: a self-managed Spark cluster reintroduces the operational burden they want to avoid and still moves data per query.\n- **d** is wrong: VPC Peering is not supported between Google Cloud and other public clouds in that manner, and it does not provide a federated query engine. **Best practice:** use BigQuery Omni for in-place cross-cloud queries; use BigQuery's storage/federation features and authorized views for governance.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-020",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "compute-provisioning",
+      "spot-vs-standard"
+    ],
+    "caseStudyId": "knightmotives-automotive",
+    "prompt": "KnightMotives Automotive runs a 24/7 customer-facing telemetry ingestion service on Compute Engine with steady, predictable baseline load that rarely changes. The CFO wants the lowest sustainable cost for this always-on workload **without** risking interruptions. Which pricing/provisioning strategy is most appropriate?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Spot VMs, because they are the cheapest"
+      },
+      {
+        "id": "b",
+        "text": "Committed Use Discounts (1- or 3-year) on standard VMs sized to the steady baseline"
+      },
+      {
+        "id": "c",
+        "text": "On-demand VMs with no commitment and no discounts"
+      },
+      {
+        "id": "d",
+        "text": "Scale the service to zero between requests using Spot preemption"
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "**Correct: b.** For an always-on, predictable baseline that must not be interrupted, Committed Use Discounts (1- or 3-year resource or spend-based commitments) deliver substantial savings (up to ~57-70% depending on type/term) while keeping standard, non-preemptible VMs — no interruption risk.\n\n- **a** and **d** are wrong: Spot VMs can be preempted at any time with no SLA, which is unacceptable for a 24/7 customer-facing service.\n- **c** is wrong: pure on-demand leaves significant savings on the table for steady predictable load; sustained-use discounts help automatically but CUDs are cheaper for committed baselines. **Best practice:** cover the steady baseline with CUDs, and handle bursty peaks above baseline with on-demand (or Spot for any fault-tolerant batch side-work).",
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-021",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "private-service-connect",
+      "load-balancing",
+      "hybrid-networking"
+    ],
+    "prompt": "A retailer runs latency-sensitive services on-premises that must call Google Cloud APIs (BigQuery, Cloud Storage) **without traversing the public internet**, and must also expose a **single global anycast IP** for a web tier running in multiple regions. Which combination meets both requirements?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Private Service Connect endpoints for Google APIs, plus a global external Application Load Balancer for the web tier"
+      },
+      {
+        "id": "b",
+        "text": "Cloud NAT for API access, plus a regional external Application Load Balancer in each region"
+      },
+      {
+        "id": "c",
+        "text": "Public Google API access secured with Cloud Armor, plus DNS round-robin across regional IPs"
+      },
+      {
+        "id": "d",
+        "text": "VPC Network Peering to Google's API network, plus an internal Application Load Balancer"
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "Private Service Connect provides private, internal-IP access to Google APIs from on-prem/VPC, and a **global external Application Load Balancer** offers a single anycast IP with multi-region backends and health-based steering. Cloud NAT is for outbound internet egress, not private Google API access. DNS round-robin is not a single anycast IP and lacks health awareness. You cannot VPC-peer to Google's API network, and an internal ALB is not internet-facing.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-provision-022",
+    "type": "multiple",
+    "domainId": "provision",
+    "concepts": [
+      "vpc-design",
+      "hybrid-networking"
+    ],
+    "prompt": "An organization uses a **Shared VPC** to centralize network administration across many service projects. Which statements are TRUE? (Choose two.)",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Subnets and firewall rules are defined in the host project and shared with attached service projects"
+      },
+      {
+        "id": "b",
+        "text": "Each service project must create its own VPC and peer it to the host project's VPC"
+      },
+      {
+        "id": "c",
+        "text": "Resources in a service project (e.g., Compute Engine VMs) can use subnets owned by the host project"
+      },
+      {
+        "id": "d",
+        "text": "Shared VPC removes the need for IAM — any service project can use any subnet automatically"
+      }
+    ],
+    "correct": [
+      "a",
+      "c"
+    ],
+    "explanation": "With Shared VPC, the **host project** owns the VPC, subnets, and firewall rules; attached **service projects** run resources that consume those host subnets. (b) describes VPC Network Peering, a different model. (d) is false — subnet usage is granted explicitly via the **Compute Network User** IAM role on specific subnets or the host project.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-provision-023",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "gke",
+      "container-orchestration",
+      "compute-provisioning"
+    ],
+    "prompt": "A team must run a workload that requires **DaemonSets, a custom CNI plugin, and node-level GPU drivers**, with control over the node OS. They want the least operational overhead that still satisfies these requirements. Which platform fits?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "GKE Standard"
+      },
+      {
+        "id": "b",
+        "text": "Cloud Run"
+      },
+      {
+        "id": "c",
+        "text": "GKE Autopilot"
+      },
+      {
+        "id": "d",
+        "text": "Cloud Run functions"
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "DaemonSets, custom CNI, node-level GPU drivers, and node-OS control all require access to the nodes, which only **GKE Standard** provides. Cloud Run and Cloud Run functions are fully serverless (no nodes/DaemonSets). GKE **Autopilot** manages nodes for you and restricts privileged node-level access, DaemonSets, and custom CNI — so it cannot meet these requirements.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-provision-024",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "data-retention",
+      "data-lifecycle",
+      "backup-recovery"
+    ],
+    "prompt": "A healthcare customer must guarantee that audit-log objects in Cloud Storage **cannot be deleted or overwritten for 7 years — even by project administrators** — to satisfy a regulatory retention mandate. What should you configure?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "A bucket retention policy with a 7-year period, then apply a locked Bucket Lock"
+      },
+      {
+        "id": "b",
+        "text": "Object versioning with a lifecycle rule that deletes noncurrent versions after 7 years"
+      },
+      {
+        "id": "c",
+        "text": "An IAM deny rule on storage.objects.delete for all administrators"
+      },
+      {
+        "id": "d",
+        "text": "Manual object holds applied to each object"
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "**Bucket Lock** makes the retention policy immutable (WORM): objects can't be deleted or overwritten before the retention period elapses, and the policy itself can't be shortened or removed — even by administrators. Versioning still permits deleting versions. IAM rules can be changed by admins. Manual holds don't scale and can be released.",
+    "difficulty": 3
+  }
+]

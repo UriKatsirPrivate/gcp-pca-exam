@@ -1,0 +1,329 @@
+[
+  {
+    "id": "q-design-plan-001",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": ["functional-vs-nonfunctional", "business-requirements"],
+    "prompt": "During discovery for a new platform, a stakeholder states: *\"The checkout API must respond in under 300 ms at the 99th percentile, and the system must remain available during a single-zone outage.\"* How should an architect classify these two statements?",
+    "choices": [
+      {"id": "a", "text": "Both are functional requirements because they describe what the checkout feature does"},
+      {"id": "b", "text": "Both are non-functional requirements describing performance and availability quality attributes"},
+      {"id": "c", "text": "The latency target is functional and the availability target is non-functional"},
+      {"id": "d", "text": "Both are business requirements that cannot be measured technically"}
+    ],
+    "correct": ["b"],
+    "explanation": "Latency at p99 (performance) and surviving a zone outage (availability/reliability) are **non-functional requirements** — they describe quality attributes and constraints on *how well* the system behaves, not *what* feature it provides. Functional requirements describe behavior such as \"the user can place an order.\" (a) is wrong: neither describes a feature. (c) is wrong: a latency SLO is a quality attribute, not a feature. (d) is wrong: both are precisely measurable (ms, zone failure) and are technical NFRs, not vague business goals. Correctly separating FRs from NFRs drives the choice of SLIs/SLOs and the underlying architecture (e.g., regional MIGs and a load balancer to survive a zone loss).",
+    "difficulty": 1
+  },
+  {
+    "id": "q-design-plan-002",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": ["ha-failover", "compute-selection"],
+    "prompt": "A stateless web tier on Compute Engine must survive the loss of an entire zone with no manual intervention while keeping cost low. Which design best meets this requirement?",
+    "choices": [
+      {"id": "a", "text": "A single large VM in one zone with a daily snapshot schedule"},
+      {"id": "b", "text": "A zonal managed instance group (MIG) with autoscaling in one zone"},
+      {"id": "c", "text": "A regional managed instance group spanning 3 zones behind a regional external Application Load Balancer with autohealing"},
+      {"id": "d", "text": "Two unmanaged instances in two zones with a manual DNS failover record"}
+    ],
+    "correct": ["c"],
+    "explanation": "A **regional MIG** distributes instances across multiple zones in a region; if a zone fails, the autoscaler and autohealer keep capacity in the surviving zones and the load balancer stops routing to unhealthy backends — all automatically. (a) a single VM is a single point of failure; snapshots are recovery, not HA. (b) a zonal MIG dies entirely if its zone fails. (d) unmanaged instances lack autohealing/autoscaling and manual DNS failover requires intervention and incurs TTL delay. The regional MIG + ALB pattern is the canonical GCP HA design for a stateless tier.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-design-plan-003",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": ["storage-selection"],
+    "prompt": "An analytics team needs shared, POSIX-compliant file storage that multiple Compute Engine VMs and a GKE cluster can mount concurrently with low latency for a rendering workload. Which Google Cloud service fits best?",
+    "choices": [
+      {"id": "a", "text": "Cloud Storage bucket mounted with Cloud Storage FUSE"},
+      {"id": "b", "text": "Filestore (e.g., Zonal or Enterprise tier)"},
+      {"id": "c", "text": "Persistent Disk attached read-write to one VM"},
+      {"id": "d", "text": "Cloud SQL with a shared schema"}
+    ],
+    "correct": ["b"],
+    "explanation": "**Filestore** is Google Cloud's managed NFS service, providing a true POSIX file system that many clients (VMs and GKE pods) can mount concurrently with low latency — ideal for render farms and shared scratch space. (a) Cloud Storage is object storage; FUSE emulates a file system but does not provide full POSIX semantics or low-latency random writes. (c) a standard Persistent Disk can only be attached read-write to a single VM. (d) Cloud SQL is a relational database, not a shared file system.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-design-plan-004",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": ["gke-vs-cloudrun", "compute-selection"],
+    "prompt": "A team is building a new stateless HTTP microservice. They want to deploy a container, scale to zero when idle, pay only for request time, and avoid managing nodes or cluster upgrades. Which compute option best matches?",
+    "choices": [
+      {"id": "a", "text": "Cloud Run"},
+      {"id": "b", "text": "GKE Standard with cluster autoscaler"},
+      {"id": "c", "text": "A managed instance group of preemptible VMs"},
+      {"id": "d", "text": "App Engine flexible environment"}
+    ],
+    "correct": ["a"],
+    "explanation": "**Cloud Run** is a fully managed, serverless container platform: it scales to zero, bills per request/CPU time, and requires no node or cluster management — a perfect fit for a stateless HTTP microservice with spiky traffic. (b) GKE Standard requires managing nodes, upgrades, and capacity, and does not scale pods to zero by default. (c) MIGs run VMs you must size and patch and do not scale to zero cleanly. (d) App Engine flexible runs on VMs that do not scale to zero, so you pay for idle instances. Choose GKE instead when you need fine-grained networking, DaemonSets, GPUs at scale, or complex multi-service orchestration.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-design-plan-005",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": ["storage-selection", "scalability"],
+    "prompt": "An architect must choose a database for a globally distributed retail catalog and inventory service that requires strong consistency, horizontal write scalability across regions, and SQL semantics. Which service is the best fit?",
+    "choices": [
+      {"id": "a", "text": "Cloud SQL for PostgreSQL with read replicas"},
+      {"id": "b", "text": "Cloud Spanner"},
+      {"id": "c", "text": "Bigtable"},
+      {"id": "d", "text": "Firestore in Datastore mode"}
+    ],
+    "correct": ["b"],
+    "explanation": "**Cloud Spanner** is a horizontally scalable, strongly consistent relational database with global, synchronously replicated multi-region configurations and SQL support — exactly what a globally distributed, strongly consistent catalog/inventory system needs. (a) Cloud SQL scales reads with replicas but has a single primary for writes and is regional; it cannot scale writes horizontally across regions. (c) Bigtable is a wide-column NoSQL store with no SQL joins or multi-row transactions across the table in the relational sense — great for high-throughput time-series, not relational catalog logic. (d) Firestore offers strong consistency but is document-oriented, not relational SQL, and is not designed for the same horizontal relational write scale.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-design-plan-006",
+    "type": "multiple",
+    "domainId": "design-plan",
+    "concepts": ["cost-optimization", "spot-vms", "compute-selection"],
+    "prompt": "A data-processing batch pipeline runs nightly, is fault-tolerant (tasks can be retried), and has no fixed completion deadline within the night window. Which TWO strategies most directly reduce compute cost while remaining appropriate for this workload?",
+    "choices": [
+      {"id": "a", "text": "Run workers on Spot VMs and design tasks to be idempotent and checkpointed"},
+      {"id": "b", "text": "Purchase 3-year committed use discounts (CUDs) for the peak nightly capacity"},
+      {"id": "c", "text": "Use a managed instance group that scales workers to zero between runs"},
+      {"id": "d", "text": "Provision the largest available VMs and keep them running 24/7 for headroom"},
+      {"id": "e", "text": "Move the workload to a multi-region Spanner instance"}
+    ],
+    "correct": ["a", "c"],
+    "explanation": "**Spot VMs** offer the deepest discount (typically 60-91% off) and suit fault-tolerant, retryable, interruptible batch work — provided tasks are idempotent/checkpointed (a). **Scaling the MIG to zero between runs** (c) means you pay nothing for compute when the pipeline is idle, ideal for a nightly job. (b) CUDs commit to steady 24/7 usage; for a workload that runs only a few hours nightly, committed capacity wastes money. (d) over-provisioning always-on large VMs is the opposite of cost optimization. (e) Spanner is an expensive relational database, irrelevant to batch compute cost and a poor fit for the workload.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-design-plan-007",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": ["private-service-connect", "vpc-design"],
+    "prompt": "An enterprise wants its workloads to reach a Google Cloud managed service (and later a partner SaaS) using private IP addresses inside its own VPC, without exposing traffic to the public internet and without overlapping IP ranges with the producer. Which capability should the architect choose?",
+    "choices": [
+      {"id": "a", "text": "Private Service Connect (PSC) endpoints"},
+      {"id": "b", "text": "Cloud NAT"},
+      {"id": "c", "text": "External Application Load Balancer with Cloud Armor"},
+      {"id": "d", "text": "VPC Network Peering with the producer's VPC"}
+    ],
+    "correct": ["a"],
+    "explanation": "**Private Service Connect** lets a consumer create an endpoint with a private IP *in its own VPC* that maps to a producer service (Google APIs, managed services, or partner/SaaS published services). Traffic stays on Google's network, and because PSC uses an endpoint (not route exchange), there is **no requirement for non-overlapping ranges** between consumer and producer. (b) Cloud NAT provides outbound internet access for private VMs — the opposite of keeping traffic private to a service. (c) an external ALB exposes services publicly. (d) VPC Peering exchanges routes and therefore requires non-overlapping CIDR ranges and exposes broader connectivity than a single service endpoint.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-design-plan-008",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": ["backup-recovery", "business-continuity"],
+    "prompt": "A finance application has an RPO of 5 minutes and an RTO of 30 minutes. The team currently takes a nightly database export to Cloud Storage. What is the most accurate assessment?",
+    "choices": [
+      {"id": "a", "text": "The nightly export satisfies both RPO and RTO"},
+      {"id": "b", "text": "The nightly export violates the RPO because up to ~24 hours of data could be lost"},
+      {"id": "c", "text": "The nightly export violates the RTO but satisfies the RPO"},
+      {"id": "d", "text": "RPO and RTO are interchangeable, so a single nightly backup covers both"}
+    ],
+    "correct": ["b"],
+    "explanation": "**RPO (Recovery Point Objective)** is the maximum acceptable data loss measured in time. A nightly export means a failure just before the next backup could lose nearly 24 hours of data, which grossly **violates the 5-minute RPO** (b). To meet a 5-minute RPO you need continuous protection such as point-in-time recovery / transaction-log shipping (e.g., Cloud SQL PITR, or Spanner's continuous replication). (a) and (c) are wrong because the RPO is clearly breached. (d) is wrong: RPO (data loss) and RTO (downtime to recover) are distinct objectives and are not interchangeable.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-design-plan-009",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": ["migration-methodology", "workload-disposition"],
+    "prompt": "An organization is planning a large migration and is classifying each application. One legacy app will be moved to Google Cloud as-is on VMs with minimal changes to hit an aggressive deadline, with modernization deferred. Which migration strategy does this represent?",
+    "choices": [
+      {"id": "a", "text": "Rehost (lift and shift)"},
+      {"id": "b", "text": "Replatform (lift and optimize / move and improve)"},
+      {"id": "c", "text": "Refactor / re-architect"},
+      {"id": "d", "text": "Retire"}
+    ],
+    "correct": ["a"],
+    "explanation": "**Rehost (lift and shift)** moves an application to the cloud with minimal or no code changes — typically VM-to-VM — which is the fastest path and defers modernization, matching the scenario. (b) Replatform makes a few cloud optimizations during the move (e.g., swapping a self-managed DB for Cloud SQL) — more than \"as-is.\" (c) Refactor substantially re-architects the app (e.g., to containers/serverless) — the most effort, not minimal change. (d) Retire means decommissioning an app that is no longer needed, which is not what is happening here.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-design-plan-010",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": ["migration-center", "migration-methodology"],
+    "prompt": "Before migrating hundreds of on-premises servers, an architect needs to build an inventory, understand application dependencies, right-size target machine types, and produce a TCO estimate. Which Google Cloud tool is purpose-built for this discovery and assessment phase?",
+    "choices": [
+      {"id": "a", "text": "Migration Center"},
+      {"id": "b", "text": "Cloud Deploy"},
+      {"id": "c", "text": "Config Connector"},
+      {"id": "d", "text": "Cloud Build"}
+    ],
+    "correct": ["a"],
+    "explanation": "**Migration Center** is Google Cloud's unified migration platform for the assessment phase: it discovers on-prem assets, maps dependencies, recommends right-sized Google Cloud machine types, and generates TCO/cost reports to support migration planning. (b) Cloud Deploy is a continuous-delivery tool for releasing apps to runtimes like GKE/Cloud Run. (c) Config Connector manages Google Cloud resources via Kubernetes-style manifests. (d) Cloud Build is a CI/CD build service. None of b-d perform discovery, dependency mapping, or TCO analysis.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-design-plan-011",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": ["well-architected-framework", "design-tradeoffs"],
+    "prompt": "An architect is reviewing a design against the Google Cloud Well-Architected Framework. The team proposes running every service across three multi-region deployments \"to be safe,\" even for an internal tool used by 20 people during business hours. Which Well-Architected principle most directly challenges this proposal?",
+    "choices": [
+      {"id": "a", "text": "Cost optimization — match resilience and spend to actual business requirements"},
+      {"id": "b", "text": "Security — encrypt all data in transit"},
+      {"id": "c", "text": "Operational excellence — automate deployments"},
+      {"id": "d", "text": "Reliability — always maximize redundancy regardless of need"}
+    ],
+    "correct": ["a"],
+    "explanation": "The Well-Architected Framework's **cost optimization** pillar stresses aligning the level of resilience and resources with actual business value and requirements; gold-plating an internal, low-criticality, business-hours tool with multi-region everything wastes money for negligible benefit (a). (b) security in transit is unrelated to the over-provisioning concern. (c) automation is good but does not address the cost/resilience mismatch. (d) is a distractor that misstates the reliability pillar — reliability is about meeting targets cost-effectively, not maximizing redundancy unconditionally. Right-sizing resilience to the SLO is a core architectural trade-off.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-design-plan-012",
+    "type": "multiple",
+    "domainId": "design-plan",
+    "concepts": ["integration-patterns", "data-movement"],
+    "prompt": "A retailer is decoupling a monolith into services. They need (1) reliable asynchronous messaging to fan out order events to multiple downstream consumers, and (2) a managed way to run scheduled and event-driven ETL/data pipelines. Which TWO services best address these needs respectively?",
+    "choices": [
+      {"id": "a", "text": "Pub/Sub for asynchronous event fan-out to multiple subscribers"},
+      {"id": "b", "text": "Cloud Dataflow (or Cloud Data Fusion) for managed data pipelines"},
+      {"id": "c", "text": "Cloud Interconnect for event messaging"},
+      {"id": "d", "text": "Cloud CDN for ETL orchestration"},
+      {"id": "e", "text": "Persistent Disk snapshots for event delivery"}
+    ],
+    "correct": ["a", "b"],
+    "explanation": "**Pub/Sub** is Google Cloud's managed, scalable asynchronous messaging service supporting fan-out: one published message can be delivered to many subscriptions/consumers, decoupling producers from consumers (a). **Dataflow** (or **Data Fusion**) provides managed, autoscaling data pipelines for batch and streaming ETL (b). (c) Cloud Interconnect is dedicated hybrid network connectivity, not messaging. (d) Cloud CDN caches content at the edge — not ETL. (e) disk snapshots are backups, not an event-delivery mechanism. This combination is the standard event-driven integration pattern on Google Cloud.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-design-plan-013",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": ["gemini-cloud-assist", "cost-optimization"],
+    "prompt": "An architecture review team wants AI-powered help directly inside the Google Cloud console to investigate a cost spike, get design recommendations, and troubleshoot a misconfigured resource using natural language grounded in their own environment. Which capability is intended for this?",
+    "choices": [
+      {"id": "a", "text": "Gemini Cloud Assist"},
+      {"id": "b", "text": "Model Garden"},
+      {"id": "c", "text": "Model Armor"},
+      {"id": "d", "text": "AI Hypercomputer"}
+    ],
+    "correct": ["a"],
+    "explanation": "**Gemini Cloud Assist** is the AI assistant embedded in the Google Cloud console and CLI that helps architects and operators design, troubleshoot, and optimize their Google Cloud environment using natural language grounded in the user's own resources and telemetry (e.g., investigating cost or configuration issues). (b) Model Garden is a catalog of foundation/open models you can deploy. (c) Model Armor provides safety/security filtering (prompt-injection and content protection) for generative-AI applications. (d) AI Hypercomputer is Google's integrated supercomputing stack (TPUs/GPUs, networking, software) for large-scale AI training/serving — not a console assistant.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-design-plan-014",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": ["storage-selection", "cost-optimization"],
+    "prompt": "Compliance requires retaining audit logs for 7 years. The logs are written once, almost never read (perhaps once a year for an audit), and must be retrievable within hours when needed. Which Cloud Storage class minimizes cost for this access pattern?",
+    "choices": [
+      {"id": "a", "text": "Standard storage"},
+      {"id": "b", "text": "Nearline storage"},
+      {"id": "c", "text": "Archive storage"},
+      {"id": "d", "text": "Multi-region Standard storage with versioning"}
+    ],
+    "correct": ["c"],
+    "explanation": "**Archive** is the lowest-cost storage class, designed for data accessed less than once a year with a minimum storage duration of 365 days — a perfect match for 7-year audit-log retention that is almost never read but must still be retrievable (within milliseconds for the request, suitable for an annual audit). (a) Standard is cheapest for frequently accessed data and most expensive to store at rest. (b) Nearline targets roughly monthly access — more expensive at rest than Archive. (d) multi-region Standard with versioning maximizes durability/availability and cost, the opposite of the goal. Using an Object Lifecycle policy to transition to Archive automates the savings.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-design-plan-015",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": ["kpi-roi", "business-requirements"],
+    "prompt": "A migration business case claims success will be measured by \"better performance.\" An architect is asked to make this a proper KPI. Which reformulation is the strongest KPI?",
+    "choices": [
+      {"id": "a", "text": "\"The system will feel faster to users after migration\""},
+      {"id": "b", "text": "\"Reduce p95 checkout latency from 1,200 ms to under 500 ms within 90 days of cutover\""},
+      {"id": "c", "text": "\"Use the latest compute machine types\""},
+      {"id": "d", "text": "\"Improve the architecture by following best practices\""}
+    ],
+    "correct": ["b"],
+    "explanation": "A strong KPI is **specific, measurable, time-bound, and tied to a business/user outcome**: reducing p95 checkout latency from 1,200 ms to under 500 ms within 90 days (b) gives a clear baseline, target, metric, and deadline you can verify and tie to ROI. (a) \"feel faster\" is subjective and unmeasurable. (c) using new machine types is an activity/output, not an outcome metric. (d) \"follow best practices\" has no measurable target. Defining KPIs this way lets you prove ROI and decide whether the migration met its goals.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-design-plan-016",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": ["business-continuity", "ha-failover", "design-tradeoffs"],
+    "caseStudyId": "ehr-healthcare",
+    "prompt": "A healthcare provider runs a patient-records platform that must meet strict RPO/RTO targets and survive the loss of an entire region for its most critical write workloads, while controlling cost for less-critical reporting workloads. Which disaster-recovery approach best balances these needs?",
+    "choices": [
+      {"id": "a", "text": "Use a single regional deployment for everything and rely on Cloud Storage backups"},
+      {"id": "b", "text": "Run the critical transactional database on a multi-region configuration (e.g., Cloud Spanner multi-region) with active replication, while protecting reporting workloads with cheaper backup/restore (warm or cold) DR"},
+      {"id": "c", "text": "Run every workload active-active across three regions regardless of criticality"},
+      {"id": "d", "text": "Keep all workloads on-premises and replicate snapshots to Cloud Storage nightly"}
+    ],
+    "correct": ["b"],
+    "explanation": "Sound business-continuity design **tiers DR by workload criticality**. The critical patient-records writes need the strongest protection — a multi-region, synchronously/continuously replicated database such as **Cloud Spanner multi-region** gives near-zero RPO and regional-failure survivability — while less-critical reporting can use a cheaper backup/restore or warm-standby pattern (b). (a) a single region cannot survive a regional outage and nightly backups blow the RPO. (c) active-active everywhere meets the targets but wastes money on low-criticality workloads, violating cost trade-offs. (d) staying on-prem with nightly snapshots fails both the regional-survivability and RPO requirements.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-design-plan-017",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": ["scalability", "performance-latency", "vpc-design"],
+    "caseStudyId": "altostrat-media",
+    "prompt": "A global media company streams video and serves a web app to users on every continent. They need low-latency content delivery, a single global anycast entry point, and automatic routing of users to the nearest healthy backend. Which combination best meets these requirements?",
+    "choices": [
+      {"id": "a", "text": "A regional external Application Load Balancer in one region with Cloud NAT"},
+      {"id": "b", "text": "A global external Application Load Balancer with Cloud CDN enabled, backed by backends in multiple regions"},
+      {"id": "c", "text": "Per-region external IPs published in DNS with manual geo-routing"},
+      {"id": "d", "text": "An internal passthrough Network Load Balancer fronting a single regional MIG"}
+    ],
+    "correct": ["b"],
+    "explanation": "A **global external Application Load Balancer** provides a single global anycast IP and automatically routes each user to the nearest healthy backend region; enabling **Cloud CDN** caches content at Google's edge for low-latency delivery worldwide (b). (a) a regional ALB serves from one region only — high latency for distant users and no cross-region failover. (c) DNS-based geo-routing is coarse, suffers from caching/TTL lag, and requires manual maintenance. (d) an internal passthrough NLB is for private, regional Layer-4 traffic — wrong for global internet content delivery. This pattern is the canonical global, low-latency web/media design on Google Cloud.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-design-plan-018",
+    "type": "multiple",
+    "domainId": "design-plan",
+    "concepts": ["licensing", "migration-methodology", "cost-optimization"],
+    "prompt": "An enterprise migrating Windows Server and SQL Server workloads to Compute Engine wants to control licensing cost and stay compliant. Which TWO statements reflect correct licensing planning on Google Cloud?",
+    "choices": [
+      {"id": "a", "text": "Google Cloud offers pay-as-you-go (license-included) images for Windows Server and SQL Server, which simplify compliance for new deployments"},
+      {"id": "b", "text": "Sole-tenant nodes can be used to bring existing eligible licenses (BYOL) that require dedicated physical hardware for compliance"},
+      {"id": "c", "text": "All commercial OS and database licenses are always free on Compute Engine"},
+      {"id": "d", "text": "Licensing has no impact on TCO and can be ignored during migration planning"},
+      {"id": "e", "text": "You must repurchase every license at full price every time a VM autoscales"}
+    ],
+    "correct": ["a", "b"],
+    "explanation": "Google Cloud provides **license-included (PAYG) images** for Windows Server and SQL Server so you pay licensing as part of the hourly rate, simplifying compliance (a). For **bring-your-own-license (BYOL)** scenarios that require dedicated physical cores for compliance, **sole-tenant nodes** give you dedicated hardware to host existing eligible licenses (b). (c) is false — commercial OS/DB licenses are not free; PAYG bakes the cost into the price. (d) is false — licensing is a significant TCO factor that must be modeled during planning. (e) is false — autoscaling with PAYG images charges per running instance-hour; you do not \"repurchase\" licenses.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-design-plan-019",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": ["workload-disposition", "cloud-first"],
+    "caseStudyId": "cymbal-retail",
+    "prompt": "A retailer is rationalizing its application portfolio. One internal app duplicates functionality already provided by a fully managed SaaS the company now subscribes to, and it carries high maintenance cost with few users. Under a build/buy/modify/deprecate analysis, what is the most appropriate disposition?",
+    "choices": [
+      {"id": "a", "text": "Refactor the app into microservices on GKE"},
+      {"id": "b", "text": "Deprecate (retire) the app and redirect users to the SaaS"},
+      {"id": "c", "text": "Rehost the app unchanged on Compute Engine"},
+      {"id": "d", "text": "Rebuild the app from scratch on Cloud Run"}
+    ],
+    "correct": ["b"],
+    "explanation": "When an application's capability is fully covered by an existing managed SaaS the organization already pays for, and the app has high maintenance cost and low usage, the right workload disposition is to **deprecate/retire** it and consolidate users onto the SaaS — eliminating duplicate cost and maintenance (b). (a), (c), and (d) all invest further engineering effort (refactor, rehost, rebuild) into a redundant application, which contradicts portfolio rationalization and a cloud-first \"buy over build\" preference for commodity capabilities.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-design-plan-020",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": ["compute-selection", "scalability", "design-tradeoffs"],
+    "caseStudyId": "knightmotives-automotive",
+    "prompt": "An automotive manufacturer is modernizing a complex platform with dozens of interdependent services that require custom networking, GPU-accelerated inference, service mesh, and fine-grained pod scheduling across hundreds of nodes. Which compute platform is the most appropriate primary choice?",
+    "choices": [
+      {"id": "a", "text": "Cloud Run for every service"},
+      {"id": "b", "text": "GKE (Google Kubernetes Engine)"},
+      {"id": "c", "text": "A single large Compute Engine VM running Docker Compose"},
+      {"id": "d", "text": "App Engine standard environment"}
+    ],
+    "correct": ["b"],
+    "explanation": "**GKE** is the right primary platform when you need rich orchestration: custom networking, GPUs, a service mesh (e.g., Anthos Service Mesh / Istio), DaemonSets, fine-grained scheduling/affinity, and large multi-node clusters with dozens of interdependent services (b). (a) Cloud Run is excellent for simpler stateless services but does not offer node-level scheduling, service mesh, or the same control needed here. (c) a single VM with Docker Compose has no real orchestration, autoscaling, or HA across nodes. (d) App Engine standard is a constrained PaaS for web apps, not GPU-accelerated, mesh-based microservice fleets. The trade-off is GKE's added operational complexity in exchange for control and scale.",
+    "difficulty": 2
+  }
+]

@@ -1,0 +1,31 @@
+{
+  "id": "ehr-healthcare",
+  "name": "EHR Healthcare",
+  "sourceUrl": "https://services.google.com/fh/files/misc/v6.1_pca_ehr_healthcare_case_study_english.pdf",
+  "sourceVerified": true,
+  "sections": {
+    "overview": "EHR Healthcare is a leading vendor of electronic health record software for the medical sector. It delivers its product as a SaaS offering to multinational medical practices, hospitals, and insurance providers.",
+    "solutionConcept": "Rapid change in healthcare and insurance has driven exponential year-over-year growth, so EHR needs to scale its environment, rework its disaster recovery plan, and adopt continuous deployment to ship software updates quickly. Google Cloud has been selected to replace their current colocation facilities.",
+    "existingTech": "- Software currently runs across multiple **colocation facilities**, and the lease on one data center is nearly up.\n- Customer-facing apps are **web-based**, and many have recently been **containerized to run on Kubernetes clusters**.\n- Data spans relational and NoSQL stores: **MySQL, MS SQL Server, Redis, and MongoDB**.\n- Several **legacy file- and API-based integrations with insurance providers** run on-premises; they are slated for replacement over several years with no current plan to move or upgrade them.\n- Users are managed through **Microsoft Active Directory**.\n- Monitoring uses assorted open source tools; alerts go out by email and are frequently ignored.",
+    "businessReqs": [
+      "Onboard new insurance providers as fast as possible.",
+      "Provide at least 99.9% availability for all customer-facing systems.",
+      "Give centralized visibility into system performance and usage and enable proactive action.",
+      "Improve the ability to deliver insights into healthcare trends.",
+      "Reduce latency for all customers.",
+      "Maintain regulatory compliance.",
+      "Lower infrastructure administration costs.",
+      "Make predictions and generate reports on industry trends from provider data."
+    ],
+    "technicalReqs": [
+      "Keep legacy interfaces to insurance providers working, with connectivity to both on-premises systems and cloud providers.",
+      "Provide a consistent way to manage container-based customer-facing applications.",
+      "Establish a secure, high-performance connection between on-premises systems and Google Cloud.",
+      "Provide consistent logging, log retention, monitoring, and alerting.",
+      "Maintain and manage multiple container-based environments.",
+      "Dynamically scale and provision new environments.",
+      "Build interfaces to ingest and process data from new providers."
+    ],
+    "executiveStatement": "The on-premises model has worked but demanded heavy investment in training across disparate systems, managing similar-but-separate environments, and handling outages caused by misconfiguration, insufficient capacity for traffic spikes, and inconsistent monitoring. EHR wants Google Cloud to provide a scalable, resilient platform that spans environments seamlessly and delivers a consistent, stable experience that supports future growth."
+  }
+}

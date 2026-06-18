@@ -1,0 +1,5 @@
+{
+  "id": "quiz-manage-impl-01",
+  "moduleId": "mod-manage-impl-01",
+  "questionIds": ["q-manage-impl-006", "q-manage-impl-016", "q-manage-impl-017"]
+}

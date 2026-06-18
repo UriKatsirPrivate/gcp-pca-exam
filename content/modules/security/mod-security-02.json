@@ -1,0 +1,15 @@
+{
+  "id": "mod-security-02",
+  "domainId": "security",
+  "title": "Data Security: Encryption, Cloud KMS / CMEK, and Secret Manager",
+  "order": 2,
+  "estMinutes": 35,
+  "bodyMarkdown": "## Encryption at rest is on by default\n\nEvery byte stored in Google Cloud is **encrypted at rest by default** using Google-managed keys — no configuration required. The question for an architect is **who controls the keys** and **how revocation works**.\n\n## Three key-management models\n\n| Model | Who holds the key | Revocation lever | Notes |\n|---|---|---|---|\n| **Google-managed (default)** | Google | None for the customer | Zero ops; Google rotates keys. |\n| **CMEK (Cloud KMS)** | Customer (in KMS) | Disable/destroy the KMS key | Customer controls rotation; HSM or software protection level; works with Cloud Storage, BigQuery, Compute, and more. |\n| **CSEK** | Customer (supplied per request) | Stop supplying the key | Raw key material sent on each call; narrower service support; high client burden. |\n\n**Choosing:** Need to control the key lifecycle and have a kill switch without running hardware? → **CMEK**. Need raw key material to never reside in Google at all and accept heavy client work? → **CSEK** (or client-side encryption). No special requirement? → default keys.\n\n### Cloud KMS essentials\n\n- **Key ring → key → key versions**; set **rotation** schedules.\n- **Protection levels:** `SOFTWARE`, `HSM` (FIPS 140-2 L3), and `EXTERNAL`/Cloud EKM for keys held outside Google.\n- Grant `roles/cloudkms.cryptoKeyEncrypterDecrypter` to the **service agents** that need to use the key — and nothing more.\n- **Separate key admins from key users** (SoD): `cloudkms.admin` vs. the encrypt/decrypt role.\n\n## Secret Manager\n\nUse **Secret Manager** for API keys, DB passwords, TLS private keys, and tokens — never bake secrets into images or commit them to source control.\n\n- **Versions:** apps reference `latest` or pin a specific version; supports **rotation**.\n- **Least privilege:** grant `roles/secretmanager.secretAccessor` on the **specific secret** to the workload's service account; reserve `admin` for secret managers.\n- Secret payloads are themselves encrypted at rest and can use **CMEK**.\n- Enable **audit logging** on secret access for sensitive credentials.\n\n### Anti-patterns to avoid\n\n- Service account **key JSON** files checked into repos or shared in chat.\n- `roles/secretmanager.admin` granted to every workload.\n- \"Encrypting\" secrets with a shared passphrase and committing them.\n\n## How it ties to compliance\n\nCMEK plus comprehensive audit logging is a common requirement for **HIPAA**, **PCI DSS**, and data-sovereignty programs, because it gives the customer demonstrable control over keys and access records.",
+  "diagrams": [
+    {
+      "title": "CMEK encryption flow",
+      "mermaid": "flowchart TD\n  App[\"Application writes data\"] --> Svc[\"Cloud Storage / BigQuery\"]\n  Svc --> KMS[\"Cloud KMS key (CMEK)\"]\n  KMS --> Enc[\"Data encrypted at rest\"]\n  Admin[\"Key admin\"] --> Disable[\"Disable / destroy key = revoke access\"]\n  Disable --> KMS"
+    }
+  ],
+  "quizId": "quiz-security-02"
+}

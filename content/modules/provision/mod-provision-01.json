@@ -1,0 +1,19 @@
+{
+  "id": "mod-provision-01",
+  "domainId": "provision",
+  "title": "Network Topologies: Hybrid, Multicloud, and VPC Design",
+  "order": 1,
+  "estMinutes": 35,
+  "bodyMarkdown": "## Designing Cloud Network Topologies\n\nNetwork design is the foundation of any Google Cloud landing zone. As a Professional Cloud Architect you must connect on-premises data centers, span multiple clouds, and structure the **VPC** so that security and addressing are governed centrally while application teams stay productive.\n\n### VPC fundamentals\n\nA Google Cloud **VPC** is global: a single VPC spans all regions, and **subnets are regional**. This means a workload in `us-central1` and one in `europe-west1` can share one VPC and route privately over Google's backbone without VPN. Key building blocks:\n\n- **Subnets** carve regional IP ranges (primary + secondary ranges for GKE Pods/Services).\n- **Routes** and **firewall rules** control traffic flow.\n- **Cloud Router** enables dynamic (BGP) route exchange with on-prem and across hybrid links.\n\n### Shared VPC vs. VPC Peering vs. Private Service Connect\n\n| Need | Recommended pattern |\n|------|--------------------|\n| Central network team owns subnets/firewalls; app teams deploy in their own projects | **Shared VPC** (host + service projects) |\n| Connect two VPCs with non-overlapping ranges, low ops | **VPC Network Peering** (non-transitive) |\n| Privately expose/consume a service or Google API without peering or overlap concerns | **Private Service Connect (PSC)** |\n\n**Shared VPC** centralizes governance: the *host project* owns the VPC, subnets, and firewall policy; *service projects* attach and deploy into shared subnets. **VPC Peering** is simple but **non-transitive** and requires non-overlapping CIDRs. **PSC** creates a one-directional consumer endpoint (internal IP) mapped to a producer service attachment, eliminating IP-overlap and route-leakage problems.\n\n### Hybrid connectivity\n\nChoose the link by bandwidth, privacy, and SLA:\n\n- **Cloud HA VPN** — IPsec over the internet, 99.99% SLA with two tunnels, quick to stand up, lower throughput.\n- **Dedicated Interconnect** — private 10/100 Gbps circuits; **99.99% SLA requires two connections across two metropolitan availability zones**.\n- **Partner Interconnect** — when you can't reach a colocation facility or need sub-10 Gbps.\n- **Cross-Cloud Interconnect** — managed private links to AWS/Azure/OCI for **multicloud**.\n\n### Multicloud\n\nFor analytics across clouds, prefer managed in-place query (**BigQuery Omni**) over bulk data movement. For network reach, **Cross-Cloud Interconnect** or **Network Connectivity Center** (a hub-and-spoke transit fabric) reduces full-mesh complexity.\n\n### Design checklist\n\n- Plan a non-overlapping IP address scheme org-wide before building.\n- Default to **Shared VPC** for enterprise landing zones.\n- Use **PSC** for SaaS/service exposure and private Google API access.\n- Build hybrid links **redundantly** for the published SLA, and pair Interconnect with HA VPN for defense in depth.",
+  "diagrams": [
+    {
+      "title": "Shared VPC host and service projects",
+      "mermaid": "flowchart LR\n  H[\"Host Project (VPC, Subnets, Firewall)\"] --> S1[\"Service Project A\"]\n  H --> S2[\"Service Project B\"]\n  S1 --> W1[\"App VMs / GKE\"]\n  S2 --> W2[\"App VMs / GKE\"]"
+    },
+    {
+      "title": "Hybrid and multicloud connectivity options",
+      "mermaid": "flowchart LR\n  OP[\"On-Prem DC\"] -->|\"Dedicated Interconnect\"| CR[\"Cloud Router (VPC)\"]\n  OP -->|\"HA VPN backup\"| CR\n  AWS[\"AWS / Azure\"] -->|\"Cross-Cloud Interconnect\"| CR"
+    }
+  ],
+  "quizId": "quiz-provision-01"
+}

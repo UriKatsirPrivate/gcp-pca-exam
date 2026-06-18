@@ -1,0 +1,5 @@
+{
+  "id": "quiz-security-04",
+  "moduleId": "mod-security-04",
+  "questionIds": ["q-security-005", "q-security-006", "q-security-008", "q-security-009"]
+}

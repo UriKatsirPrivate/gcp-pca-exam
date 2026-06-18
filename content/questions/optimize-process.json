@@ -1,0 +1,330 @@
+[
+  {
+    "id": "q-optimize-process-001",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": ["ci-cd", "sdlc"],
+    "prompt": "A platform team wants to standardize how container images are built and promoted to production on Google Cloud. They need an immutable, versioned store for images plus a managed build service triggered from their Git repository. Which combination best fits a modern GCP CI/CD pipeline?",
+    "choices": [
+      { "id": "a", "text": "Cloud Build for builds, Artifact Registry for image storage, Cloud Deploy for promotion across environments" },
+      { "id": "b", "text": "Compute Engine startup scripts for builds and Cloud Storage buckets for image storage" },
+      { "id": "c", "text": "Cloud Functions for builds and Container Registry with manual gcloud pushes" },
+      { "id": "d", "text": "GKE Jobs for builds and Filestore for image storage" }
+    ],
+    "correct": ["a"],
+    "explanation": "**Correct: a.** The canonical 2026 GCP CI/CD stack is **Cloud Build** (managed build/test execution triggered from Cloud Source Repositories or GitHub/GitLab connections), **Artifact Registry** (the successor to the deprecated Container Registry; immutable, regional, supports container images plus language packages), and **Cloud Deploy** (managed continuous delivery with defined delivery pipelines, targets, promotion sequences, approvals, and automatic rollback).\n\n**Why the others are wrong:**\n- **b:** Cloud Storage is object storage, not an OCI image registry; startup scripts are not a build system and provide no provenance or caching.\n- **c:** Container Registry is deprecated in favor of Artifact Registry, and manual `gcloud` pushes break the automated, auditable promotion the team wants.\n- **d:** Filestore is NFS file storage, unsuitable as an image registry; running ad-hoc GKE Jobs reinvents what Cloud Build already provides.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-optimize-process-002",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": ["rto-rpo", "disaster-recovery"],
+    "prompt": "An application requires that, after a regional outage, no more than 15 minutes of data may be lost and the service must be restored within 1 hour. Which two metrics are being specified, in order?",
+    "choices": [
+      { "id": "a", "text": "RPO = 15 minutes, RTO = 1 hour" },
+      { "id": "b", "text": "RTO = 15 minutes, RPO = 1 hour" },
+      { "id": "c", "text": "MTTR = 15 minutes, MTBF = 1 hour" },
+      { "id": "d", "text": "SLA = 15 minutes, SLO = 1 hour" }
+    ],
+    "correct": ["a"],
+    "explanation": "**Correct: a.** **RPO (Recovery Point Objective)** is the maximum acceptable amount of *data loss* measured in time — here 15 minutes, dictating backup/replication frequency. **RTO (Recovery Time Objective)** is the maximum acceptable *downtime* — here 1 hour, dictating the recovery architecture (cold vs. warm vs. hot standby).\n\n**Why the others are wrong:**\n- **b:** Reverses the two definitions.\n- **c:** MTTR (mean time to repair) and MTBF (mean time between failures) are reliability statistics, not recovery objectives.\n- **d:** SLA/SLO describe service-level commitments and targets, not recovery design constraints.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-optimize-process-003",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": ["committed-use-discounts", "cost-resource-optimization"],
+    "prompt": "A company runs a stable baseline of 200 vCPUs of general-purpose Compute Engine workloads 24/7 across a region, plus bursty batch jobs. They want the deepest predictable discount on the steady baseline without locking to specific machine types. What should they purchase for the baseline?",
+    "choices": [
+      { "id": "a", "text": "Spend-based committed use discounts (flexible CUDs) for Compute Engine" },
+      { "id": "b", "text": "Resource-based committed use discounts tied to a specific machine family and zone" },
+      { "id": "c", "text": "Spot VMs for the entire baseline" },
+      { "id": "d", "text": "Rely solely on sustained use discounts" }
+    ],
+    "correct": ["a"],
+    "explanation": "**Correct: a.** **Spend-based (flexible) CUDs** commit to an hourly dollar amount of Compute Engine spend for 1 or 3 years and apply across machine families and regions, giving deep discounts while preserving flexibility to change machine types — ideal for a stable baseline when you don't want to lock a specific shape.\n\n**Why the others are wrong:**\n- **b:** Resource-based CUDs give slightly different commitments but lock you to a specific machine family/region; the requirement explicitly avoids machine-type lock-in.\n- **c:** Spot VMs can be preempted at any time and are unsuitable for an always-on baseline; they suit the bursty/fault-tolerant batch jobs instead.\n- **d:** Sustained use discounts apply automatically but are shallower than CUDs and require no commitment — they don't deliver the *deepest predictable* discount.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-optimize-process-004",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": ["rightsizing", "cost-resource-optimization"],
+    "prompt": "Which Google Cloud capability proactively analyzes historical utilization and surfaces machine-type rightsizing suggestions (for example, downsizing an over-provisioned VM) along with idle-resource recommendations?",
+    "choices": [
+      { "id": "a", "text": "Active Assist Recommender (machine-type and idle VM recommendations)" },
+      { "id": "b", "text": "Cloud Profiler" },
+      { "id": "c", "text": "Cloud Trace" },
+      { "id": "d", "text": "Cloud Deployment Manager" }
+    ],
+    "correct": ["a"],
+    "explanation": "**Correct: a.** **Active Assist Recommender** generates rightsizing recommendations (VM machine-type recommender), idle VM/disk/IP recommendations, idle GKE and Cloud SQL insights, and commitment recommendations based on observed utilization, enabling continuous cost optimization.\n\n**Why the others are wrong:**\n- **b:** Cloud Profiler analyzes application CPU/heap usage at the code level, not VM rightsizing.\n- **c:** Cloud Trace is for distributed-tracing latency analysis.\n- **d:** Deployment Manager is an (older) IaC provisioning tool, not an optimization advisor.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-optimize-process-005",
+    "type": "multiple",
+    "domainId": "optimize-process",
+    "concepts": ["disaster-recovery", "rto-rpo", "business-continuity"],
+    "prompt": "An architect is choosing a disaster recovery posture. Which statements correctly characterize the cost/recovery trade-offs of DR patterns on Google Cloud? Select all that apply.",
+    "choices": [
+      { "id": "a", "text": "Cold standby (backup and restore) has the lowest ongoing cost but the longest RTO" },
+      { "id": "b", "text": "Hot standby / multi-region active-active offers the smallest RTO and RPO but the highest cost" },
+      { "id": "c", "text": "Warm standby (pilot light) keeps a minimal scaled-down environment running, balancing cost and recovery time" },
+      { "id": "d", "text": "Cold standby always provides a near-zero RPO" },
+      { "id": "e", "text": "Hot standby is the cheapest option because resources are shared" }
+    ],
+    "correct": ["a", "b", "c"],
+    "explanation": "**Correct: a, b, c.** DR patterns trade cost against recovery speed:\n- **a:** Backup-and-restore (cold) is cheapest to run but slowest to recover because infrastructure must be rebuilt and data restored.\n- **b:** Active-active across regions (hot) gives the smallest RTO/RPO (often near-zero) but you pay for full duplicate capacity.\n- **c:** Pilot light / warm standby keeps a minimal replica (e.g., a small standby DB and scaled-down compute) ready to scale up, balancing the two.\n\n**Why the others are wrong:**\n- **d:** Cold standby's RPO depends on backup frequency and is typically *not* near-zero; near-zero RPO requires continuous replication.\n- **e:** Hot standby is the *most* expensive, not the cheapest, due to duplicated always-on capacity.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-optimize-process-006",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": ["budgets-alerts", "cost-resource-optimization"],
+    "prompt": "A finance lead wants automated notifications when a project's monthly spend crosses 50%, 90%, and 100% of a defined threshold, and optionally wants to trigger a programmatic response. What is the correct Google Cloud approach?",
+    "choices": [
+      { "id": "a", "text": "Create a Cloud Billing budget with threshold rules and connect its Pub/Sub notifications to automation" },
+      { "id": "b", "text": "Set a hard spending cap on the billing account that auto-disables billing at 100%" },
+      { "id": "c", "text": "Configure a Cloud Monitoring uptime check on the billing API" },
+      { "id": "d", "text": "Use IAM deny policies to block resource creation after a dollar amount" }
+    ],
+    "correct": ["a"],
+    "explanation": "**Correct: a.** **Cloud Billing budgets** support multiple percentage threshold rules (e.g., 50/90/100%) on actual or forecasted spend, send email alerts to billing admins, and can publish to a **Pub/Sub** topic so you can automate responses (e.g., a Cloud Function that disables billing or scales down resources).\n\n**Why the others are wrong:**\n- **b:** Budgets are *not* hard caps; Google Cloud has no native automatic billing shutoff, you must build that automation yourself via Pub/Sub.\n- **c:** Uptime checks monitor endpoint availability, not spend.\n- **d:** IAM deny policies restrict permissions, not spend thresholds, and don't react to budget levels.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-optimize-process-007",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": ["rca", "testing-validation"],
+    "prompt": "After a production incident, an SRE team conducts a blameless postmortem to identify why a deployment caused cascading failures. Which Google Cloud Operations capability most directly supports correlating logs, metrics, and traces to find the root cause?",
+    "choices": [
+      { "id": "a", "text": "Cloud Logging, Cloud Monitoring, and Cloud Trace within Cloud Operations" },
+      { "id": "b", "text": "Cloud Build triggers" },
+      { "id": "c", "text": "Artifact Registry vulnerability scanning" },
+      { "id": "d", "text": "Cloud Deploy approval gates" }
+    ],
+    "correct": ["a"],
+    "explanation": "**Correct: a.** Root-cause analysis depends on observability. The **Cloud Operations** suite — **Cloud Logging** (centralized logs, Log Analytics), **Cloud Monitoring** (metrics, dashboards, alerting), and **Cloud Trace** (latency/distributed tracing), plus Error Reporting — lets the team correlate signals across the deployment window to pinpoint causation.\n\n**Why the others are wrong:**\n- **b:** Cloud Build triggers start pipelines; they don't analyze runtime failures.\n- **c:** Vulnerability scanning finds CVEs in images, not the cause of a runtime cascade.\n- **d:** Cloud Deploy approval gates control promotion; they help *prevent* bad releases but don't perform RCA.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-optimize-process-008",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": ["service-catalog"],
+    "prompt": "A central platform team wants to let application teams self-provision only pre-approved, compliant infrastructure templates (e.g., a hardened VM or an approved data pipeline) through a governed storefront. Which Google Cloud feature is designed for this?",
+    "choices": [
+      { "id": "a", "text": "Service Catalog (part of Google Cloud), publishing curated Terraform/Deployment solutions" },
+      { "id": "b", "text": "Cloud Marketplace public listings only" },
+      { "id": "c", "text": "Personal gcloud aliases shared via a wiki" },
+      { "id": "d", "text": "Granting every developer Project Owner so they can build what they need" }
+    ],
+    "correct": ["a"],
+    "explanation": "**Correct: a.** **Service Catalog** lets administrators curate and publish approved solutions (Terraform configurations, Deployment Manager templates, or links) to specific folders/projects, so end users self-serve only governed, compliant resources — enforcing standards while enabling autonomy.\n\n**Why the others are wrong:**\n- **b:** Cloud Marketplace offers third-party/public products, not your own internal governed templates with restricted sharing.\n- **c:** Shared aliases provide no governance, versioning, or access control.\n- **d:** Granting Owner broadly violates least privilege and removes all guardrails.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-optimize-process-009",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": ["change-management", "stakeholder-management"],
+    "prompt": "A company is migrating a critical legacy system to Google Cloud. Operations staff are anxious about new tooling and resistant to the change. From a business-process perspective, what is the architect's most effective first action?",
+    "choices": [
+      { "id": "a", "text": "Engage stakeholders early with a change-management plan: communicate the why, provide training, and gather feedback" },
+      { "id": "b", "text": "Mandate the migration deadline and escalate any resistance to senior leadership immediately" },
+      { "id": "c", "text": "Migrate silently over a weekend to avoid disrupting the team's workflow" },
+      { "id": "d", "text": "Outsource all operations to a third party so existing staff are not involved" }
+    ],
+    "correct": ["a"],
+    "explanation": "**Correct: a.** Effective change management addresses the human side: communicate the rationale and benefits, involve affected stakeholders early, provide training to close skills gaps, and create feedback loops. This reduces resistance and builds ownership.\n\n**Why the others are wrong:**\n- **b:** Pure mandates and escalation increase resistance and erode trust.\n- **c:** A silent cutover removes transparency and training, virtually guaranteeing operational failures and distrust.\n- **d:** Sidelining staff destroys morale, loses institutional knowledge, and doesn't address the readiness gap.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-optimize-process-010",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": ["capex-opex", "cost-resource-optimization"],
+    "prompt": "An executive asks how moving from on-premises data centers to Google Cloud changes the financial model. Which description is most accurate?",
+    "choices": [
+      { "id": "a", "text": "It shifts large upfront capital expenditure (CapEx) toward consumption-based operating expenditure (OpEx)" },
+      { "id": "b", "text": "It converts all spending into CapEx because servers are still purchased" },
+      { "id": "c", "text": "It eliminates all costs after the first year" },
+      { "id": "d", "text": "It has no effect on the financial model, only on performance" }
+    ],
+    "correct": ["a"],
+    "explanation": "**Correct: a.** Cloud adoption typically converts **CapEx** (buying and depreciating hardware/data-center capacity upfront) into **OpEx** (pay-as-you-go consumption). This improves cash flow, removes over-provisioning for peak, and aligns cost with actual usage — though it requires disciplined cost governance (budgets, CUDs, rightsizing) to avoid waste.\n\n**Why the others are wrong:**\n- **b:** You no longer purchase the underlying servers; spend becomes operational.\n- **c:** Cloud is ongoing consumption spend; costs do not disappear.\n- **d:** The financial/accounting model change is one of the primary business drivers.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-optimize-process-011",
+    "type": "multiple",
+    "domainId": "optimize-process",
+    "concepts": ["testing-validation", "ci-cd"],
+    "prompt": "A team wants to validate both application code and infrastructure changes before they reach production. Which practices belong in a robust testing/validation strategy on Google Cloud? Select all that apply.",
+    "choices": [
+      { "id": "a", "text": "Run unit and integration tests as Cloud Build steps on every commit" },
+      { "id": "b", "text": "Use canary or progressive rollouts via Cloud Deploy with automated verification" },
+      { "id": "c", "text": "Validate Terraform plans and run policy checks (e.g., with Policy Validator / OPA) before apply" },
+      { "id": "d", "text": "Deploy directly to production and rely on users to report defects" },
+      { "id": "e", "text": "Skip staging environments to save cost when releases are urgent" }
+    ],
+    "correct": ["a", "b", "c"],
+    "explanation": "**Correct: a, b, c.** A strong validation strategy spans code and infra:\n- **a:** Automated unit/integration tests in **Cloud Build** catch regressions early on every commit (shift-left).\n- **b:** **Cloud Deploy** supports canary/progressive delivery with verification steps and automatic rollback, limiting blast radius.\n- **c:** Infrastructure-as-code is validated with `terraform plan` plus policy-as-code (Policy Validator/OPA/Sentinel-style checks) before `apply`.\n\n**Why the others are wrong:**\n- **d:** Relying on users to find defects is the opposite of validation and harms reliability and trust.\n- **e:** Removing staging to save cost trades a small saving for large production risk; pre-prod validation is essential.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-optimize-process-012",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": ["disaster-recovery", "rto-rpo"],
+    "prompt": "A Cloud SQL (PostgreSQL) database backs a transactional system that must survive a zonal failure with minimal data loss and fast failover. Which configuration best meets a low RTO and low RPO at reasonable cost?",
+    "choices": [
+      { "id": "a", "text": "Enable high availability (regional, synchronous standby) plus automated backups and point-in-time recovery" },
+      { "id": "b", "text": "Single-zone instance with weekly exports to Cloud Storage" },
+      { "id": "c", "text": "Single-zone instance with no backups but frequent manual snapshots when remembered" },
+      { "id": "d", "text": "Read replicas only, with no HA configuration" }
+    ],
+    "correct": ["a"],
+    "explanation": "**Correct: a.** Cloud SQL **HA** provisions a synchronous standby in another zone within the region, giving automatic failover (low RTO) with no committed-transaction loss across a zonal outage (low RPO). Adding **automated backups + point-in-time recovery (PITR)** protects against logical corruption and accidental deletes.\n\n**Why the others are wrong:**\n- **b:** Weekly exports yield an RPO of up to a week and a slow manual restore (high RTO).\n- **c:** No backups plus ad-hoc manual snapshots is unreliable and high-risk.\n- **d:** Read replicas are asynchronous and meant for read scaling/cross-region DR; alone they don't provide automatic in-region failover or guaranteed zero-loss promotion.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-optimize-process-013",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": ["team-readiness", "decision-making"],
+    "prompt": "Before committing to a Kubernetes-based platform, an architect assesses that the operations team has limited container experience. Which approach best aligns the technology decision with team readiness?",
+    "choices": [
+      { "id": "a", "text": "Assess the skills gap, then either invest in training or favor a more managed option (e.g., Cloud Run / GKE Autopilot) to reduce operational burden" },
+      { "id": "b", "text": "Choose the most complex self-managed option to force the team to learn quickly" },
+      { "id": "c", "text": "Ignore team skills since the technology choice is purely technical" },
+      { "id": "d", "text": "Hire entirely new staff and dismiss the existing team" }
+    ],
+    "correct": ["a"],
+    "explanation": "**Correct: a.** Good decision-making weighs team readiness as a real constraint. With limited container expertise, you either close the gap through training/enablement or reduce operational complexity by choosing a more managed platform such as **Cloud Run** or **GKE Autopilot** (which removes node management). Matching technology to capability lowers risk.\n\n**Why the others are wrong:**\n- **b:** Forcing maximal complexity raises operational risk and burnout.\n- **c:** Technology choices that ignore the people running them frequently fail in operation.\n- **d:** Wholesale replacement destroys institutional knowledge and morale, and is rarely necessary.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-optimize-process-014",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": ["disaster-recovery", "business-continuity", "rto-rpo"],
+    "caseStudyId": "ehr-healthcare",
+    "prompt": "EHR Healthcare runs clinical applications where extended downtime can affect patient care, so leadership mandates that core services keep running through the loss of an entire region with near-zero data loss. Which Google Cloud architecture best satisfies this business-continuity requirement?",
+    "choices": [
+      { "id": "a", "text": "Multi-region active-active deployment with synchronous or near-synchronous data replication and global load balancing" },
+      { "id": "b", "text": "Single-region deployment with nightly backups copied to another region" },
+      { "id": "c", "text": "A cold standby in a second region that is provisioned only after an outage is declared" },
+      { "id": "d", "text": "Multi-zone deployment within one region only" }
+    ],
+    "correct": ["a"],
+    "explanation": "**Correct: a.** Surviving the loss of an entire region with near-zero RPO and minimal RTO requires a **multi-region active-active** design: redundant stacks in two or more regions, data replicated synchronously/near-synchronously (e.g., Spanner multi-region, or carefully designed replication), and a **global external load balancer** routing traffic away from the failed region automatically.\n\n**Why the others are wrong:**\n- **b:** Nightly backups give an RPO of up to 24 hours and a slow restore — unacceptable for life-critical clinical systems.\n- **c:** A cold standby has a long RTO because resources must be built after declaration.\n- **d:** Multi-zone protects only against zonal failures, not the loss of an entire region.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-optimize-process-015",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": ["cost-resource-optimization", "rightsizing"],
+    "caseStudyId": "cymbal-retail",
+    "prompt": "Cymbal Retail discovers that several development-environment GKE clusters and Compute Engine VMs run 24/7 but are only used during business hours, and many nodes sit at under 10% CPU. Which set of actions provides the most immediate, low-risk cost optimization?",
+    "choices": [
+      { "id": "a", "text": "Schedule non-production resources to shut down off-hours and apply Recommender rightsizing suggestions to over-provisioned nodes" },
+      { "id": "b", "text": "Buy 3-year resource-based committed use discounts for all dev resources" },
+      { "id": "c", "text": "Migrate every workload to the largest available machine types for headroom" },
+      { "id": "d", "text": "Move all dev workloads to Spot VMs with no other changes" }
+    ],
+    "correct": ["a"],
+    "explanation": "**Correct: a.** The fastest, lowest-risk wins are eliminating idle spend: use **instance schedules / automation** to stop dev resources outside business hours, and act on **Active Assist Recommender** rightsizing recommendations to downsize the under-utilized nodes. Together these cut waste without architectural risk.\n\n**Why the others are wrong:**\n- **b:** Committing 3-year CUDs to *dev* resources that are idle most of the time locks in spend for capacity you mostly don't need.\n- **c:** Upsizing increases cost and worsens the under-utilization.\n- **d:** Spot VMs can help for fault-tolerant dev workloads, but moving everything blindly risks preemption disrupting developers; scheduling and rightsizing are the immediate, safe wins.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-optimize-process-016",
+    "type": "multiple",
+    "domainId": "optimize-process",
+    "concepts": ["ci-cd", "sdlc", "change-management"],
+    "caseStudyId": "altostrat-media",
+    "prompt": "Altostrat Media wants to mature its software delivery from manual, error-prone releases toward reliable, frequent deployments. Which practices align with a healthy SDLC and safe change management on Google Cloud? Select all that apply.",
+    "choices": [
+      { "id": "a", "text": "Automate build, test, and deploy with Cloud Build and Cloud Deploy, including approval gates for production" },
+      { "id": "b", "text": "Use progressive delivery (canary) with automated rollback to limit the blast radius of changes" },
+      { "id": "c", "text": "Maintain audit trails and require code review/merge approvals before release" },
+      { "id": "d", "text": "Allow any engineer to push manual hotfixes straight to production without review during business hours" },
+      { "id": "e", "text": "Disable monitoring during releases to reduce alert noise" }
+    ],
+    "correct": ["a", "b", "c"],
+    "explanation": "**Correct: a, b, c.** Mature delivery combines automation with governance:\n- **a:** **Cloud Build** + **Cloud Deploy** automate the pipeline; production approval gates add controlled change management.\n- **b:** Canary/progressive rollouts with automatic rollback reduce risk and shorten MTTR.\n- **c:** Code review, merge approvals, and audit trails provide accountability and traceability.\n\n**Why the others are wrong:**\n- **d:** Unreviewed manual production pushes are exactly the error-prone behavior they want to eliminate.\n- **e:** Disabling monitoring during releases blinds you precisely when risk is highest — the opposite of safe change management.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-optimize-process-017",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": ["customer-success", "stakeholder-management"],
+    "prompt": "After delivering a cloud platform, an architecture team wants to ensure the business actually realizes value and adoption grows over time. Which practice best reflects customer success management?",
+    "choices": [
+      { "id": "a", "text": "Define success metrics with stakeholders, track adoption/value KPIs, and run regular reviews to drive continuous improvement" },
+      { "id": "b", "text": "Consider the engagement finished the moment the platform is deployed" },
+      { "id": "c", "text": "Measure only infrastructure uptime and ignore business outcomes" },
+      { "id": "d", "text": "Avoid contact with stakeholders to prevent scope creep" }
+    ],
+    "correct": ["a"],
+    "explanation": "**Correct: a.** Customer success is outcome-focused: agree on measurable success criteria and value KPIs with stakeholders, monitor adoption and realized business value, and hold periodic reviews (e.g., quarterly business reviews) to iterate and remove blockers. This sustains value beyond go-live.\n\n**Why the others are wrong:**\n- **b:** Treating deployment as the end ignores adoption, the phase where value is actually realized.\n- **c:** Uptime alone doesn't prove the platform delivers business outcomes.\n- **d:** Avoiding stakeholders forfeits the feedback and alignment that customer success depends on.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-optimize-process-018",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": ["committed-use-discounts", "capex-opex", "cost-resource-optimization"],
+    "prompt": "A team has run a workload on-demand for six months with very stable, predictable usage and now wants to reduce cost without changing the architecture. Which optimization is the best next step, and what is the main trade-off?",
+    "choices": [
+      { "id": "a", "text": "Purchase 1-year or 3-year committed use discounts; the trade-off is a usage/spend commitment in exchange for a lower rate" },
+      { "id": "b", "text": "Switch entirely to Spot VMs; the trade-off is none, performance is identical" },
+      { "id": "c", "text": "Do nothing, since sustained use discounts already provide the deepest possible savings" },
+      { "id": "d", "text": "Delete monitoring to cut operational costs" }
+    ],
+    "correct": ["a"],
+    "explanation": "**Correct: a.** For stable, predictable usage, **committed use discounts (CUDs)** for 1 or 3 years deliver substantially lower rates than on-demand. The trade-off is the **commitment**: you agree to a level of spend (flexible CUDs) or resources (resource-based CUDs) for the term whether or not you fully use it.\n\n**Why the others are wrong:**\n- **b:** Spot VMs are far cheaper but can be preempted with little notice; that is a major trade-off, not 'none', and unsuitable for steady production.\n- **c:** Sustained use discounts apply automatically but are shallower than CUDs, so meaningful savings are being left on the table.\n- **d:** Removing monitoring saves little and dangerously reduces operational visibility.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-optimize-process-019",
+    "type": "multiple",
+    "domainId": "optimize-process",
+    "concepts": ["disaster-recovery", "rto-rpo", "rca"],
+    "caseStudyId": "knightmotives-automotive",
+    "prompt": "KnightMotives Automotive runs a connected-vehicle telemetry platform on Google Cloud. Leadership sets an RPO of seconds and an RTO of a few minutes for the ingestion and serving tiers, and wants the architecture to also accelerate root-cause analysis when failovers occur. Which combination of design choices best satisfies these objectives? Select all that apply.",
+    "choices": [
+      { "id": "a", "text": "Use a multi-region, synchronously replicated database (e.g., Spanner multi-region) for the serving tier so committed writes survive a region loss with near-zero RPO" },
+      { "id": "b", "text": "Front the ingestion and serving tiers with a global external load balancer that automatically reroutes traffic away from an unhealthy region" },
+      { "id": "c", "text": "Centralize telemetry in Cloud Logging, Monitoring, and Trace with SLO-based alerting so failover events are detected and diagnosed quickly" },
+      { "id": "d", "text": "Rely on a single-region deployment with hourly database exports to a second region" },
+      { "id": "e", "text": "Trigger DR only manually after an on-call engineer confirms the outage by phone, to avoid false positives" }
+    ],
+    "correct": ["a", "b", "c"],
+    "explanation": "**Correct: a, b, c.** Seconds-level RPO with minutes-level RTO across a region loss requires synchronous multi-region data (a, e.g., **Spanner multi-region** keeps strongly consistent committed writes), automatic traffic steering (b, a **global external Application Load Balancer** with health checks reroutes around the failed region without manual DNS changes), and strong observability (c, **Cloud Operations** with SLO burn-rate alerts) so failovers are detected and root-caused fast.\n\n**Why the others are wrong:**\n- **d:** Hourly exports give an RPO of up to an hour and a slow restore - far outside the stated seconds/minutes objectives.\n- **e:** A mandatory manual, phone-confirmed trigger adds human latency that blows the few-minutes RTO; automated, health-check-driven failover is required (manual confirmation can remain for declaring a full disaster, not for fast traffic rerouting).",
+    "difficulty": 3
+  },
+  {
+    "id": "q-optimize-process-020",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": ["committed-use-discounts", "rightsizing", "cost-resource-optimization"],
+    "prompt": "A FinOps review finds: (1) a 24/7 production baseline on E2 VMs, (2) a fluctuating tier that scales between 0 and many instances daily, and (3) nightly fault-tolerant batch jobs. The team wants the lowest sustainable cost without harming reliability. What is the best pricing strategy per tier?",
+    "choices": [
+      { "id": "a", "text": "Cover the steady baseline with committed use discounts, let the fluctuating tier run on-demand with autoscaling (sustained use discounts apply automatically), and run the nightly batch on Spot VMs" },
+      { "id": "b", "text": "Put all three tiers on 3-year resource-based CUDs sized to peak demand" },
+      { "id": "c", "text": "Run everything on Spot VMs to maximize the discount" },
+      { "id": "d", "text": "Run everything on-demand and rely only on sustained use discounts" }
+    ],
+    "correct": ["a"],
+    "explanation": "**Correct: a.** Optimal cost matches each usage pattern to the right lever. The predictable **24/7 baseline** is ideal for **CUDs** (deepest discount for committed, steady use). The **fluctuating tier** that often scales to zero should stay **on-demand with autoscaling** - committing to it would pay for capacity you frequently don't use, and **sustained use discounts** apply automatically to whatever runs most of the month. The **fault-tolerant nightly batch** is the textbook fit for **Spot VMs** (very deep discount, preemption tolerated).\n\n**Why the others are wrong:**\n- **b:** Committing all tiers to peak-sized 3-year CUDs massively over-commits for the bursty and batch tiers, wasting money on idle commitment.\n- **c:** Spot for the always-on baseline and the user-facing fluctuating tier risks preemption and harms reliability.\n- **d:** On-demand only leaves the substantial CUD and Spot savings unused for the predictable and interruptible tiers.",
+    "difficulty": 3
+  }
+]

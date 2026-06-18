@@ -1,0 +1,332 @@
+[
+  {
+    "id": "q-manage-impl-001",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": ["iac-terraform", "app-infra-deployment"],
+    "prompt": "Your team manages production GCP infrastructure with Terraform. Two engineers run `terraform apply` against the same configuration at the same time from their laptops, and the resulting state file becomes corrupted. What is the recommended way to prevent this in the future?",
+    "choices": [
+      {"id": "a", "text": "Commit the `terraform.tfstate` file to Git so both engineers always pull the latest version before applying."},
+      {"id": "b", "text": "Store state in a Cloud Storage backend bucket, which provides automatic state locking via the GCS backend."},
+      {"id": "c", "text": "Run `terraform apply -refresh-only` first to avoid write conflicts."},
+      {"id": "d", "text": "Have each engineer keep a separate local state file and merge them manually after each change."}
+    ],
+    "correct": ["b"],
+    "explanation": "**Correct: b.** The Terraform `gcs` backend stores state in a Cloud Storage bucket and acquires a lock object for the duration of state-mutating operations, so concurrent `apply` runs are serialized and cannot corrupt state. This is the recommended pattern for team/CI use.\n\n**Why the others are wrong:**\n- **a:** State files contain secrets in plaintext and are not designed for Git merge semantics; committing state to Git provides no locking and risks exposing credentials.\n- **c:** `-refresh-only` only reconciles drift; it does not coordinate concurrent writers or provide locking.\n- **d:** Manually merging state is error-prone and unsupported; Terraform state is not meant to be hand-merged.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-manage-impl-002",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": ["api-client-libraries", "service-accounts", "programmatic-access"],
+    "prompt": "A Python application running on a Compute Engine VM needs to call the Cloud Storage API using the Google Cloud client library. You want the most secure, least-maintenance way to authenticate. What should you do?",
+    "choices": [
+      {"id": "a", "text": "Create a service account key JSON file, store it on the VM, and set GOOGLE_APPLICATION_CREDENTIALS to point at it."},
+      {"id": "b", "text": "Attach a service account to the VM and let the client library use Application Default Credentials (ADC) from the metadata server."},
+      {"id": "c", "text": "Embed an OAuth client ID and secret in the application source code and run an interactive consent flow at startup."},
+      {"id": "d", "text": "Use the gcloud CLI to print an access token and paste it into an environment variable read by the application."}
+    ],
+    "correct": ["b"],
+    "explanation": "**Correct: b.** Attaching a service account to the VM lets the client library obtain short-lived credentials automatically via Application Default Credentials and the instance metadata server. There are no key files to rotate, leak, or manage, which is Google's recommended approach for workloads on Google Cloud.\n\n**Why the others are wrong:**\n- **a:** Downloaded service account keys are long-lived secrets that must be rotated and protected; they are explicitly discouraged when ADC can be used.\n- **c:** OAuth user consent flows are for end-user data access, not for unattended server workloads.\n- **d:** Access tokens are short-lived (about one hour) and pasting them manually is not sustainable for a running service.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-manage-impl-003",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": ["apigee", "api-management"],
+    "prompt": "Cymbal Retail exposes a backend pricing API and wants to ensure no single partner can exceed 1,000 calls per minute, while also transforming the response from XML to JSON for mobile clients. Which Apigee capability addresses both requirements?",
+    "caseStudyId": "cymbal-retail",
+    "choices": [
+      {"id": "a", "text": "Deploy the backend directly behind a global external Application Load Balancer with Cloud Armor rate-limiting rules."},
+      {"id": "b", "text": "Build an Apigee API proxy that applies a Quota policy keyed per app and an XML-to-JSON mediation policy in the response flow."},
+      {"id": "c", "text": "Enable Cloud Endpoints with an OpenAPI spec and configure ESPv2 quotas."},
+      {"id": "d", "text": "Put the API behind API Gateway and use a Cloud Function to reformat responses."}
+    ],
+    "correct": ["b"],
+    "explanation": "**Correct: b.** Apigee is purpose-built for full lifecycle API management. A Quota policy can enforce per-app (per-partner) limits like 1,000 calls/minute, and the JSONToXML/XMLToJSON mediation policies transform payloads inside the proxy without changing the backend. Both are core Apigee policy features.\n\n**Why the others are wrong:**\n- **a:** Cloud Armor provides edge rate limiting and WAF but no per-app quotas keyed to developer apps and no payload mediation.\n- **c:** Cloud Endpoints/ESPv2 supports quotas but not rich content mediation/transformation policies.\n- **d:** API Gateway is lightweight (auth, basic routing) and lacks Apigee's quota-per-app and mediation policy model; bolting on a Cloud Function adds operational complexity Apigee solves natively.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-manage-impl-004",
+    "type": "multiple",
+    "domainId": "manage-impl",
+    "concepts": ["cloud-emulators", "testing-frameworks"],
+    "prompt": "A development team wants to run fast, free local integration tests against Pub/Sub and Firestore without touching production projects. Which TWO statements about the Google Cloud local emulators are correct?",
+    "choices": [
+      {"id": "a", "text": "The emulators are started via the gcloud CLI (for example `gcloud beta emulators pubsub start`) and expose a local endpoint."},
+      {"id": "b", "text": "Client libraries connect to an emulator when an environment variable such as PUBSUB_EMULATOR_HOST or FIRESTORE_EMULATOR_HOST is set."},
+      {"id": "c", "text": "Emulators replicate IAM policy enforcement exactly, so you can validate fine-grained permissions locally."},
+      {"id": "d", "text": "Emulators persist all data permanently to the cloud backend so tests share state across runs."},
+      {"id": "e", "text": "There are emulators available for services including Pub/Sub, Firestore, Bigtable, and Spanner."}
+    ],
+    "correct": ["a", "b", "e"],
+    "explanation": "This question expects the correct subset; the right answers are **a, b, e**.\n\n**Correct:**\n- **a:** Emulators are launched through the gcloud CLI (`gcloud beta emulators <service> start`) and listen on a local host:port.\n- **b:** Client libraries detect emulator endpoints via env vars like `PUBSUB_EMULATOR_HOST`, `FIRESTORE_EMULATOR_HOST`, `BIGTABLE_EMULATOR_HOST`, and `SPANNER_EMULATOR_HOST`.\n- **e:** Google ships local emulators for Pub/Sub, Firestore, Bigtable, and Spanner (among others).\n\n**Why the others are wrong:**\n- **c:** Emulators do **not** enforce IAM; they are for functional/local testing only, not permission validation.\n- **d:** Emulator data is in-memory/local and ephemeral by default and is never written to the real cloud backend.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-manage-impl-005",
+    "type": "multiple",
+    "domainId": "manage-impl",
+    "concepts": ["gsutil-bq", "gcloud-cli"],
+    "prompt": "You need to copy a multi-terabyte dataset of objects between two Cloud Storage buckets from a script, as quickly as possible. Which TWO commands are valid, performant ways to do this?",
+    "choices": [
+      {"id": "a", "text": "`gcloud storage cp -r gs://source-bucket gs://dest-bucket`, the modern recommended CLI for Cloud Storage, which parallelizes the transfer."},
+      {"id": "b", "text": "`gsutil -m cp -r gs://source-bucket gs://dest-bucket`, using the `-m` flag for multithreaded/parallel copying."},
+      {"id": "c", "text": "Download every object to a local VM with `bq extract` and re-upload them one at a time."},
+      {"id": "d", "text": "`gcloud compute scp` to stream the objects through a bastion host."},
+      {"id": "e", "text": "Use `bq cp` to copy the bucket as a BigQuery dataset."}
+    ],
+    "correct": ["a", "b"],
+    "explanation": "The valid, performant options are **a** and **b**.\n\n**Correct:**\n- **a:** `gcloud storage cp` is the modern, recommended CLI for Cloud Storage and performs highly parallelized, server-side-optimized copies between buckets.\n- **b:** `gsutil -m cp` uses the `-m` (multithreaded/parallel) flag for fast bulk copies; it remains valid although `gcloud storage` is now preferred.\n\n**Why the others are wrong:**\n- **c:** `bq extract` is for exporting BigQuery tables, not copying GCS objects; round-tripping through local disk is slow and pointless.\n- **d:** `gcloud compute scp` copies files to/from VMs over SSH, not between buckets.\n- **e:** `bq cp` copies BigQuery tables/datasets, which has nothing to do with Cloud Storage objects.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-manage-impl-006",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": ["app-infra-deployment"],
+    "prompt": "Altostrat Media wants progressive delivery for its containerized streaming service on GKE: automated promotion across dev, staging, and prod with one-click rollback and a canary phase. Which Google Cloud service is purpose-built for this continuous delivery workflow?",
+    "caseStudyId": "altostrat-media",
+    "choices": [
+      {"id": "a", "text": "Cloud Build triggers that run `kubectl apply` to every cluster on each commit."},
+      {"id": "b", "text": "Cloud Deploy, using a delivery pipeline with ordered targets and canary deployment strategies."},
+      {"id": "c", "text": "Artifact Registry remote repositories with vulnerability scanning."},
+      {"id": "d", "text": "Cloud Scheduler jobs that redeploy each environment nightly."}
+    ],
+    "correct": ["b"],
+    "explanation": "**Correct: b.** Cloud Deploy is Google's managed continuous delivery service. It models a delivery pipeline with ordered targets (dev to staging to prod), supports canary and progressive rollout strategies, gives one-click promotion and rollback, and integrates with GKE, Cloud Run, and Anthos.\n\n**Why the others are wrong:**\n- **a:** Cloud Build is excellent for CI and can call kubectl, but it has no built-in promotion, approval, canary, or rollback model; you would have to script all of it.\n- **c:** Artifact Registry stores and scans images; it does not orchestrate deployments.\n- **d:** Cloud Scheduler triggers jobs on a cron; it provides no promotion or canary semantics.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-manage-impl-007",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": ["load-testing", "testing-frameworks"],
+    "prompt": "Before a major product launch, EHR Healthcare wants to validate that its patient-portal API can sustain 10x expected traffic and identify the breaking point. Which testing approach best fits this goal?",
+    "caseStudyId": "ehr-healthcare",
+    "choices": [
+      {"id": "a", "text": "Unit testing each function with mocked dependencies."},
+      {"id": "b", "text": "Load and stress testing with a tool like Locust, k6, or JMeter generating concurrent virtual users against the API."},
+      {"id": "c", "text": "Static code analysis to find performance anti-patterns."},
+      {"id": "d", "text": "Integration testing a single request path end-to-end once."}
+    ],
+    "correct": ["b"],
+    "explanation": "**Correct: b.** Validating sustained high throughput and finding the breaking point is exactly what load and stress testing do. Tools such as Locust, k6, and Apache JMeter simulate large numbers of concurrent virtual users and measure latency/error rates as load increases.\n\n**Why the others are wrong:**\n- **a:** Unit tests verify individual functions in isolation; they say nothing about system behavior under concurrent load.\n- **c:** Static analysis inspects source without executing it and cannot reveal real-world throughput limits.\n- **d:** A single integration run validates correctness of a path but not capacity at 10x scale.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-manage-impl-008",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": ["cloud-shell", "cloud-code", "programmatic-access"],
+    "prompt": "A developer wants a zero-setup, browser-based environment that already has gcloud, kubectl, Terraform, and an IDE with Cloud Code installed, persistent home storage, and authenticated access to their GCP project. What should they use?",
+    "choices": [
+      {"id": "a", "text": "Cloud Shell, which provides an ephemeral VM with preinstalled tools, 5 GB persistent $HOME, and the Cloud Shell Editor with Cloud Code."},
+      {"id": "b", "text": "A local installation of the Cloud SDK on their workstation."},
+      {"id": "c", "text": "A Compute Engine VM they provision and configure manually."},
+      {"id": "d", "text": "Cloud Workstations configured from scratch with custom images."}
+    ],
+    "correct": ["a"],
+    "explanation": "**Correct: a.** Cloud Shell is a free, browser-accessible environment with a preconfigured set of tools (gcloud, kubectl, Terraform, Docker, language runtimes), 5 GB of persistent `$HOME` storage, and the Cloud Shell Editor (a VS Code-based IDE) with the Cloud Code extension. It is automatically authenticated to your account/project.\n\n**Why the others are wrong:**\n- **b:** A local SDK install requires manual setup, updates, and authentication, which is the opposite of zero-setup.\n- **c:** A self-managed Compute Engine VM requires provisioning, tool installation, and lifecycle management.\n- **d:** Cloud Workstations are powerful for customized, longer-lived dev environments but require configuration; the question asks for zero-setup, which Cloud Shell delivers out of the box.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-manage-impl-009",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": ["migration-tooling"],
+    "prompt": "KnightMotives Automotive must migrate a fleet of on-premises VMware virtual machines to Compute Engine with minimal downtime and automated validation. Which Google Cloud tool is designed for this lift-and-shift VM migration?",
+    "caseStudyId": "knightmotives-automotive",
+    "choices": [
+      {"id": "a", "text": "Database Migration Service (DMS)."},
+      {"id": "b", "text": "Migrate to Virtual Machines (Migrate to VMs / M2VM)."},
+      {"id": "c", "text": "Storage Transfer Service."},
+      {"id": "d", "text": "BigQuery Data Transfer Service."}
+    ],
+    "correct": ["b"],
+    "explanation": "**Correct: b.** Migrate to Virtual Machines (formerly Migrate for Compute Engine) is purpose-built to migrate VMs from on-premises (VMware), AWS, or Azure to Compute Engine. It replicates disks in the background, supports test clones for validation, and performs a final cutover with minimal downtime.\n\n**Why the others are wrong:**\n- **a:** DMS migrates databases (for example MySQL/PostgreSQL to Cloud SQL or AlloyDB), not whole VMs.\n- **c:** Storage Transfer Service moves object/file data into Cloud Storage, not running VMs.\n- **d:** BigQuery Data Transfer Service schedules data loads into BigQuery, unrelated to VM migration.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-manage-impl-010",
+    "type": "multiple",
+    "domainId": "manage-impl",
+    "concepts": ["iac-terraform", "app-infra-deployment"],
+    "prompt": "You are structuring a Terraform codebase for reuse across multiple GCP environments. Which TWO practices align with Terraform and Google Cloud recommendations?",
+    "choices": [
+      {"id": "a", "text": "Encapsulate reusable resource groupings into modules and parameterize them with input variables."},
+      {"id": "b", "text": "Use separate state files (for example per environment) to limit blast radius."},
+      {"id": "c", "text": "Hardcode project IDs and credentials directly in `.tf` files for each environment."},
+      {"id": "d", "text": "Run `terraform apply` manually in production without a plan review step."},
+      {"id": "e", "text": "Store all environments in a single shared state file to keep things simple."}
+    ],
+    "correct": ["a", "b"],
+    "explanation": "The correct practices are **a** and **b**.\n\n**Correct:**\n- **a:** Modules with input variables promote reuse and consistency; Google's Cloud Foundation Fabric and module registry follow this pattern.\n- **b:** Separating state per environment (or per component) limits blast radius so a mistake in dev cannot corrupt prod state.\n\n**Why the others are wrong:**\n- **c:** Hardcoding project IDs and especially credentials is an anti-pattern; use variables, workspaces, and ADC/Workload Identity instead of embedded secrets.\n- **d:** Skipping `terraform plan` review removes a critical safety gate; production changes should go through plan review/approval (ideally in CI).\n- **e:** A single shared state for all environments maximizes blast radius and creates locking contention, the opposite of the recommended pattern.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-manage-impl-011",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": ["gemini-cloud-assist", "app-infra-deployment"],
+    "prompt": "An operations engineer is troubleshooting an elevated error rate on a Cloud Run service and wants AI assistance that is aware of their GCP resources, logs, and metrics directly within the Cloud Console. Which Google Cloud capability provides this?",
+    "choices": [
+      {"id": "a", "text": "Gemini Cloud Assist, which offers context-aware help, troubleshooting, and recommendations across Google Cloud."},
+      {"id": "b", "text": "A standalone Gemini chatbot with no access to cloud context."},
+      {"id": "c", "text": "Cloud Logging log-based metrics alone."},
+      {"id": "d", "text": "The gcloud `--help` flag."}
+    ],
+    "correct": ["a"],
+    "explanation": "**Correct: a.** Gemini Cloud Assist embeds generative AI throughout the Google Cloud Console and CLI, with awareness of your project's resources, configurations, logs, and metrics. It helps design, troubleshoot, and optimize, for example by explaining errors and suggesting fixes for a misbehaving Cloud Run service.\n\n**Why the others are wrong:**\n- **b:** A generic chatbot without cloud context cannot inspect your specific resources, logs, or metrics.\n- **c:** Log-based metrics are useful telemetry but do not provide AI-driven, context-aware troubleshooting guidance.\n- **d:** `gcloud --help` shows static command documentation, not contextual diagnostics.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-manage-impl-012",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": ["api-client-libraries", "programmatic-access"],
+    "prompt": "A team is deciding between calling Google Cloud APIs through the official client libraries versus hand-written calls to the raw REST/JSON endpoints. Which statement is the strongest argument for using the client libraries?",
+    "choices": [
+      {"id": "a", "text": "Client libraries handle authentication (ADC), retries with backoff, pagination, and idiomatic types, reducing boilerplate and errors."},
+      {"id": "b", "text": "Raw REST calls are the only way to authenticate to Google APIs."},
+      {"id": "c", "text": "Client libraries bypass IAM permission checks for convenience."},
+      {"id": "d", "text": "Client libraries are required because Google does not document the REST APIs."}
+    ],
+    "correct": ["a"],
+    "explanation": "**Correct: a.** The Cloud Client Libraries integrate Application Default Credentials, implement automatic retries with exponential backoff, handle pagination, and expose idiomatic, strongly typed objects per language. This removes large amounts of error-prone boilerplate compared to crafting REST calls by hand.\n\n**Why the others are wrong:**\n- **b:** Raw REST is one option, not the only authentication path; ADC works with both, and libraries simplify it.\n- **c:** Client libraries never bypass IAM; all API calls are still authorized by IAM regardless of transport.\n- **d:** Google fully documents its REST APIs; the libraries are a convenience layer, not a substitute for documentation.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-manage-impl-013",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": ["apigee", "api-management", "service-accounts"],
+    "prompt": "An Apigee API proxy needs to verify a caller's identity before routing to the backend, and you want to enforce that only registered developer apps with an approved API product can access the API. Which Apigee mechanism is the standard fit?",
+    "choices": [
+      {"id": "a", "text": "Use a VerifyAPIKey policy (or OAuthV2 policy) so the proxy validates the credential against the app's API product entitlements."},
+      {"id": "b", "text": "Open the proxy with no security policy and rely on the backend firewall."},
+      {"id": "c", "text": "Hardcode allowed IP addresses in the target endpoint."},
+      {"id": "d", "text": "Store every partner's password in a KVM and compare it in a JavaScript policy."}
+    ],
+    "correct": ["a"],
+    "explanation": "**Correct: a.** Apigee's developer/app/API-product model issues API keys (or OAuth client credentials) scoped to API products. A VerifyAPIKey or OAuthV2 policy at the start of the proxy flow validates the credential and confirms the calling app is entitled to the requested API product, the standard way to gate access.\n\n**Why the others are wrong:**\n- **b:** Removing the security policy defeats the purpose of an API gateway and pushes security entirely to the backend.\n- **c:** IP allowlists are brittle and do not identify developer apps or enforce product entitlements.\n- **d:** Storing and comparing passwords manually is insecure and reinvents what VerifyAPIKey/OAuthV2 already provide.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-manage-impl-014",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": ["gcloud-cli", "gsutil-bq"],
+    "prompt": "From a CI pipeline you must load a newline-delimited JSON file from Cloud Storage into a BigQuery table, auto-detecting the schema. Which command is correct?",
+    "choices": [
+      {"id": "a", "text": "`bq load --source_format=NEWLINE_DELIMITED_JSON --autodetect dataset.table gs://bucket/data.json`"},
+      {"id": "b", "text": "`gsutil load dataset.table gs://bucket/data.json`"},
+      {"id": "c", "text": "`gcloud bigquery import gs://bucket/data.json`"},
+      {"id": "d", "text": "`bq cp gs://bucket/data.json dataset.table`"}
+    ],
+    "correct": ["a"],
+    "explanation": "**Correct: a.** `bq load` is the BigQuery CLI command for loading data. Specifying `--source_format=NEWLINE_DELIMITED_JSON` and `--autodetect` loads the JSON file and infers the schema automatically into `dataset.table`.\n\n**Why the others are wrong:**\n- **b:** `gsutil` operates on Cloud Storage objects and has no `load` subcommand for BigQuery.\n- **c:** There is no `gcloud bigquery import` command for ad hoc loads; BigQuery loads are done with `bq load`.\n- **d:** `bq cp` copies an existing BigQuery table to another table; it cannot load a file from GCS.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-manage-impl-015",
+    "type": "multiple",
+    "domainId": "manage-impl",
+    "concepts": ["service-accounts", "programmatic-access", "api-client-libraries"],
+    "prompt": "Your application runs on GKE and must call BigQuery using least privilege, without storing any service account key files. Which TWO actions together implement the recommended approach?",
+    "choices": [
+      {"id": "a", "text": "Use Workload Identity Federation for GKE to bind the pod's Kubernetes service account to a dedicated IAM service account, then rely on ADC."},
+      {"id": "b", "text": "Grant that dedicated IAM service account only the specific BigQuery roles the workload needs (for example roles/bigquery.dataViewer and roles/bigquery.jobUser)."},
+      {"id": "c", "text": "Mount a downloaded service account key as a Kubernetes Secret and reference it via GOOGLE_APPLICATION_CREDENTIALS."},
+      {"id": "d", "text": "Grant the Compute Engine default service account Owner so any pod can act."},
+      {"id": "e", "text": "Embed a long-lived OAuth refresh token in the container image."}
+    ],
+    "correct": ["a", "b"],
+    "explanation": "The correct actions are **a** and **b**.\n\n**Correct:**\n- **a:** Workload Identity (Workload Identity Federation for GKE) lets a Kubernetes service account impersonate a dedicated IAM service account. Pods get short-lived credentials automatically through ADC, with no key files to manage. This is Google's recommended GKE-to-Google-API auth pattern.\n- **b:** Least privilege means granting that IAM service account only the narrow BigQuery roles required, not broad roles.\n\n**Why the others are wrong:**\n- **c:** Mounting a downloaded key as a Secret reintroduces a long-lived, leakable credential that must be rotated, defeating the goal.\n- **d:** Granting Owner to the default service account is the opposite of least privilege and dangerously broad.\n- **e:** Baking a refresh token into an image is a long-lived secret embedded in an artifact, a serious security risk.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-manage-impl-016",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": ["testing-frameworks", "app-infra-deployment"],
+    "prompt": "In a CI/CD pipeline for a microservice, you want the fastest feedback layer to catch logic regressions before any deployment, running in seconds on every commit. Which test type belongs at the base of the testing pyramid for this purpose?",
+    "choices": [
+      {"id": "a", "text": "Unit tests that exercise individual functions/classes in isolation with mocks."},
+      {"id": "b", "text": "End-to-end tests that spin up the full environment for every commit."},
+      {"id": "c", "text": "Manual exploratory testing by QA before each merge."},
+      {"id": "d", "text": "Load tests at 10x production traffic on every commit."}
+    ],
+    "correct": ["a"],
+    "explanation": "**Correct: a.** Unit tests sit at the base of the testing pyramid: they are numerous, fast (seconds), isolated with mocks, and give the quickest feedback on logic regressions, making them ideal to run on every commit.\n\n**Why the others are wrong:**\n- **b:** End-to-end tests are valuable but slow and brittle; running the full environment on every commit is expensive and belongs higher (and sparser) in the pyramid.\n- **c:** Manual testing does not scale to per-commit feedback and is not automated.\n- **d:** Load tests are essential before launches but are far too heavy and slow to run on every commit as the primary fast feedback layer.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-manage-impl-017",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": ["cloud-code", "cloud-shell", "app-infra-deployment"],
+    "prompt": "A developer wants IDE integration that scaffolds Kubernetes/Cloud Run apps, provides Skaffold-based local-to-cloud iteration, and offers inline GCP API support inside VS Code and IntelliJ. Which tool is this?",
+    "choices": [
+      {"id": "a", "text": "Cloud Code, the IDE extension/plugin for VS Code and JetBrains IDEs."},
+      {"id": "b", "text": "The gcloud CLI alone."},
+      {"id": "c", "text": "Cloud Build configuration files."},
+      {"id": "d", "text": "The BigQuery web UI."}
+    ],
+    "correct": ["a"],
+    "explanation": "**Correct: a.** Cloud Code is the set of IDE plugins for VS Code and JetBrains/IntelliJ that scaffolds GKE and Cloud Run applications, integrates Skaffold for continuous local-to-cloud development loops, provides YAML authoring help, and surfaces Google Cloud API client library support and Gemini Code Assist inline. It is also bundled in the Cloud Shell Editor.\n\n**Why the others are wrong:**\n- **b:** The gcloud CLI is a command-line tool, not an IDE integration with scaffolding and inline editing.\n- **c:** Cloud Build config files define CI steps; they are not an IDE developer-experience tool.\n- **d:** The BigQuery web UI is for querying data, unrelated to application IDE scaffolding.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-manage-impl-018",
+    "type": "multiple",
+    "domainId": "manage-impl",
+    "concepts": ["migration-tooling", "app-infra-deployment"],
+    "prompt": "Cymbal Retail is planning multiple migrations to Google Cloud. Match the workload to the right tool. Which TWO pairings are correct?",
+    "caseStudyId": "cymbal-retail",
+    "choices": [
+      {"id": "a", "text": "Migrating a self-managed PostgreSQL database to Cloud SQL with minimal downtime: Database Migration Service (DMS)."},
+      {"id": "b", "text": "Moving 200 TB of archival files from on-prem NAS into Cloud Storage: Storage Transfer Service (with Transfer Appliance for offline)."},
+      {"id": "c", "text": "Migrating a running on-prem PostgreSQL database: Storage Transfer Service."},
+      {"id": "d", "text": "Bulk-loading archival files into Cloud Storage: Database Migration Service."},
+      {"id": "e", "text": "Migrating VMware VMs to Compute Engine: BigQuery Data Transfer Service."}
+    ],
+    "correct": ["a", "b"],
+    "explanation": "The correct pairings are **a** and **b**.\n\n**Correct:**\n- **a:** Database Migration Service handles homogeneous and heterogeneous database migrations (for example PostgreSQL to Cloud SQL/AlloyDB) with continuous replication for minimal-downtime cutover.\n- **b:** Storage Transfer Service moves large object/file datasets into Cloud Storage; for very large offline transfers, Transfer Appliance ships physical hardware.\n\n**Why the others are wrong:**\n- **c:** Storage Transfer Service moves files/objects, not live relational databases; databases use DMS.\n- **d:** DMS is for databases, not bulk file/object loads.\n- **e:** VMware VM migration uses Migrate to Virtual Machines, not BigQuery Data Transfer Service (which schedules BigQuery loads).",
+    "difficulty": 3
+  },
+  {
+    "id": "q-manage-impl-019",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": ["iac-terraform", "service-accounts", "programmatic-access"],
+    "prompt": "You run Terraform from a Cloud Build pipeline to provision GCP resources. What is the recommended way for Terraform to authenticate to Google Cloud in this pipeline?",
+    "choices": [
+      {"id": "a", "text": "Let the Google Terraform provider use Application Default Credentials from the Cloud Build service account (or an impersonated, least-privilege service account)."},
+      {"id": "b", "text": "Generate a service account key JSON and commit it to the repo so Cloud Build can read it."},
+      {"id": "c", "text": "Hardcode an access token in the Terraform provider block."},
+      {"id": "d", "text": "Use a personal user OAuth token from one of the engineers."}
+    ],
+    "correct": ["a"],
+    "explanation": "**Correct: a.** In Cloud Build, Terraform's Google provider should authenticate via Application Default Credentials, which automatically use the build's service account identity. For least privilege you typically have the build impersonate a dedicated, narrowly scoped Terraform service account. No keys are stored.\n\n**Why the others are wrong:**\n- **b:** Committing a key JSON exposes a long-lived credential in source control, a serious security risk.\n- **c:** Hardcoding an access token is insecure and tokens expire within about an hour.\n- **d:** Tying automation to a personal user token breaks when that person leaves and grants their broad personal permissions to the pipeline.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-manage-impl-020",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": ["apigee", "api-management", "app-infra-deployment"],
+    "prompt": "A platform team wants to publish APIs to internal and partner developers with a self-service portal, generated documentation, key issuance, and analytics on traffic and latency. Which Apigee capability set covers these needs?",
+    "choices": [
+      {"id": "a", "text": "Apigee Developer Portal plus Apigee Analytics (API products, app registration, and dashboards)."},
+      {"id": "b", "text": "Cloud CDN with signed URLs."},
+      {"id": "c", "text": "Cloud Monitoring uptime checks only."},
+      {"id": "d", "text": "A static website hosted on Cloud Storage listing the endpoints."}
+    ],
+    "correct": ["a"],
+    "explanation": "**Correct: a.** Apigee includes a Developer Portal where developers discover API products, read generated documentation, register apps, and obtain keys, plus Apigee Analytics dashboards that report traffic, latency, error rates, and top developers/apps. Together they deliver self-service publishing and observability.\n\n**Why the others are wrong:**\n- **b:** Cloud CDN accelerates cacheable content delivery; it is not an API developer portal or analytics platform.\n- **c:** Uptime checks verify availability but provide neither a portal, key issuance, nor API-level analytics.\n- **d:** A static endpoint listing offers no key issuance, app registration, or analytics, defeating the self-service goal.",
+    "difficulty": 2
+  }
+]

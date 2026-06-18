@@ -1,0 +1,19 @@
+{
+  "id": "mod-design-plan-02",
+  "domainId": "design-plan",
+  "title": "Business Continuity, HA, and Disaster Recovery: RPO, RTO, and Cost Trade-offs",
+  "order": 2,
+  "estMinutes": 35,
+  "bodyMarkdown": "## High availability vs disaster recovery\n\nThese are different problems:\n\n- **High availability (HA)** keeps a service running through *component* failures (a VM, a zone) with minimal disruption — handled by redundancy *inside* the deployment.\n- **Disaster recovery (DR)** restores a service after a *large-scale* failure (a region, data corruption) — handled by replication/backups to *another* location plus a recovery plan.\n\n## The two numbers that drive DR design\n\n| Metric | Meaning | Question it answers |\n|--------|---------|---------------------|\n| **RPO** (Recovery Point Objective) | Max acceptable *data loss*, in time | How much data can we lose? |\n| **RTO** (Recovery Time Objective) | Max acceptable *downtime* | How fast must we be back? |\n\nA nightly backup gives an RPO of up to ~24 hours — it **cannot** meet a 5-minute RPO. For tight RPO use continuous protection: Cloud SQL **point-in-time recovery**, Spanner's continuous replication, or async DB replication.\n\n## DR strategy spectrum (cost rises left → right)\n\n| Pattern | RTO/RPO | Cost | Use when |\n|---------|---------|------|----------|\n| **Backup & restore** | hours / hours | low | tier-3, tolerant workloads |\n| **Cold standby** | tens of min | low-med | infrequent failover OK |\n| **Warm standby** (pilot light) | minutes | medium | important workloads |\n| **Hot standby / active-active** | seconds / near-zero | high | tier-1 critical |\n\n**Tier your DR by workload criticality.** Don't pay for active-active on a reporting database. This trade-off is a frequent exam scenario.\n\n## HA building blocks on Google Cloud\n\n- **Regional managed instance groups (MIGs)** spread VMs across zones; **autohealing** replaces unhealthy instances; **autoscaling** maintains capacity after a zone loss.\n- **Global / regional external Application Load Balancer** stops routing to unhealthy backends and (global) routes users to the nearest healthy region.\n- **Multi-region data services**: Cloud Spanner multi-region, Cloud Storage multi-region buckets, Cloud SQL with cross-region replicas / HA configuration.\n\n## Backup & recovery essentials\n\n- Persistent Disk **snapshots** (schedule them) for VM/disk recovery.\n- **Backup and DR Service** for centralized, application-consistent backups.\n- Cloud Storage **Object Versioning** + retention/lifecycle for immutable, long-lived copies.\n- Test restores regularly — an untested backup is a hope, not a plan.\n\n## Worked example\n\nRequirement: critical writes must survive a *regional* outage with near-zero RPO; reporting can tolerate hours.\n\n- Critical DB → **Spanner multi-region** (synchronous-style replication, regional survivability).\n- Reporting DB → **backup & restore** or warm standby (much cheaper).\n\nThis balances continuity against cost — the architecturally correct answer.",
+  "diagrams": [
+    {
+      "title": "RPO vs RTO on a failure timeline",
+      "mermaid": "flowchart LR\n  A[\"Last good backup / replica\"] -->|RPO = data lost| B[\"Failure event\"]\n  B -->|RTO = time to recover| C[\"Service restored\"]"
+    },
+    {
+      "title": "Tiered DR by workload criticality",
+      "mermaid": "flowchart TD\n  W[\"Workload portfolio\"] --> T1[\"Tier 1 critical: active-active / multi-region\"]\n  W --> T2[\"Tier 2 important: warm standby\"]\n  W --> T3[\"Tier 3 tolerant: backup & restore\"]"
+    }
+  ],
+  "quizId": "quiz-design-plan-02"
+}

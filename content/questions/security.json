@@ -1,0 +1,364 @@
+[
+  {
+    "id": "q-security-001",
+    "type": "single",
+    "domainId": "security",
+    "concepts": ["iam", "separation-of-duties"],
+    "prompt": "A platform team needs to let a billing analyst view spend across all projects in an organization **without** granting any ability to read application data or change resources. Which approach best follows least privilege and separation of duties?",
+    "choices": [
+      { "id": "a", "text": "Grant `roles/owner` at the organization level and ask the analyst not to change anything." },
+      { "id": "b", "text": "Grant `roles/billing.viewer` on the Cloud Billing account and `roles/resourcemanager.organizationViewer` at the org node." },
+      { "id": "c", "text": "Grant `roles/editor` on each project so the analyst can open the billing pages." },
+      { "id": "d", "text": "Add the analyst to the `gcp-organization-admins` group so they inherit billing access." }
+    ],
+    "correct": ["b"],
+    "explanation": "Least privilege means granting only the roles needed for the job. `roles/billing.viewer` on the billing account exposes cost data, and `roles/resourcemanager.organizationViewer` lets the analyst see the project list for context, with **no** data-plane or write access. **a** and **c** violate least privilege (Owner/Editor are broad write roles). **d** conflates billing with org administration and over-grants. Best practice: use predefined roles scoped to the narrowest resource (billing account) and bind to groups, not individuals.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-security-002",
+    "type": "single",
+    "domainId": "security",
+    "concepts": ["resource-hierarchy", "org-policy"],
+    "prompt": "Your organization wants a guarantee that **no** Compute Engine VM in any current or future project can have an external IP address, and that this cannot be overridden by a project owner. What is the correct mechanism?",
+    "choices": [
+      { "id": "a", "text": "A deny IAM policy on `compute.instances.create` at each project." },
+      { "id": "b", "text": "The `constraints/compute.vmExternalIpAccess` organization policy constraint set to deny-all at the organization node." },
+      { "id": "c", "text": "A hierarchical firewall policy blocking egress to 0.0.0.0/0." },
+      { "id": "d", "text": "A VPC Service Controls perimeter around all projects." }
+    ],
+    "correct": ["b"],
+    "explanation": "Organization Policy constraints govern resource configuration centrally and are inherited down the hierarchy; `compute.vmExternalIpAccess` is a list constraint that can deny all external IPs, and a project owner cannot remove it because policy administration is a separate permission (`orgpolicy.policyAdmin`). **a** is per-project, error-prone, and blocks all VM creation, not just external IPs. **c** firewalls control traffic flow, not whether an interface gets a public IP. **d** VPC-SC protects API access to services from data exfiltration; it does not stop external IP assignment.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-security-003",
+    "type": "single",
+    "domainId": "security",
+    "concepts": ["kms-cmek", "encryption"],
+    "prompt": "A regulated customer must control the encryption keys used for data at rest in Cloud Storage and BigQuery, including the ability to revoke access by disabling a key, but does **not** want to manage key material on their own hardware. Which option fits?",
+    "choices": [
+      { "id": "a", "text": "Google-managed encryption keys (the default)." },
+      { "id": "b", "text": "Customer-managed encryption keys (CMEK) backed by Cloud KMS." },
+      { "id": "c", "text": "Customer-supplied encryption keys (CSEK) provided on every API call." },
+      { "id": "d", "text": "Application-layer client-side encryption only." }
+    ],
+    "correct": ["b"],
+    "explanation": "CMEK lets the customer create and control keys in Cloud KMS (software or HSM protection level) while Google still operates the service. Disabling or destroying the KMS key renders data inaccessible, giving a revocation lever. **a** gives no customer control over the key lifecycle. **c** CSEK requires the customer to supply raw key material on each request and is supported on a narrower set of services (e.g., not BigQuery the same way); it shifts key handling to the client. **d** client-side encryption is possible but adds significant application burden and is not what the requirement (managed service with key control) describes.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-security-004",
+    "type": "multiple",
+    "domainId": "security",
+    "concepts": ["secret-manager", "iam"],
+    "prompt": "Which practices correctly use Secret Manager for application credentials? (Choose two.)",
+    "choices": [
+      { "id": "a", "text": "Grant the application's service account `roles/secretmanager.secretAccessor` on the specific secret it needs." },
+      { "id": "b", "text": "Store the database password as an environment variable baked into the container image." },
+      { "id": "c", "text": "Enable automatic rotation and reference secret versions so apps can pin or use `latest`." },
+      { "id": "d", "text": "Grant `roles/secretmanager.admin` to every workload so it can self-serve secrets." },
+      { "id": "e", "text": "Commit the secret payload to the repository encrypted with a shared passphrase." }
+    ],
+    "correct": ["a", "c"],
+    "explanation": "Secret Manager best practice is least-privilege access (`secretAccessor` on the individual secret, bound to the workload's service account) and using versioning plus rotation so credentials can be changed without redeploying. **b** bakes secrets into images, which is a classic leak vector. **d** `admin` allows create/destroy/IAM changes — far more than reading a value. **e** committing secrets to source control (even \"encrypted\" with a shared passphrase) defeats the purpose and is a common breach cause.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-security-005",
+    "type": "single",
+    "domainId": "security",
+    "concepts": ["iap", "iam"],
+    "caseStudyId": "altostrat-media",
+    "prompt": "Altostrat Media's developers currently SSH into VMs through a bastion host with a public IP. The team wants to remove the bastion, eliminate public IPs on the VMs, and enforce per-user, context-aware authorization to reach both SSH and an internal web admin app. What should they use?",
+    "choices": [
+      { "id": "a", "text": "Identity-Aware Proxy (IAP) with TCP forwarding for SSH and IAP for the HTTPS app, authorized via IAM." },
+      { "id": "b", "text": "A second bastion host in another region for high availability." },
+      { "id": "c", "text": "Cloud NAT so the VMs can be reached from the internet without public IPs." },
+      { "id": "d", "text": "A self-managed VPN appliance on a Compute Engine VM." }
+    ],
+    "correct": ["a"],
+    "explanation": "IAP terminates the connection at Google's edge, checks the user's identity and IAM binding (`roles/iap.tunnelResourceAccessor` for TCP/SSH, the IAP-secured Web App User role for HTTPS), and can combine with Access Context Manager for context-aware access — all without public IPs or a bastion. **b** keeps a bastion (public attack surface). **c** Cloud NAT is for outbound egress; it does not enable inbound user access. **d** a self-managed VPN adds operational burden and does not provide per-resource, identity-aware authorization.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-security-006",
+    "type": "single",
+    "domainId": "security",
+    "concepts": ["workload-identity-federation", "sa-impersonation"],
+    "prompt": "A CI/CD pipeline running in GitHub Actions needs to deploy to Google Cloud. The security team has banned long-lived service account keys. What is the recommended way to authenticate?",
+    "choices": [
+      { "id": "a", "text": "Create a service account key JSON and store it as an encrypted GitHub secret." },
+      { "id": "b", "text": "Use Workload Identity Federation so GitHub's OIDC token is exchanged for short-lived Google credentials via a workload identity pool." },
+      { "id": "c", "text": "Embed a user's `gcloud` refresh token in the pipeline." },
+      { "id": "d", "text": "Run the deploy from a VM with broad Owner permissions and SSH keys checked into the repo." }
+    ],
+    "correct": ["b"],
+    "explanation": "Workload Identity Federation lets an external IdP (GitHub's OIDC issuer) present a token that Google exchanges for short-lived credentials, optionally impersonating a service account, with attribute conditions restricting which repo/branch can authenticate. No downloadable key exists to leak. **a** is exactly the long-lived key the team banned. **c** embeds user credentials, a leak/audit nightmare. **d** Owner plus committed SSH keys is a severe over-grant and credential-exposure risk.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-security-007",
+    "type": "single",
+    "domainId": "security",
+    "concepts": ["vpc-service-controls", "sensitive-data-protection"],
+    "caseStudyId": "cymbal-retail",
+    "prompt": "Cymbal Retail stores customer PII in BigQuery and Cloud Storage and is worried that a compromised credential could be used to copy data to an attacker's personal project. They want a boundary so that even valid credentials cannot exfiltrate data to resources outside approved projects. What addresses this?",
+    "choices": [
+      { "id": "a", "text": "Make all buckets and datasets private with uniform bucket-level access." },
+      { "id": "b", "text": "Configure a VPC Service Controls service perimeter around the projects holding the data." },
+      { "id": "c", "text": "Rotate all service account keys weekly." },
+      { "id": "d", "text": "Enable Cloud Audit Logs Data Access logging." }
+    ],
+    "correct": ["b"],
+    "explanation": "VPC Service Controls creates a perimeter so that requests to protected services (BigQuery, Cloud Storage, etc.) are denied when the source or destination is outside the perimeter, mitigating exfiltration even with stolen valid credentials. **a** access controls still allow an authorized-but-compromised identity to copy data out. **c** rotation reduces key lifetime but does nothing once a key is active and abused. **d** audit logging detects after the fact; it does not prevent exfiltration. VPC-SC is the preventive control here.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-security-008",
+    "type": "single",
+    "domainId": "security",
+    "concepts": ["context-aware-access", "chrome-enterprise-premium"],
+    "prompt": "Leadership wants employees to reach internal web apps from anywhere without a VPN, but access must be denied unless the request comes from a managed device with disk encryption and a recent OS. Which combination delivers this?",
+    "choices": [
+      { "id": "a", "text": "Chrome Enterprise Premium with IAP and Access Context Manager access levels based on device posture from Endpoint Verification." },
+      { "id": "b", "text": "A hierarchical firewall policy allowing only corporate office IP ranges." },
+      { "id": "c", "text": "Cloud VPN for all employees plus MFA at the IdP." },
+      { "id": "d", "text": "Public load balancer with Cloud Armor rate limiting." }
+    ],
+    "correct": ["a"],
+    "explanation": "Chrome Enterprise Premium (formerly BeyondCorp Enterprise) implements context-aware access: IAP enforces identity, and Access Context Manager access levels evaluate signals such as device posture (managed, encrypted, OS version) reported by Endpoint Verification — no VPN required. **b** ties access to office IPs, breaking \"from anywhere\" and ignoring device posture. **c** reintroduces a VPN and lacks device-posture enforcement. **d** Cloud Armor protects against web attacks/abuse but does not evaluate user identity or device trust.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-security-009",
+    "type": "single",
+    "domainId": "security",
+    "concepts": ["binary-authorization", "software-supply-chain"],
+    "prompt": "A team must ensure that only container images built by the approved pipeline and scanned for vulnerabilities can be deployed to GKE, blocking any image pulled directly from a developer laptop. What enforces this at deploy time?",
+    "choices": [
+      { "id": "a", "text": "Artifact Registry remote repositories." },
+      { "id": "b", "text": "Binary Authorization policy requiring attestations from trusted attestors before a pod can run." },
+      { "id": "c", "text": "A GKE network policy restricting egress." },
+      { "id": "d", "text": "Pod Security Admission set to restricted." }
+    ],
+    "correct": ["b"],
+    "explanation": "Binary Authorization is a deploy-time gate: the cluster admits a pod only if its image carries valid attestations (signed metadata) from configured attestors, which the approved pipeline produces after a successful build and scan. An unscanned laptop image has no attestation and is blocked. **a** Artifact Registry stores images but does not gate admission by provenance. **c** network policy controls traffic, not image provenance. **d** Pod Security Admission restricts pod security context fields, not image trust.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-security-010",
+    "type": "single",
+    "domainId": "security",
+    "concepts": ["audit-logs", "iam"],
+    "prompt": "Auditors need a tamper-evident record of every IAM policy change across the organization, retained for years and queryable. Which configuration is correct?",
+    "choices": [
+      { "id": "a", "text": "Rely on Admin Activity audit logs (always on) and create an aggregated log sink at the org level exporting to a dedicated, access-restricted BigQuery dataset or bucket." },
+      { "id": "b", "text": "Enable Data Access audit logs only and keep them in the default 30-day retention." },
+      { "id": "c", "text": "Ask each project owner to screenshot IAM changes monthly." },
+      { "id": "d", "text": "Turn on VPC Flow Logs for the shared VPC." }
+    ],
+    "correct": ["a"],
+    "explanation": "IAM policy changes (`SetIamPolicy`) are recorded in Admin Activity audit logs, which are always enabled and cannot be disabled. An aggregated sink at the organization node centralizes logs from all projects into a restricted destination (BigQuery for querying, or a bucket with retention/Bucket Lock for immutability) and long retention. **b** Data Access logs cover data reads/writes, not the always-on admin changes, and 30 days fails the multi-year need. **c** is not auditable or reliable. **d** Flow Logs capture network traffic, not IAM changes.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-security-011",
+    "type": "multiple",
+    "domainId": "security",
+    "concepts": ["hipaa", "kms-cmek", "audit-logs"],
+    "caseStudyId": "ehr-healthcare",
+    "prompt": "EHR Healthcare is moving electronic health records to Google Cloud and must comply with HIPAA. Which steps are appropriate? (Choose two.)",
+    "choices": [
+      { "id": "a", "text": "Execute a Business Associate Agreement (BAA) with Google and use only HIPAA-covered services for PHI." },
+      { "id": "b", "text": "Enable Cloud Audit Logs (including Data Access) on services handling PHI and protect data with CMEK." },
+      { "id": "c", "text": "Store PHI in a publicly readable bucket so partner clinics can access it easily." },
+      { "id": "d", "text": "Disable encryption to simplify troubleshooting of record retrieval." },
+      { "id": "e", "text": "Email PHI extracts to providers as plain attachments for convenience." }
+    ],
+    "correct": ["a", "b"],
+    "explanation": "HIPAA on Google Cloud requires a signed BAA and limiting PHI to covered services. Strong technical safeguards — comprehensive audit logging (Data Access logs to record PHI access) and encryption with customer-controlled keys (CMEK) — support the Security Rule. **c**, **d**, and **e** each create unauthorized-disclosure or lack-of-safeguard violations (public exposure, no encryption, unprotected transmission).",
+    "difficulty": 2
+  },
+  {
+    "id": "q-security-012",
+    "type": "single",
+    "domainId": "security",
+    "concepts": ["pci-dss", "sensitive-data-protection"],
+    "prompt": "An e-commerce app must not store raw primary account numbers (PANs). The team wants to reduce PCI DSS scope by replacing card numbers with non-sensitive surrogate values that still allow analytics joins. What is the best technique?",
+    "choices": [
+      { "id": "a", "text": "Hash the PAN with MD5 in the application before storing." },
+      { "id": "b", "text": "Use Sensitive Data Protection (DLP) de-identification with format-preserving tokenization to replace PANs with tokens." },
+      { "id": "c", "text": "Store the full PAN but restrict the table with IAM." },
+      { "id": "d", "text": "Base64-encode the PAN before inserting it." }
+    ],
+    "correct": ["b"],
+    "explanation": "Sensitive Data Protection (formerly Cloud DLP) can de-identify PANs using cryptographic tokenization (including format-preserving and deterministic methods), producing surrogates that keep referential integrity for joins while removing the live card data, shrinking PCI scope. **a** MD5 is broken and unsalted hashing of a small keyspace like card numbers is reversible by brute force. **c** keeping the raw PAN keeps full PCI scope. **d** Base64 is encoding, not protection — trivially reversible.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-security-013",
+    "type": "single",
+    "domainId": "security",
+    "concepts": ["data-sovereignty", "org-policy"],
+    "prompt": "An EU public-sector customer requires that all data and the personnel who can access it remain within EU boundaries, with strong assurances about data residency and support access. Which Google Cloud offering most directly addresses these sovereignty requirements?",
+    "choices": [
+      { "id": "a", "text": "Assured Workloads with an EU Regions and Support control package, combined with resource-location org policy constraints." },
+      { "id": "b", "text": "A single multi-region bucket set to the EU multi-region." },
+      { "id": "c", "text": "Cloud CDN with EU edge caching." },
+      { "id": "d", "text": "Turning off audit logs to avoid sending data abroad." }
+    ],
+    "correct": ["a"],
+    "explanation": "Assured Workloads enforces compliance controls such as data residency and personnel/support access restrictions for control packages like EU Regions and Support, and pairing it with `constraints/gcp.resourceLocations` org policy keeps resources in approved regions. **b** addresses storage residency for one bucket only, not personnel access or org-wide enforcement. **c** CDN edge caching is about latency, not sovereignty guarantees. **d** disabling audit logs harms compliance rather than helping residency.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-security-014",
+    "type": "single",
+    "domainId": "security",
+    "concepts": ["model-armor", "sensitive-data-protection"],
+    "caseStudyId": "knightmotives-automotive",
+    "prompt": "KnightMotives Automotive is deploying a customer-facing generative AI assistant for vehicle support. They want to block prompt-injection attempts and jailbreaks, filter unsafe content, and prevent the model from leaking sensitive data in responses. Which Google Cloud capability is designed for this?",
+    "choices": [
+      { "id": "a", "text": "Cloud Armor WAF rules on the load balancer." },
+      { "id": "b", "text": "Model Armor to screen prompts and responses, optionally integrated with Sensitive Data Protection for sensitive-data findings." },
+      { "id": "c", "text": "Binary Authorization on the model container." },
+      { "id": "d", "text": "VPC Service Controls around the Vertex AI project." }
+    ],
+    "correct": ["b"],
+    "explanation": "Model Armor inspects LLM prompts and responses for threats such as prompt injection, jailbreak attempts, and unsafe or sensitive content, and can leverage Sensitive Data Protection to detect and de-identify sensitive data in the flow. **a** Cloud Armor mitigates web-layer attacks (DDoS, common exploits) but does not understand LLM prompt semantics. **c** Binary Authorization governs which container images deploy, not prompt content. **d** VPC-SC limits API access boundaries but does not inspect prompt/response safety.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-security-015",
+    "type": "single",
+    "domainId": "security",
+    "concepts": ["iam", "separation-of-duties"],
+    "prompt": "Your security policy says no single person should be able to both deploy code and approve its release to production. In Google Cloud terms, what is the cleanest way to model this?",
+    "choices": [
+      { "id": "a", "text": "Give one group `roles/owner` and trust them to behave." },
+      { "id": "b", "text": "Assign deploy permissions to a 'deployers' group and release-approval permissions (e.g., release/attestor roles) to a separate 'approvers' group, with no person in both." },
+      { "id": "c", "text": "Use a single shared service account for the whole pipeline." },
+      { "id": "d", "text": "Grant everyone `roles/editor` and audit afterwards." }
+    ],
+    "correct": ["b"],
+    "explanation": "Separation of duties is enforced by splitting privileges across distinct groups (deployers vs. approvers/attestors) and ensuring membership does not overlap, so no individual holds both capabilities. This pairs naturally with Binary Authorization attestors for the approval step. **a** Owner collapses all duties into one role. **c** a shared service account erases individual accountability and the duty split. **d** broad Editor with after-the-fact auditing is detective, not preventive, and over-grants.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-security-016",
+    "type": "single",
+    "domainId": "security",
+    "concepts": ["soc2", "audit-logs"],
+    "prompt": "A SaaS startup's enterprise prospects keep asking for a SOC 2 report. What does relying on Google Cloud's own SOC 2 attestation actually cover for the startup?",
+    "choices": [
+      { "id": "a", "text": "It automatically makes the startup's application SOC 2 compliant." },
+      { "id": "b", "text": "It covers the controls of the cloud provider's infrastructure; the startup still needs its own SOC 2 covering its application and operational controls (shared responsibility)." },
+      { "id": "c", "text": "It removes the need for the startup to log access to customer data." },
+      { "id": "d", "text": "It transfers all compliance liability to Google." }
+    ],
+    "correct": ["b"],
+    "explanation": "Compliance on Google Cloud follows a shared responsibility model: Google's SOC 2 attestation covers the security of the cloud platform/infrastructure, but the customer is responsible for security in the cloud — their application, access controls, and operations — and must pursue their own SOC 2 if customers require it. **a** is false; the provider's attestation does not certify the customer's app. **c** customers still must implement and log their own controls. **d** liability is not transferred; responsibilities are divided.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-security-017",
+    "type": "single",
+    "domainId": "security",
+    "concepts": ["hierarchical-firewall", "resource-hierarchy"],
+    "prompt": "A security team wants a baseline set of firewall rules (e.g., allow IAP ranges for SSH, deny all other inbound) applied consistently to many projects and enforced above project-level rules so app teams cannot weaken them. What should they use?",
+    "choices": [
+      { "id": "a", "text": "Copy the same VPC firewall rules into every project manually." },
+      { "id": "b", "text": "Hierarchical firewall policies attached at the organization or folder level." },
+      { "id": "c", "text": "A single shared VPC with no firewall rules." },
+      { "id": "d", "text": "Cloud Armor security policies on each backend service." }
+    ],
+    "correct": ["b"],
+    "explanation": "Hierarchical firewall policies are defined at the organization or folder level and evaluated before VPC-level rules, so the baseline (allow IAP ranges, deny other inbound) is enforced consistently and app teams cannot override the higher-priority rules. **a** manual copying drifts and is overridable per project. **c** removing rules removes the protection entirely. **d** Cloud Armor applies to HTTP(S)/L7 load balancer backends, not general VM ingress firewalling across projects.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-security-018",
+    "type": "single",
+    "domainId": "security",
+    "concepts": ["iam", "sa-impersonation", "separation-of-duties"],
+    "prompt": "An on-call engineer occasionally needs elevated permissions held by a powerful service account, but you do not want them to hold those permissions permanently or possess any key. What is the recommended pattern?",
+    "choices": [
+      { "id": "a", "text": "Download the service account key and store it in the engineer's password manager." },
+      { "id": "b", "text": "Grant the engineer `roles/iam.serviceAccountTokenCreator` on that service account so they can impersonate it to get short-lived credentials when needed, ideally gated by an IAM condition or just-in-time elevation." },
+      { "id": "c", "text": "Add the engineer's user account directly to all the powerful roles." },
+      { "id": "d", "text": "Make the service account's key publicly readable in a bucket for emergencies." }
+    ],
+    "correct": ["b"],
+    "explanation": "Service account impersonation via `iam.serviceAccountTokenCreator` lets the engineer mint short-lived tokens for the privileged account only when needed, with full audit trails and no downloadable key. Adding IAM conditions or just-in-time (PAM-style) elevation tightens it further. **a** and **d** create long-lived, leak-prone keys (publicly readable is catastrophic). **c** makes the elevation permanent, violating least privilege and time-bound access.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-security-019",
+    "type": "multiple",
+    "domainId": "security",
+    "concepts": ["org-policy", "resource-hierarchy", "iam"],
+    "prompt": "A new enterprise is designing its Google Cloud resource hierarchy and guardrails. Which design choices reflect Google's recommended practices? (Choose two.)",
+    "choices": [
+      { "id": "a", "text": "Use folders to group projects by department or environment and apply IAM and org policies at the folder level for inheritance." },
+      { "id": "b", "text": "Grant all IAM roles to individual user emails rather than groups for clarity." },
+      { "id": "c", "text": "Apply broad org policy constraints (e.g., restrict resource locations, disable default network) at the org node and relax only where justified." },
+      { "id": "d", "text": "Put every workload in one large project to simplify billing." },
+      { "id": "e", "text": "Disable the organization node and manage projects standalone." }
+    ],
+    "correct": ["a", "c"],
+    "explanation": "Recommended hierarchy design groups projects under folders by department/environment so IAM and org policies are inherited, and sets a secure baseline of org-policy constraints at the top, relaxing only where a documented need exists. **b** binding roles to groups (not individuals) is the recommended practice for manageability. **d** one giant project removes isolation/blast-radius boundaries and complicates least privilege. **e** without an organization node you lose central policy, hierarchy, and aggregated controls.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-security-020",
+    "type": "multiple",
+    "domainId": "security",
+    "concepts": ["gdpr", "pii", "data-sovereignty"],
+    "prompt": "An EU SaaS company must honor GDPR data-subject rights and minimize exposure of personal data. Which measures directly support GDPR obligations on Google Cloud? (Choose two.)",
+    "choices": [
+      { "id": "a", "text": "Use resource-location org policy constraints to keep personal data in EU regions and sign Google's Data Processing Addendum (DPA)." },
+      { "id": "b", "text": "Use Sensitive Data Protection to discover and classify personal data so deletion/access requests can be fulfilled accurately." },
+      { "id": "c", "text": "Replicate all production personal data to a US analytics project for convenience." },
+      { "id": "d", "text": "Disable encryption to make data-subject access requests faster to serve." },
+      { "id": "e", "text": "Grant the analytics team Owner on the data project so they can self-serve deletions." }
+    ],
+    "correct": ["a", "b"],
+    "explanation": "GDPR compliance is supported by keeping personal data in approved (EU) regions via `gcp.resourceLocations`, contracting Google as a processor under the DPA, and being able to locate personal data — Sensitive Data Protection discovery/classification makes data-subject access and erasure requests feasible. **c** copying EU personal data to the US can breach transfer/residency requirements. **d** removing encryption weakens the required technical safeguards. **e** Owner massively over-grants and undermines least privilege and accountability for deletions.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-security-021",
+    "type": "multiple",
+    "domainId": "security",
+    "concepts": ["encryption", "kms-cmek", "secret-manager"],
+    "prompt": "Which statements about encryption and key handling on Google Cloud are correct? (Choose two.)",
+    "choices": [
+      { "id": "a", "text": "Data at rest in Google Cloud is encrypted by default, even without configuring any keys." },
+      { "id": "b", "text": "With CMEK, you can disable or destroy a Cloud KMS key to render the protected data inaccessible." },
+      { "id": "c", "text": "Customer-supplied encryption keys (CSEK) are stored and managed for you inside Cloud KMS." },
+      { "id": "d", "text": "Secret Manager is the recommended place to store TLS private keys and DB passwords as plaintext files in a bucket." },
+      { "id": "e", "text": "Google-managed keys give the customer full control over key rotation schedules." }
+    ],
+    "correct": ["a", "b"],
+    "explanation": "Google Cloud encrypts data at rest by default with Google-managed keys, requiring no customer action. With CMEK, the customer owns the Cloud KMS key lifecycle and can disable/destroy it to cut off access to the data. **c** is wrong: CSEK keys are supplied by the customer on each request and are not stored in KMS. **d** contradicts itself — Secret Manager stores secrets in a managed, access-controlled service, not as plaintext bucket files. **e** Google-managed keys are rotated by Google; customers do not control that schedule (use CMEK for that).",
+    "difficulty": 2
+  },
+  {
+    "id": "q-security-022",
+    "type": "multiple",
+    "domainId": "security",
+    "concepts": ["vpc-service-controls", "context-aware-access", "audit-logs"],
+    "prompt": "A security team is hardening API access to sensitive data services. Which combinations are valid uses of VPC Service Controls and related controls? (Choose two.)",
+    "choices": [
+      { "id": "a", "text": "Define an ingress/egress rule on a VPC-SC perimeter to allow a specific partner project to call BigQuery while blocking all others." },
+      { "id": "b", "text": "Attach an access level (e.g., requiring a corporate IP range or device posture) to a perimeter so only matching contexts can reach protected APIs." },
+      { "id": "c", "text": "Use VPC Service Controls to scan email attachments for malware." },
+      { "id": "d", "text": "Use VPC Service Controls to replace IAM entirely so no roles are needed." },
+      { "id": "e", "text": "Use VPC Service Controls to automatically rotate service account keys." }
+    ],
+    "correct": ["a", "b"],
+    "explanation": "VPC-SC perimeters support ingress/egress rules to allow narrowly scoped cross-perimeter access (e.g., one partner project) while denying the rest, and can bind Access Context Manager access levels (IP range, device posture, identity) so only approved contexts reach protected services. **c** malware scanning is unrelated. **d** VPC-SC complements, not replaces, IAM — you still need roles for authorization. **e** key rotation is not a VPC-SC function.",
+    "difficulty": 3
+  }
+]

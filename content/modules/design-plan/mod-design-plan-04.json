@@ -1,0 +1,19 @@
+{
+  "id": "mod-design-plan-04",
+  "domainId": "design-plan",
+  "title": "Migration Planning: Assessment, Strategies, Dependencies, and Licensing",
+  "order": 4,
+  "estMinutes": 35,
+  "bodyMarkdown": "## The migration journey\n\nGoogle frames migration in phases: **Assess → Plan → Migrate (deploy) → Optimize**. Most planning failures happen because teams skip a rigorous assessment.\n\n### Assess with Migration Center\n\n**Migration Center** is the unified tool for the assessment phase. It:\n\n- Discovers on-prem and cloud assets (servers, VMs, databases).\n- Maps **application dependencies** (what talks to what) so you can group apps into migration *waves* and avoid breaking integrations.\n- Recommends **right-sized** Google Cloud machine types.\n- Produces **TCO / cost estimates** for the business case.\n\nGood assessment data feeds your KPIs, ROI model, and wave plan.\n\n## The migration strategies (the \"R\"s)\n\n| Strategy | What you do | Effort | When |\n|----------|-------------|--------|------|\n| **Rehost** (lift & shift) | Move as-is, VM-to-VM | low | Tight deadline; modernize later |\n| **Replatform** (move & improve) | Minor cloud optimizations (e.g., self-managed DB → Cloud SQL) | medium | Quick wins available |\n| **Refactor / re-architect** | Redesign for cloud-native (containers, serverless) | high | Long-term agility/scale matters |\n| **Repurchase** | Replace with SaaS | varies | Commodity capability exists |\n| **Retire** | Decommission | low | App no longer needed |\n| **Retain** | Keep where it is (for now) | none | Not yet ready / constrained |\n\nThe build/buy/modify/deprecate lens maps onto these: prefer **buy/repurchase** for commodity functions, **retire** redundant apps, and **refactor** only where it earns its keep.\n\n## Dependency and network planning\n\n- Build a dependency map before sequencing waves — co-migrate tightly coupled apps.\n- Plan **non-overlapping IP ranges** between on-prem and Google Cloud VPCs early.\n- Choose hybrid connectivity: **Cloud VPN** (lower bandwidth, quick) or **Cloud Interconnect** (Dedicated/Partner, high bandwidth, low latency) for data transfer and cutover.\n- For large datasets, plan the **data movement** method: online (Storage Transfer Service, Database Migration Service, Datastream) vs offline (**Transfer Appliance**) when network transfer would take too long.\n\n## Licensing planning\n\nLicensing is a real TCO driver — don't ignore it.\n\n- **Pay-as-you-go (license-included) images** for Windows Server / SQL Server bundle licensing into the hourly rate; simplest for new deployments and compliant by default.\n- **Bring Your Own License (BYOL):** reuse eligible existing licenses. When a license requires **dedicated physical hardware**, use **sole-tenant nodes** to satisfy compliance.\n- Model license cost across the steady-state fleet (including autoscaling) in your TCO — autoscaled PAYG instances are billed per instance-hour, not \"repurchased.\"\n\n## Cutover and validation\n\n1. Migrate in waves; validate functionality and NFRs (latency, throughput) against baselines.\n2. Keep rollback options until confidence is high.\n3. Optimize post-migration: right-size, apply CUDs/Spot where appropriate, adopt managed services.",
+  "diagrams": [
+    {
+      "title": "Migration phases",
+      "mermaid": "flowchart LR\n  A[\"Assess (Migration Center)\"] --> B[\"Plan waves & dependencies\"]\n  B --> C[\"Migrate / deploy\"]\n  C --> D[\"Optimize (right-size, CUDs, managed services)\"]"
+    },
+    {
+      "title": "Choosing a migration strategy",
+      "mermaid": "flowchart TD\n  A[\"App in portfolio\"] --> B{\"Still needed?\"}\n  B -->|No| R[\"Retire\"]\n  B -->|Yes| C{\"SaaS covers it?\"}\n  C -->|Yes| P[\"Repurchase / buy\"]\n  C -->|No| D{\"Deadline tight?\"}\n  D -->|Yes| E[\"Rehost\"]\n  D -->|No| F[\"Replatform or Refactor\"]"
+    }
+  ],
+  "quizId": "quiz-design-plan-04"
+}

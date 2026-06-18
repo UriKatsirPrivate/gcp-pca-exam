@@ -1,0 +1,138 @@
+@import "tailwindcss";
+
+/* Class-based dark mode: toggled by `class="dark"` on <html>. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+  Design tokens. Light values live on :root; the .dark block overrides them.
+  Tailwind v4 maps these into utilities via the @theme inline block below
+  (e.g. bg-surface, text-muted, border-line, bg-brand-600).
+*/
+:root {
+  --background: #f7f8fa;
+  --surface: #ffffff;
+  --surface-2: #f1f3f7;
+  --foreground: #0f172a;
+  --muted: #64748b;
+  --line: #e2e8f0;
+
+  --brand-50: #eef2ff;
+  --brand-100: #e0e7ff;
+  --brand-500: #6366f1;
+  --brand-600: #4f46e5;
+  --brand-700: #4338ca;
+
+  --success: #16a34a;
+  --warning: #d97706;
+  --danger: #dc2626;
+  --info: #0284c7;
+}
+
+.dark {
+  --background: #0b1020;
+  --surface: #111827;
+  --surface-2: #0f1729;
+  --foreground: #e5e7eb;
+  --muted: #94a3b8;
+  --line: #1f2a44;
+
+  --brand-50: #1e1b4b;
+  --brand-100: #312e81;
+  --brand-500: #818cf8;
+  --brand-600: #6366f1;
+  --brand-700: #4f46e5;
+
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --info: #38bdf8;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+
+  --color-brand-50: var(--brand-50);
+  --color-brand-100: var(--brand-100);
+  --color-brand-500: var(--brand-500);
+  --color-brand-600: var(--brand-600);
+  --color-brand-700: var(--brand-700);
+
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+html {
+  color-scheme: light dark;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Mermaid renders inline SVG; keep it responsive and centered. */
+.mermaid-host svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Lightweight prose helpers for module/explanation markdown. */
+.prose-content :where(h1, h2, h3) {
+  font-weight: 600;
+  line-height: 1.25;
+  margin-top: 1.4em;
+  margin-bottom: 0.5em;
+}
+.prose-content h1 { font-size: 1.6rem; }
+.prose-content h2 { font-size: 1.3rem; }
+.prose-content h3 { font-size: 1.1rem; }
+.prose-content p { margin: 0.75em 0; line-height: 1.7; }
+.prose-content ul { list-style: disc; padding-left: 1.5em; margin: 0.75em 0; }
+.prose-content ol { list-style: decimal; padding-left: 1.5em; margin: 0.75em 0; }
+.prose-content li { margin: 0.3em 0; }
+.prose-content code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: var(--surface-2);
+  padding: 0.15em 0.4em;
+  border-radius: 0.3em;
+}
+.prose-content pre {
+  background: var(--surface-2);
+  padding: 1em;
+  border-radius: 0.6em;
+  overflow-x: auto;
+  margin: 1em 0;
+}
+.prose-content pre code { background: transparent; padding: 0; }
+.prose-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1em 0;
+  font-size: 0.9em;
+}
+.prose-content th, .prose-content td {
+  border: 1px solid var(--line);
+  padding: 0.5em 0.75em;
+  text-align: left;
+}
+.prose-content th { background: var(--surface-2); font-weight: 600; }
+.prose-content a { color: var(--brand-600); text-decoration: underline; }
+.prose-content blockquote {
+  border-left: 3px solid var(--brand-500);
+  padding-left: 1em;
+  color: var(--muted);
+  margin: 1em 0;
+}

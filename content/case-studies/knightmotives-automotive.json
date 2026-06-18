@@ -1,0 +1,30 @@
+{
+  "id": "knightmotives-automotive",
+  "name": "KnightMotives Automotive",
+  "sourceUrl": "https://services.google.com/fh/files/misc/v6.1_pca_knightmotives_automotive_case_study_english.pdf",
+  "sourceVerified": true,
+  "sections": {
+    "overview": "KnightMotives builds autonomous, self-driving vehicles spanning battery electric (BEV), hybrid, and internal combustion engine (ICE) models. Its BEV fleet has a modern in-vehicle experience, but hybrid and ICE models lack it and are poorly received, hurting sales and satisfaction. The company aims to modernize the consumer experience across all models within five years using AI, and also wants to fix its unreliable online build-and-order system, which is straining its relationship with dealers who need better data, reliability, and tooling for sales and service.",
+    "solutionConcept": "KnightMotives wants to evolve from selling cars to delivering a complete \"automotive experience.\" The strategy emphasizes a consistent experience across all models, AI-powered features, new revenue from data monetization, a digital-first brand differentiation, and better tools for mechanics and salespeople.",
+    "existingTech": "- IT is mostly **on-premises** with some apps on major cloud platforms.\n- The **supply chain runs on an outdated mainframe**, and the **ERP system is also outdated**, making new promotions and dealer discounts hard to roll out.\n- Dealers have **no budget for new equipment**.\n- Vehicles are fragmented across **multiple code bases**, with heavy technical debt from backward compatibility.\n- **Network connectivity to manufacturing plants** and **vehicle connectivity in rural areas** are persistent challenges.",
+    "businessReqs": [
+      "Build a personalized relationship with the driver and a cohesive experience across all models.",
+      "Create a better build-to-order model that reduces time on the lot and adds transparency for dealers and customers.",
+      "Monetize corporate data to fund new technology investments, since current AI infrastructure is obsolete and data is siloed.",
+      "Treat security as paramount given past data breaches.",
+      "Comply with European Union (EU) data protection regulations, especially for emerging autonomous platforms.",
+      "Invest heavily in fully autonomous driving, starting in regions with favorable regulations.",
+      "Prioritize employee upskilling, attract top talent, and improve communication between business and technical teams."
+    ],
+    "technicalReqs": [
+      "Modernize the in-vehicle experience with a consistent UX that integrates AI features across all models, upgrade hardware/software in legacy models, and ensure reliable connectivity (including rural areas) for real-time AI and data transmission.",
+      "Upgrade networks to handle increased data traffic and improve connectivity between plants and headquarters.",
+      "Modernize IT with a hybrid cloud strategy and gradually modernize or replace legacy systems for greater efficiency and agility.",
+      "Support autonomous vehicle development and testing with cutting-edge AI/ML, a robust simulation environment, and compliance with evolving autonomous-vehicle regulations.",
+      "Enable data monetization and insights via a robust data management platform, strict data security and privacy, and scalable AI/ML infrastructure.",
+      "Strengthen security and risk management with a comprehensive security framework, an incident response plan, and security awareness training.",
+      "Deliver a delightful dealer and customer experience: improve the online build-to-order system, build modern dealer tools (sales, service, inventory), and implement a comprehensive CRM."
+    ],
+    "executiveStatement": "KnightMotives is committed to improving safety and saving lives by drawing on extensive data about driving, road conditions, behavior, and crash safety to create compelling digital experiences for drivers. Per CEO Michael Knight, their AI consistently beats national safety statistics, ensuring a unique, consistent KnightMotives experience across every model."
+  }
+}

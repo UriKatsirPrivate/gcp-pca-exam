@@ -1,0 +1,27 @@
+{
+  "id": "cymbal-retail",
+  "name": "Cymbal Retail",
+  "sourceUrl": "https://services.google.com/fh/files/misc/v6.1_pca_cymbal_retail_case_study_english.pdf",
+  "sourceVerified": true,
+  "sections": {
+    "overview": "Cymbal is a fast-growing online retailer selling a broad assortment of products across several retail sub-verticals. The sheer breadth of its catalog makes catalog management an ongoing challenge.",
+    "solutionConcept": "Cymbal wants to modernize operations and improve the customer experience in three areas: (1) **Catalog and content enrichment** using gen AI to generate product attributes, descriptions, and images from supplier-provided data, reducing manual effort and errors and keeping information consistent across channels; (2) **Conversational commerce with product discovery** by adding AI-powered virtual agents to the website and mobile app that use Google Cloud Discovery AI to understand natural-language requests and surface the most relevant products; and (3) **Technical stack modernization** to cut costs around manual processes, data transfer, and error handling through cloud-based infrastructure, secure data handling, third-party integrations, and proactive monitoring and security.",
+    "existingTech": "- A blend of **on-premises and cloud-based** systems.\n- Multiple databases for the catalog and customer data: **MySQL, Microsoft SQL Server, Redis, and MongoDB**.\n- **Kubernetes clusters** running containerized applications.\n- Legacy **file-based integrations** with on-prem systems, including SFTP transfers and ETL batch processing.\n- A custom web app that lets customers browse the catalog by querying relational databases for product names and categories.\n- An **IVR system** that handles incoming calls and routes them to the right department or agent.\n- **Call-center agents** who take transferred calls and manually key in orders when customers cannot self-serve.\n- Open source monitoring tools including **Grafana, Nagios, and Elastic**.\n- Known pain points: manual processes are slow and error-prone, data silos block a unified customer view, and integrating new technology is hard.",
+    "businessReqs": [
+      "Automate product catalog enrichment to cut manual effort, reduce errors, and keep the catalog accurate and consistent.",
+      "Improve product discoverability with better search relevance so customers find products more efficiently.",
+      "Increase customer engagement through a more interactive, personalized shopping experience that lifts satisfaction and may reduce returns.",
+      "Drive sales conversion with a more intuitive, helpful shopping experience that grows revenue.",
+      "Reduce costs, specifically call-center staffing and data-center hosting costs."
+    ],
+    "technicalReqs": [
+      "Attribute generation: derive accurate product attributes from varied supplier data (titles, descriptions, images) aligned to the product category and Cymbal's existing catalog structure.",
+      "Image generation and enhancement: produce image variations from a base image (e.g., color variants), with support for background changes, color adjustments, and text overlays.",
+      "Automate product discovery: interpret natural-language customer requests and return highly relevant results.",
+      "Scalability and performance: handle the large catalog and anticipated growth without degrading performance or experience.",
+      "Human-in-the-loop (HITL) review: give associates a UI to approve, reject, or edit gen AI-generated content before it updates the catalog.",
+      "Data security and compliance: handle all customer data and virtual-agent interactions securely and in line with relevant industry regulations."
+    ],
+    "executiveStatement": "By adopting Google Cloud's generative AI for digital commerce, Cymbal expects to lower operational costs, speed up product onboarding, improve information accuracy and consistency, deliver a more engaging conversational shopping experience, and boost discoverability and conversion. This investment is meant to keep Cymbal competitive in a fast-evolving online retail market."
+  }
+}

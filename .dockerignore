@@ -1,0 +1,53 @@
+# Keep the build context small and reproducible. node_modules and build output
+# are regenerated inside the image; never copy host artifacts in.
+#
+# NOTE: src/, prisma/, and content/ are intentionally NOT ignored — they are
+# required by the build (and content/ is traced into the standalone bundle via
+# next.config.ts outputFileTracingIncludes).
+
+# Dependencies / build output (rebuilt in-image)
+node_modules
+.next
+out
+build
+dist
+
+# Version control & VCS metadata
+.git
+.gitignore
+.gitattributes
+
+# Environment / secrets — never bake into the image (provided at runtime)
+.env
+.env.*
+
+# Local databases / scratch
+prisma/dev.db
+prisma/*.db
+prisma/*.db-journal
+
+# Logs & debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Editor / tooling / agent clutter
+.vscode
+.idea
+.claude
+.DS_Store
+*.pem
+
+# Docs & local-only scripts not needed in the image
+README.md
+AGENTS.md
+CLAUDE.md
+LICENSE
+deploy
+docker-compose.yml
+run.sh
+setup-data-sharing.sh
+
+# Test coverage
+coverage

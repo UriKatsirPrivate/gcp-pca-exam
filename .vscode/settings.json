@@ -1,0 +1,7 @@
+{
+    "files.exclude": {
+        "LICENSE": true,
+        ".vscode": true,
+        ".gitattributes": true
+    }
+}

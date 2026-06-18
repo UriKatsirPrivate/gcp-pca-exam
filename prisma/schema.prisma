@@ -1,0 +1,186 @@
+// GCP PCA Exam Prep — data model.
+// Static exam content (domains, questions, modules, quizzes, case studies) lives in
+// versioned JSON under /content and is referenced here only by string id. Per-user
+// state lives in Postgres.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Prisma 7: the connection URL lives in prisma.config.ts (for Migrate) and the
+// PrismaClient is constructed with a pg driver adapter (see src/lib/prisma.ts).
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Auth.js (NextAuth v5) models
+// ---------------------------------------------------------------------------
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String? // set for Credentials sign-in
+  role          String    @default("user")
+  createdAt     DateTime  @default(now())
+
+  accounts        Account[]
+  sessions        Session[]
+  assessmentRuns  AssessmentRun[]
+  answers         Answer[]
+  studyPlans      StudyPlan[]
+  moduleProgress  ModuleProgress[]
+  quizAttempts    QuizAttempt[]
+  examRuns        ExamRun[]
+  feedbackInsights FeedbackInsight[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ---------------------------------------------------------------------------
+// App models
+// ---------------------------------------------------------------------------
+
+// Result of a diagnostic assessment (feature 1).
+model AssessmentRun {
+  id         String   @id @default(cuid())
+  userId     String
+  takenAt    DateTime @default(now())
+  overallPct Float
+  // perDomain: Record<DomainId, { correct, total, proficiency }>
+  perDomain  Json
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// Every answered question, in any context — powers feedback pattern detection (feature 5).
+model Answer {
+  id         String   @id @default(cuid())
+  userId     String
+  questionId String
+  context    String // "assessment" | "quiz" | "exam"
+  refId      String? // runId / quizId / examId the answer belongs to
+  domainId   String
+  concepts   String[] // copied from the question for fast aggregation
+  selected   String[]
+  correct    Boolean
+  atMs       Int      @default(0)
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([userId, domainId])
+}
+
+// Generated, time-bound study plan (feature 2).
+model StudyPlan {
+  id        String   @id @default(cuid())
+  userId    String
+  createdAt DateTime @default(now())
+  active    Boolean  @default(true)
+  weeks     Int
+  hoursPerWeek Int   @default(6)
+  // milestones: StudyPlanMilestone[]
+  milestones Json
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// Per-module learning status (features 3 & 6).
+model ModuleProgress {
+  id        String   @id @default(cuid())
+  userId    String
+  moduleId  String
+  status    String   @default("todo") // "todo" | "in-progress" | "done"
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, moduleId])
+  @@index([userId])
+}
+
+// A completed quiz attempt (feature 4 & 6).
+model QuizAttempt {
+  id        String   @id @default(cuid())
+  userId    String
+  quizId    String
+  moduleId  String
+  domainId  String
+  correct   Int
+  total     Int
+  scorePct  Float
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+// A full-length simulation exam (feature 7).
+model ExamRun {
+  id          String    @id @default(cuid())
+  userId      String
+  status      String    @default("in-progress") // "in-progress" | "submitted" | "expired"
+  startedAt   DateTime  @default(now())
+  finishedAt  DateTime?
+  durationSec Int       @default(7200)
+  questionIds String[]
+  caseStudyIds String[]
+  scorePct    Float?
+  // perDomain: Record<DomainId, { correct, total }>
+  perDomain   Json?
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// Stored feedback insights (feature 5) — both rule-based and LLM-generated.
+model FeedbackInsight {
+  id        String   @id @default(cuid())
+  userId    String
+  kind      String // "pattern" | "tip" | "strength"
+  concepts  String[]
+  message   String   @db.Text
+  source    String // "rule" | "llm"
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}

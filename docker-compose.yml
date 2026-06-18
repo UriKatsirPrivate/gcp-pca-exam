@@ -1,0 +1,34 @@
+# LOCAL DEVELOPMENT ONLY. Not used by Cloud Run (which uses Cloud SQL).
+#
+# Brings up a PostgreSQL 16 instance matching the local DATABASE_URL in
+# .env.example:
+#   postgresql://pca:pca@localhost:5432/pca?schema=public
+#
+# Usage:
+#   docker compose up -d db
+#   npm run db:migrate   # prisma migrate dev
+#   npm run db:seed
+#   npm run dev
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: pca-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pca
+      POSTGRES_PASSWORD: pca
+      POSTGRES_DB: pca
+    ports:
+      - "5432:5432"
+    volumes:
+      - pca-db-data:/var/lib/postgresql/data
+    healthcheck:
+      # pg_isready returns 0 once the server accepts connections.
+      test: ["CMD-SHELL", "pg_isready -U pca -d pca"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pca-db-data:
