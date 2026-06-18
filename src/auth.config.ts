@@ -1,7 +1,7 @@
 import type { NextAuthConfig } from "next-auth";
 
 // Edge-safe config (no Prisma / bcrypt). Used by middleware and extended in auth.ts.
-const PUBLIC_PATHS = new Set(["/", "/login", "/register"]);
+const PUBLIC_PATHS = new Set(["/", "/login"]);
 
 export const authConfig = {
   pages: { signIn: "/login" },
@@ -18,7 +18,7 @@ export const authConfig = {
 
       const isPublic = PUBLIC_PATHS.has(pathname);
 
-      if (isLoggedIn && (pathname === "/login" || pathname === "/register")) {
+      if (isLoggedIn && pathname === "/login") {
         return Response.redirect(new URL("/dashboard", nextUrl));
       }
       if (!isLoggedIn && !isPublic) {

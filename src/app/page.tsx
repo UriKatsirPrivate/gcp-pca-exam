@@ -36,8 +36,7 @@ export default async function HomePage() {
             <ButtonLink href="/dashboard">Go to dashboard</ButtonLink>
           ) : (
             <>
-              <ButtonLink href="/login" variant="ghost">Sign in</ButtonLink>
-              <ButtonLink href="/register">Get started</ButtonLink>
+              <ButtonLink href="/login">Sign in with Google</ButtonLink>
             </>
           )}
         </nav>
@@ -55,8 +54,8 @@ export default async function HomePage() {
           Diagnose, study with visual modules, and simulate the real 2-hour exam.
         </p>
         <div className="mt-8 flex items-center justify-center gap-3">
-          <ButtonLink href={user ? "/assessment" : "/register"} size="lg">
-            {user ? "Take the diagnostic" : "Start free"} <ArrowRight size={18} />
+          <ButtonLink href={user ? "/assessment" : "/login"} size="lg">
+            {user ? "Take the diagnostic" : "Sign in with Google"} <ArrowRight size={18} />
           </ButtonLink>
         </div>
       </section>
