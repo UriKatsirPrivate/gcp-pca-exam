@@ -1,18 +1,23 @@
-import { ShieldCheck } from "lucide-react";
-import { bootstrapAdminEmails } from "@/lib/access";
+import { GraduationCap, ShieldCheck } from "lucide-react";
+import { bootstrapAdminEmails, normalizeEmail } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/session";
 import { Badge, Card, CardBody, CardHeader } from "@/components/ui";
 import { AdminUsersTable } from "./AdminUsersTable";
+import { ExamAccessTable } from "./ExamAccessTable";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
   const me = await requireAdmin();
 
-  const [rows, bootstrap] = await Promise.all([
+  const [rows, bootstrap, users] = await Promise.all([
     prisma.allowedUser.findMany({ orderBy: { createdAt: "asc" } }),
     Promise.resolve(bootstrapAdminEmails()),
+    prisma.user.findMany({
+      orderBy: { createdAt: "asc" },
+      select: { id: true, name: true, email: true, examUnlocked: true },
+    }),
   ]);
 
   const tableRows = rows.map((r) => ({
@@ -22,6 +27,28 @@ export default async function AdminPage() {
     addedBy: r.addedBy,
     createdAt: r.createdAt.toISOString(),
   }));
+
+  // Exam access is driven by who CAN sign in (bootstrap admins + allowlist),
+  // not by who happens to have a User row yet. Join each allowed email with its
+  // User record (if any) for name + current override state.
+  const userByEmail = new Map(
+    users.map((u) => [normalizeEmail(u.email), u]),
+  );
+  const allowedEmails = [
+    ...new Set([
+      ...bootstrap.map((e) => normalizeEmail(e)),
+      ...rows.map((r) => normalizeEmail(r.email)),
+    ]),
+  ].filter(Boolean);
+  const examUsers = allowedEmails.map((email) => {
+    const u = userByEmail.get(email);
+    return {
+      email,
+      name: u?.name ?? null,
+      examUnlocked: u?.examUnlocked ?? false,
+      signedIn: !!u,
+    };
+  });
 
   return (
     <div className="flex flex-col gap-6">
@@ -70,6 +97,22 @@ export default async function AdminPage() {
           ) : null}
 
           <AdminUsersTable rows={tableRows} meEmail={me.email ?? null} />
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardHeader
+          title="Final exam access"
+          subtitle="Force-unlock the final exam for a user, regardless of their progress."
+          icon={<GraduationCap className="h-5 w-5" />}
+        />
+        <CardBody className="flex flex-col gap-4">
+          <p className="text-sm text-muted">
+            Unlocking here overrides the usual requirement (80% of modules
+            complete or 70% mastery). Relocking falls back to that requirement —
+            it won&apos;t hide the exam from someone who already earned it.
+          </p>
+          <ExamAccessTable users={examUsers} />
         </CardBody>
       </Card>
     </div>

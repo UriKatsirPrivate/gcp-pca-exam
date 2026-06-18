@@ -77,3 +77,31 @@ export async function removeAllowedUser(id: string): Promise<ActionResult> {
   revalidatePath("/admin");
   return { ok: true };
 }
+
+/**
+ * Admin override to force-unlock (or relock) the final exam for a user, keyed by
+ * email so it works even before they've signed in. Upserts the User row by email;
+ * Google links to it on first sign-in (allowDangerousEmailAccountLinking), so the
+ * flag carries over. When true it unlocks regardless of progress; when false the
+ * user falls back to the earn-it criteria (module completion / mastery).
+ */
+export async function setExamUnlocked(
+  email: string,
+  unlocked: boolean,
+): Promise<ActionResult> {
+  await requireAdmin();
+
+  const normalized = normalizeEmail(email);
+  if (!normalized) return { ok: false, error: "Email is required." };
+
+  await prisma.user.upsert({
+    where: { email: normalized },
+    update: { examUnlocked: unlocked },
+    create: { email: normalized, examUnlocked: unlocked },
+  });
+
+  revalidatePath("/admin");
+  revalidatePath("/dashboard");
+  revalidatePath("/exam");
+  return { ok: true };
+}

@@ -36,11 +36,12 @@ const EXAM_UNLOCK_MODULE_RATIO = 0.8;
 const EXAM_UNLOCK_MASTERY = 70;
 
 export async function getUserProgress(userId: string): Promise<UserProgress> {
-  const [moduleRows, quizRows, latest, plan] = await Promise.all([
+  const [moduleRows, quizRows, latest, plan, account] = await Promise.all([
     prisma.moduleProgress.findMany({ where: { userId } }),
     prisma.quizAttempt.findMany({ where: { userId } }),
     prisma.assessmentRun.findFirst({ where: { userId }, orderBy: { takenAt: "desc" } }),
     prisma.studyPlan.findFirst({ where: { userId, active: true } }),
+    prisma.user.findUnique({ where: { id: userId }, select: { examUnlocked: true } }),
   ]);
 
   const moduleStatusById: Record<string, "todo" | "in-progress" | "done"> = {};
@@ -104,7 +105,10 @@ export async function getUserProgress(userId: string): Promise<UserProgress> {
     DOMAINS.reduce((s, d) => s + perDomain[d.id].masteryPct, 0) / DOMAINS.length,
   );
 
+  // An admin can force-unlock the exam regardless of progress; otherwise it's
+  // earned by module completion or mastery.
   const examUnlocked =
+    account?.examUnlocked === true ||
     completedModules / Math.max(1, totalModules) >= EXAM_UNLOCK_MODULE_RATIO ||
     overallMasteryPct >= EXAM_UNLOCK_MASTERY;
 

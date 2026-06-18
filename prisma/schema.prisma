@@ -25,6 +25,7 @@ model User {
   image         String?
   passwordHash  String? // set for Credentials sign-in
   role          String    @default("user")
+  examUnlocked  Boolean   @default(false) // admin override: force-unlock the final exam
   createdAt     DateTime  @default(now())
 
   accounts        Account[]

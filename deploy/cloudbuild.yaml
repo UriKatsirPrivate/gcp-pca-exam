@@ -36,6 +36,9 @@ substitutions:
   _ANTHROPIC_VERTEX_PROJECT_ID: PROJECT_ID
   # Bootstrap admin emails (comma-separated): always allowed and granted admin.
   _ADMIN_EMAILS: ""
+  # Cloud Run container resources.
+  _CPU: "2"
+  _MEMORY: 1Gi
 
 options:
   logging: CLOUD_LOGGING_ONLY
@@ -150,6 +153,8 @@ steps:
       - --region=${_REGION}
       - --platform=managed
       - --allow-unauthenticated
+      - --cpu=${_CPU}
+      - --memory=${_MEMORY}
       - --service-account=${_RUN_SA_EMAIL}
       - --set-secrets=AUTH_SECRET=${_AUTH_SECRET_SECRET},AUTH_GOOGLE_ID=auth-google-id:latest,AUTH_GOOGLE_SECRET=auth-google-secret:latest
       - --set-env-vars=CLOUD_SQL_CONNECTION_NAME=${_INSTANCE_CONNECTION_NAME},DB_USER=${_DB_IAM_USER},DB_NAME=${_DB_NAME},DB_IAM_AUTH=true,CLOUD_SQL_IP_TYPE=${_DB_IP_TYPE},LLM_PROVIDER=vertex,ANTHROPIC_VERTEX_PROJECT_ID=${_ANTHROPIC_VERTEX_PROJECT_ID},CLOUD_ML_REGION=global,AUTH_TRUST_HOST=true,AUTH_URL=${_AUTH_URL},ADMIN_EMAILS=${_ADMIN_EMAILS}
