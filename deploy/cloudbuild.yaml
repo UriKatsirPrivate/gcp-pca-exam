@@ -6,8 +6,8 @@
 # _SERVICE=pca-app,_RUN_SA_EMAIL=pca-run@PROJECT:.iam.gserviceaccount.com,\
 # _DB_IAM_USER=pca-run@PROJECT.iam,_ANTHROPIC_VERTEX_PROJECT_ID=PROJECT
 #
-# Image path: REGION-docker.pkg.dev/$PROJECT_ID/pca/app:$SHORT_SHA
-# $PROJECT_ID and $SHORT_SHA are provided automatically by Cloud Build.
+# Image path: REGION-docker.pkg.dev/$PROJECT_ID/pca/app:$BUILD_ID
+# $PROJECT_ID and $BUILD_ID are provided automatically by Cloud Build.
 #
 # One-time setup (APIs, Artifact Registry repo "pca", Cloud SQL instance,
 # secrets, IAM) is documented in deploy/README.md.
@@ -36,7 +36,7 @@ options:
   machineType: E2_HIGHCPU_8
 
 images:
-  - "${_REGION}-docker.pkg.dev/$PROJECT_ID/pca/app:$SHORT_SHA"
+  - "${_REGION}-docker.pkg.dev/$PROJECT_ID/pca/app:$BUILD_ID"
 
 steps:
   # -------------------------------------------------------------------------
@@ -47,7 +47,7 @@ steps:
     args:
       - build
       - --tag
-      - "${_REGION}-docker.pkg.dev/$PROJECT_ID/pca/app:$SHORT_SHA"
+      - "${_REGION}-docker.pkg.dev/$PROJECT_ID/pca/app:$BUILD_ID"
       - --tag
       - "${_REGION}-docker.pkg.dev/$PROJECT_ID/pca/app:latest"
       - .
@@ -83,7 +83,7 @@ steps:
   # deploy`, which fetches the CLI on the fly and applies prisma/migrations.
   # -------------------------------------------------------------------------
   - id: migrate
-    name: "${_REGION}-docker.pkg.dev/$PROJECT_ID/pca/app:$SHORT_SHA"
+    name: "${_REGION}-docker.pkg.dev/$PROJECT_ID/pca/app:$BUILD_ID"
     entrypoint: sh
     args:
       - -c
@@ -91,21 +91,32 @@ steps:
         set -e
         # Start the Cloud SQL Auth Proxy (IAM auth, unix socket) in background.
         # The proxy binary is fetched fresh; pin a version for reproducibility.
+        # NOTE: shell variables use $$ so Cloud Build does not treat them as
+        # build substitutions; ${_...} are real Cloud Build substitutions.
+        # The runner image runs as a non-root user, so write to /tmp (writable).
         PROXY_VERSION=2.14.1
-        wget -qO /cloud-sql-proxy \
-          "https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v${PROXY_VERSION}/cloud-sql-proxy.linux.amd64"
-        chmod +x /cloud-sql-proxy
-        mkdir -p /cloudsql
-        /cloud-sql-proxy --auto-iam-authn \
+        wget -qO /tmp/cloud-sql-proxy \
+          "https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v$${PROXY_VERSION}/cloud-sql-proxy.linux.amd64"
+        chmod +x /tmp/cloud-sql-proxy
+        mkdir -p /tmp/cloudsql
+        /tmp/cloud-sql-proxy --auto-iam-authn \
           --impersonate-service-account "${_RUN_SA_EMAIL}" \
-          --unix-socket /cloudsql "${_INSTANCE_CONNECTION_NAME}" &
-        PROXY_PID=$!
+          --unix-socket /tmp/cloudsql "${_INSTANCE_CONNECTION_NAME}" &
+        PROXY_PID=$$!
         # Give the proxy a moment to create the socket.
         sleep 5
-        ENC_USER=$(printf '%s' "${_DB_IAM_USER}" | sed 's/@/%40/g')
-        export DATABASE_URL="postgresql://${ENC_USER}@localhost/${_DB_NAME}?host=/cloudsql/${_INSTANCE_CONNECTION_NAME}&sslmode=disable"
-        npx --yes prisma@7 migrate deploy
-        kill "$PROXY_PID" || true
+        ENC_USER=$$(printf '%s' "${_DB_IAM_USER}" | sed 's/@/%40/g')
+        export DATABASE_URL="postgresql://$${ENC_USER}@localhost/${_DB_NAME}?host=/tmp/cloudsql/${_INSTANCE_CONNECTION_NAME}&sslmode=disable"
+        # Non-root user: keep npm/npx caches in writable /tmp.
+        export HOME=/tmp
+        export npm_config_cache=/tmp/.npm
+        # This step runs in /workspace (uploaded source, no node_modules), but
+        # prisma.config.ts imports `dotenv/config` and `prisma/config`. Install
+        # both in isolation and expose via NODE_PATH so the config + CLI resolve.
+        npm install --no-save --no-audit --no-fund --prefix /tmp/deps prisma@7 dotenv >/dev/null 2>&1
+        export NODE_PATH=/tmp/deps/node_modules
+        /tmp/deps/node_modules/.bin/prisma migrate deploy
+        kill "$${PROXY_PID}" || true
     waitFor: ["push"]
 
   # -------------------------------------------------------------------------
@@ -129,11 +140,11 @@ steps:
       - run
       - deploy
       - "${_SERVICE}"
-      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/pca/app:$SHORT_SHA
+      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/pca/app:$BUILD_ID
       - --region=${_REGION}
       - --platform=managed
       - --allow-unauthenticated
       - --service-account=${_RUN_SA_EMAIL}
-      - --set-secrets=AUTH_SECRET=${_AUTH_SECRET_SECRET}
+      - --set-secrets=AUTH_SECRET=${_AUTH_SECRET_SECRET},AUTH_GOOGLE_ID=auth-google-id:latest,AUTH_GOOGLE_SECRET=auth-google-secret:latest
       - --set-env-vars=CLOUD_SQL_CONNECTION_NAME=${_INSTANCE_CONNECTION_NAME},DB_USER=${_DB_IAM_USER},DB_NAME=${_DB_NAME},DB_IAM_AUTH=true,CLOUD_SQL_IP_TYPE=${_DB_IP_TYPE},LLM_PROVIDER=vertex,ANTHROPIC_VERTEX_PROJECT_ID=${_ANTHROPIC_VERTEX_PROJECT_ID},CLOUD_ML_REGION=global,AUTH_TRUST_HOST=true
     waitFor: ["migrate"]
