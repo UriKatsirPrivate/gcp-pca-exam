@@ -204,6 +204,10 @@ Notes:
   registered as the Cloud SQL IAM DB user.
 - `LLM_PROVIDER=vertex` makes the app call **Claude on Vertex AI** using the
   runtime SA's ADC (no API key). The runtime SA needs `roles/aiplatform.user`.
-- `AUTH_TRUST_HOST=true` lets Auth.js trust the Cloud Run-provided host.
+- `AUTH_TRUST_HOST=true` lets Auth.js trust the Cloud Run-provided host, and
+  `AUTH_URL` pins the public origin. **`AUTH_URL` is required on Cloud Run** —
+  without it Auth.js can resolve the host to the container's `0.0.0.0:8080`,
+  which makes the OAuth token exchange send an invalid `redirect_uri` and Google
+  rejects it. It must equal a redirect URI registered on the OAuth client.
 - For "Login with Google", also pass `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET`.
 ```

@@ -26,6 +26,10 @@ substitutions:
   _DB_IAM_USER: pca-run@PROJECT_ID.iam
   # PUBLIC (default), PRIVATE, or PSC — must match the instance's IP config.
   _DB_IP_TYPE: PUBLIC
+  # Public service URL. REQUIRED on Cloud Run: without it Auth.js resolves the
+  # host to the container's 0.0.0.0:8080 and OAuth callbacks fail. Must match a
+  # redirect URI registered on the Google OAuth client.
+  _AUTH_URL: https://pca-app-hrqoscmbca-zf.a.run.app
   # Pinned Secret Manager version (override per release if you rotate).
   _AUTH_SECRET_SECRET: auth-secret:latest
   # Vertex AI (Claude) project for ADC-based LLM calls at runtime.
@@ -146,5 +150,5 @@ steps:
       - --allow-unauthenticated
       - --service-account=${_RUN_SA_EMAIL}
       - --set-secrets=AUTH_SECRET=${_AUTH_SECRET_SECRET},AUTH_GOOGLE_ID=auth-google-id:latest,AUTH_GOOGLE_SECRET=auth-google-secret:latest
-      - --set-env-vars=CLOUD_SQL_CONNECTION_NAME=${_INSTANCE_CONNECTION_NAME},DB_USER=${_DB_IAM_USER},DB_NAME=${_DB_NAME},DB_IAM_AUTH=true,CLOUD_SQL_IP_TYPE=${_DB_IP_TYPE},LLM_PROVIDER=vertex,ANTHROPIC_VERTEX_PROJECT_ID=${_ANTHROPIC_VERTEX_PROJECT_ID},CLOUD_ML_REGION=global,AUTH_TRUST_HOST=true
+      - --set-env-vars=CLOUD_SQL_CONNECTION_NAME=${_INSTANCE_CONNECTION_NAME},DB_USER=${_DB_IAM_USER},DB_NAME=${_DB_NAME},DB_IAM_AUTH=true,CLOUD_SQL_IP_TYPE=${_DB_IP_TYPE},LLM_PROVIDER=vertex,ANTHROPIC_VERTEX_PROJECT_ID=${_ANTHROPIC_VERTEX_PROJECT_ID},CLOUD_ML_REGION=global,AUTH_TRUST_HOST=true,AUTH_URL=${_AUTH_URL}
     waitFor: ["migrate"]
