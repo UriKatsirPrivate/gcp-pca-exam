@@ -67,6 +67,19 @@ export const questionSchema = z.object({
   difficulty: z.union([z.literal(1), z.literal(2), z.literal(3)]),
 });
 
+export const videoSchema = z.object({
+  youtubeId: z.string().min(1),
+  title: z.string().min(1),
+  channel: z.string().optional(),
+  durationMin: z.number().int().positive().optional(),
+});
+
+// Per-module curated videos: a map of moduleId -> list of videos.
+// Authored in content/videos/modules.json.
+export const moduleVideosSchema = z.record(z.string(), z.array(videoSchema));
+
+export type Video = z.infer<typeof videoSchema>;
+
 export const diagramSchema = z.object({
   title: z.string().min(1),
   mermaid: z.string().min(1),

@@ -1,8 +1,8 @@
 import { ClipboardCheck, Clock, ListChecks, Target } from "lucide-react";
 import { Badge, ButtonLink, Card, CardBody, CardHeader } from "@/components/ui";
 import {
-  getAssessmentQuestions,
   getCaseStudy,
+  sampleAssessment,
   toClientQuestion,
 } from "@/lib/content";
 import type { CaseStudy, CaseStudyId } from "@/lib/content/schema";
@@ -25,7 +25,7 @@ export default async function AssessmentPage({
     orderBy: { takenAt: "desc" },
   });
 
-  const questions = getAssessmentQuestions();
+  const questions = sampleAssessment();
   const clientQs = questions.map(toClientQuestion);
 
   // Only the case studies actually referenced by these questions.

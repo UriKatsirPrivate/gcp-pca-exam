@@ -4,6 +4,7 @@ import path from "node:path";
 import {
   caseStudySchema,
   moduleSchema,
+  moduleVideosSchema,
   questionSchema,
   quizSchema,
   DOMAIN_IDS,
@@ -13,6 +14,7 @@ import {
   type Module,
   type Question,
   type Quiz,
+  type Video,
 } from "./schema";
 import { DOMAINS, DOMAIN_BY_ID, getDomain } from "./domains";
 
@@ -42,6 +44,7 @@ interface ContentStore {
   caseStudyById: Map<CaseStudyId, CaseStudy>;
   modulesByDomain: Map<DomainId, Module[]>;
   questionsByDomain: Map<DomainId, Question[]>;
+  videosByModule: Map<string, Video[]>;
 }
 
 function build(): ContentStore {
@@ -76,9 +79,38 @@ function build(): ContentStore {
     }
   }
 
+  // Derive a study-weighted time estimate per module, overriding the authored
+  // estMinutes so the badge AND the study-plan budget reflect actual content:
+  //   reading time (~200 wpm) ×2 for exam-prep depth (re-reading + thinking)
+  //   + ~1.5 min per quiz question + ~1 min per diagram. (Videos are optional
+  //   and not counted.) Floored at 5 min.
+  const quizQuestionCountByModule = new Map<string, number>();
+  for (const q of quizzes) {
+    quizQuestionCountByModule.set(q.moduleId, q.questionIds.length);
+  }
+  for (const m of modules) {
+    const words = (m.bodyMarkdown.match(/\S+/g) ?? []).length;
+    const readingMin = words / 200;
+    const quizQ = quizQuestionCountByModule.get(m.id) ?? 0;
+    m.estMinutes = Math.max(
+      5,
+      Math.round(readingMin * 2 + quizQ * 1.5 + m.diagrams.length),
+    );
+  }
+
   // Case studies: content/case-studies/*.json
   for (const f of listJson(path.join(CONTENT_DIR, "case-studies"))) {
     caseStudies.push(caseStudySchema.parse(readJson(f)));
+  }
+
+  // Per-module videos: content/videos/modules.json (a moduleId -> videos map; optional)
+  const videosByModule = new Map<string, Video[]>();
+  const videosFile = path.join(CONTENT_DIR, "videos", "modules.json");
+  if (fs.existsSync(videosFile)) {
+    const parsed = moduleVideosSchema.parse(readJson(videosFile));
+    for (const [moduleId, vids] of Object.entries(parsed)) {
+      videosByModule.set(moduleId, vids);
+    }
   }
 
   const questionById = new Map<string, Question>();
@@ -115,6 +147,7 @@ function build(): ContentStore {
     caseStudyById,
     modulesByDomain,
     questionsByDomain,
+    videosByModule,
   };
 }
 
@@ -144,6 +177,40 @@ export function getQuestions(ids: string[]): Question[] {
 }
 export function getQuestionsByDomain(domainId: DomainId): Question[] {
   return store().questionsByDomain.get(domainId) ?? [];
+}
+export function getModuleVideos(moduleId: string): Video[] {
+  // `?.` guards against a stale cached store (e.g. a dev server that built the
+  // store before this field existed); degrades to "no videos" instead of a 500.
+  return store().videosByModule?.get(moduleId) ?? [];
+}
+
+/** In-place Fisher–Yates shuffle. */
+function shuffle<T>(arr: T[]): T[] {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+/**
+ * Build a freshly randomized, domain-balanced diagnostic set by sampling from
+ * the union of the assessment pool and the per-domain question banks. No
+ * persistence needed: questionById indexes both, and grading reloads by id.
+ */
+export function sampleAssessment(perDomain = 3): Question[] {
+  const s = store();
+  const sampled: Question[] = [];
+  for (const domainId of DOMAIN_IDS) {
+    const byId = new Map<string, Question>();
+    for (const q of s.assessment) {
+      if (q.domainId === domainId) byId.set(q.id, q);
+    }
+    for (const q of getQuestionsByDomain(domainId)) byId.set(q.id, q);
+    const pool = shuffle([...byId.values()]);
+    sampled.push(...pool.slice(0, perDomain));
+  }
+  return shuffle(sampled);
 }
 export function getModules(domainId: DomainId): Module[] {
   return store().modulesByDomain.get(domainId) ?? [];

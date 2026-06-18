@@ -30,6 +30,7 @@ import {
 import { DomainMasteryChart } from "@/components/charts/DomainMasteryChart";
 import { ScoreTrendChart } from "@/components/charts/ScoreTrendChart";
 import { FeedbackPanel } from "@/components/FeedbackPanel";
+import { DangerZone } from "@/components/DangerZone";
 
 export const dynamic = "force-dynamic";
 
@@ -351,6 +352,9 @@ export default async function DashboardPage() {
           </CardBody>
         </Card>
       </div>
+
+      {/* Danger zone ------------------------------------------------------ */}
+      <DangerZone />
     </div>
   );
 }

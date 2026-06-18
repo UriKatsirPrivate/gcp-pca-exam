@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowRight, ChevronLeft, Clock } from "lucide-react";
 import {
   getDomain,
   getModule,
+  getModuleVideos,
   getModules,
   getQuestions,
   getQuizByModule,
@@ -14,6 +15,8 @@ import { requireUser } from "@/lib/session";
 import { Markdown } from "@/components/Markdown";
 import { Mermaid } from "@/components/Mermaid";
 import { Badge } from "@/components/ui";
+import { VideoList } from "@/components/VideoList";
+import { MarkCompleteButton } from "@/components/MarkCompleteButton";
 import type { RevealQuestion } from "@/types/client";
 import { ModuleQuiz } from "./ModuleQuiz";
 import { MarkProgressOnView } from "./MarkProgressOnView";
@@ -79,6 +82,9 @@ export default async function ModulePage({
             </span>
             <Badge tone="neutral">Module {m.order}</Badge>
           </div>
+          <div className="mt-4">
+            <MarkCompleteButton moduleId={m.id} initialStatus={initialStatus} />
+          </div>
         </header>
 
         <div className="prose-content">
@@ -97,6 +103,19 @@ export default async function ModulePage({
             ))}
           </div>
         ) : null}
+
+        {(() => {
+          const videos = getModuleVideos(m.id);
+          return videos.length ? (
+            <section className="mt-10 border-t border-line pt-8">
+              <h2 className="mb-1 text-xl font-semibold">Recommended videos</h2>
+              <p className="mb-5 text-sm text-muted">
+                Hand-picked walkthroughs to reinforce this module.
+              </p>
+              <VideoList videos={videos} />
+            </section>
+          ) : null;
+        })()}
 
         {quiz && revealQuestions.length > 0 ? (
           <section className="mt-10 border-t border-line pt-8">

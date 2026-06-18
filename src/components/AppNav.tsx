@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { signOutAction } from "@/lib/auth-actions";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const LINKS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -56,6 +57,7 @@ export function AppNav({ name }: { name?: string | null }) {
           {name ? (
             <span className="hidden text-sm text-muted sm:inline">{name}</span>
           ) : null}
+          <ThemeToggle />
           <form action={signOutAction}>
             <button
               type="submit"

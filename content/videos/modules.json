@@ -1,0 +1,92 @@
+{
+  "mod-design-plan-01": [
+    { "youtubeId": "p0kcNnpn9IM", "title": "Google Cloud Well-Architected", "channel": "Daniel Lees" }
+  ],
+  "mod-design-plan-02": [
+    { "youtubeId": "d5Frb2HXapw", "title": "Introduction to Google Cloud Backup and DR", "channel": "Google Cloud Tech" }
+  ],
+  "mod-design-plan-03": [
+    { "youtubeId": "75LwAYg1BXY", "title": "Choosing a storage option on Google Cloud", "channel": "Google Cloud" }
+  ],
+  "mod-design-plan-04": [
+    { "youtubeId": "9hoGYczheOk", "title": "Cloud Migration Strategies: 6 Rs Framework Explained", "channel": "CodeLucky" }
+  ],
+  "mod-design-plan-05": [
+    { "youtubeId": "uHwnqPJR0bc", "title": "Google Cloud Cost Optimization: Tips and Tricks to Save Money", "channel": "Whizlabs" }
+  ],
+  "mod-provision-01": [
+    { "youtubeId": "8yDjEgYi2Q0", "title": "GCP Architect Networking Deep Dive", "channel": "ExamPro" }
+  ],
+  "mod-provision-02": [
+    { "youtubeId": "mTWk9_nRjzg", "title": "GCP: Implement Load Balancing on Compute Engine", "channel": "GitcoTech" }
+  ],
+  "mod-provision-03": [
+    { "youtubeId": "HyJo24-49hI", "title": "Google Cloud Storage Full Guide: Buckets, Classes, UBLA, Lifecycle Rules", "channel": "Zero 2 cloud" }
+  ],
+  "mod-provision-04": [
+    { "youtubeId": "h6TwTx4Bup0", "title": "Google Compute Engine Tutorial: GCP Virtual Machines Explained", "channel": "CodeLucky" }
+  ],
+  "mod-provision-05": [
+    { "youtubeId": "pBlgHeOpkG0", "title": "Google Cloud and Vertex AI 101", "channel": "Aliane Abdenour" }
+  ],
+  "mod-security-01": [
+    { "youtubeId": "rTWC3DDheh0", "title": "Cloud IAM Explained: GCP Identity and Access Management", "channel": "CodeLucky" }
+  ],
+  "mod-security-02": [
+    { "youtubeId": "AR7NwcExJwQ", "title": "How to use Customer-Managed Encryption Keys (CMEK) and Cloud KMS", "channel": "Learn @ Qodea" }
+  ],
+  "mod-security-03": [
+    { "youtubeId": "5lcrA3sANHk", "title": "How to secure your cloud with VPC Service Controls", "channel": "Google Cloud Tech" }
+  ],
+  "mod-security-04": [
+    { "youtubeId": "X8aG43wGSqw", "title": "User Authentication with Identity-Aware Proxy (IAP)", "channel": "New Techs coding" }
+  ],
+  "mod-security-05": [
+    { "youtubeId": "BNIhzXwpTK8", "title": "GCP Assured Workloads for HIPAA: A Beginner's Guide to Cloud Compliance", "channel": "HIPAA Vault" }
+  ],
+  "mod-optimize-process-01": [
+    { "youtubeId": "s-Cyg_jp_7I", "title": "Cloud Build CI/CD Service: Introduction to GCP Continuous Integration", "channel": "CodeLucky" }
+  ],
+  "mod-optimize-process-02": [
+    { "youtubeId": "PQkmafy0smA", "title": "Software Testing: Black Box, White Box, Unit, Integration Explained", "channel": "InnovationXpert" }
+  ],
+  "mod-optimize-process-03": [
+    { "youtubeId": "SQPTygQOV8Q", "title": "RTO and RPO in Disaster Recovery Explained", "channel": "Global Technology Options" }
+  ],
+  "mod-optimize-process-04": [
+    { "youtubeId": "B3kC9gBqO88", "title": "Cloud Cost Optimization Strategy Explained | FinOps", "channel": "Abhishek.Veeramalla" }
+  ],
+  "mod-optimize-process-05": [
+    { "youtubeId": "CuwrRjnkbnY", "title": "ITIL Change Management Process | ITIL V4 Foundation", "channel": "The Knowledge Academy" }
+  ],
+  "mod-manage-impl-01": [
+    { "youtubeId": "TNrhGiVxc7k", "title": "Google Cloud Build Introduction | CI/CD Pipeline with GCP", "channel": "Architecture Bytes - AI" }
+  ],
+  "mod-manage-impl-02": [
+    { "youtubeId": "vGe38icp0n4", "title": "Intro to Apigee API management", "channel": "Google Cloud Tech" }
+  ],
+  "mod-manage-impl-03": [
+    { "youtubeId": "9R87lm5OaLU", "title": "How to migrate Tomcat applications to containers", "channel": "Google Cloud Tech" }
+  ],
+  "mod-manage-impl-04": [
+    { "youtubeId": "VCayKl82Lt8", "title": "Learn Terraform with Google Cloud Platform – Infrastructure as Code Course", "channel": "freeCodeCamp.org" }
+  ],
+  "mod-manage-impl-05": [
+    { "youtubeId": "YUcXW86bAXA", "title": "Mastering the gcloud CLI", "channel": "The Cloud Stack" }
+  ],
+  "mod-ops-excellence-01": [
+    { "youtubeId": "SNtTuQeidOE", "title": "What Is Operational Excellence? Operational Excellence Explained", "channel": "Operational Excellence Academy" }
+  ],
+  "mod-ops-excellence-02": [
+    { "youtubeId": "n0tMRbvuFdg", "title": "Troubleshoot faster with Google Cloud logging, monitoring, and observability", "channel": "Google Cloud" }
+  ],
+  "mod-ops-excellence-03": [
+    { "youtubeId": "ywNR71uGvHI", "title": "10 SRE Fundamentals — SLIs, SLOs & Error Budgets", "channel": "Scott Benson" }
+  ],
+  "mod-ops-excellence-04": [
+    { "youtubeId": "H5z70EBtEow", "title": "Deployment Strategies Explained: Blue-Green vs. Canary vs. Rolling", "channel": "CodeLucky" }
+  ],
+  "mod-ops-excellence-05": [
+    { "youtubeId": "vNm4XnfVu0Y", "title": "SRE Incident Management: Google's Reliability Approach", "channel": "CodeLucky" }
+  ]
+}

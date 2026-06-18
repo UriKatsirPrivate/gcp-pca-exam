@@ -12,7 +12,7 @@ import { requireUser } from "@/lib/session";
  */
 export async function markProgress(
   moduleId: string,
-  status: "in-progress" | "done",
+  status: "todo" | "in-progress" | "done",
 ): Promise<void> {
   const user = await requireUser();
 
