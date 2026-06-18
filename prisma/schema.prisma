@@ -77,6 +77,17 @@ model VerificationToken {
 // App models
 // ---------------------------------------------------------------------------
 
+// Allowlist of emails permitted to sign in, with their role. Email-keyed (not a
+// User FK) so an admin can pre-authorize someone who has never signed in. The
+// ADMIN_EMAILS env var is an always-on superset (bootstrap admins).
+model AllowedUser {
+  id        String   @id @default(cuid())
+  email     String   @unique // stored lowercased
+  role      String   @default("user") // "user" | "admin"
+  addedBy   String? // email of the admin who added this entry
+  createdAt DateTime @default(now())
+}
+
 // Result of a diagnostic assessment (feature 1).
 model AssessmentRun {
   id         String   @id @default(cuid())

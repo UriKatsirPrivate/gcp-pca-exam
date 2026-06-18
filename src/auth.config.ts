@@ -13,7 +13,9 @@ const CANONICAL_HOST = process.env.AUTH_URL
   : null;
 
 export const authConfig = {
-  pages: { signIn: "/login" },
+  // Route auth errors (e.g. a denied sign-in where the signIn callback returns
+  // false) to our styled /login page instead of Auth.js's built-in error page.
+  pages: { signIn: "/login", error: "/login" },
   session: { strategy: "jwt" },
   trustHost: true,
   providers: [], // real providers are added in auth.ts (Node runtime)
@@ -40,9 +42,33 @@ export const authConfig = {
       // Always allow Auth.js endpoints and static assets.
       if (pathname.startsWith("/api/auth")) return true;
 
+      // Admin console: signed-in admins only. token.role is set at sign-in
+      // (auth.ts). Non-admins are bounced to the dashboard; signed-out users
+      // fall through to the login redirect below. requireAdmin() is the
+      // authoritative server-side check; this is edge defense-in-depth.
+      if (pathname.startsWith("/admin")) {
+        if (!isLoggedIn) {
+          const url = new URL("/login", nextUrl);
+          url.searchParams.set("callbackUrl", pathname);
+          return Response.redirect(url);
+        }
+        if ((auth?.user as { role?: string } | undefined)?.role !== "admin") {
+          return Response.redirect(new URL("/dashboard", nextUrl));
+        }
+        return true;
+      }
+
       const isPublic = PUBLIC_PATHS.has(pathname);
 
-      if (isLoggedIn && pathname === "/login") {
+      // Send logged-in users from /login to the app — UNLESS there's an error
+      // (e.g. ?error=AccessDenied for an authenticated-but-not-allowlisted user).
+      // Without this guard, requireUser() bouncing such a user to /login and this
+      // rule bouncing them back to /dashboard would loop forever.
+      if (
+        isLoggedIn &&
+        pathname === "/login" &&
+        !nextUrl.searchParams.has("error")
+      ) {
         return Response.redirect(new URL("/dashboard", nextUrl));
       }
       if (!isLoggedIn && !isPublic) {

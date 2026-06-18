@@ -1,13 +1,25 @@
 import { Button } from "@/components/ui";
 import { signInWithGoogle } from "@/lib/auth-actions";
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error } = await searchParams;
   return (
     <div>
       <h1 className="mb-1 text-xl font-semibold">Sign in</h1>
       <p className="mb-6 text-sm text-muted">
         Continue with your Google account to start your prep.
       </p>
+      {error ? (
+        <div className="mb-4 rounded-lg border border-danger/40 bg-danger/10 p-3 text-sm text-danger">
+          {error === "AccessDenied"
+            ? "This account isn't authorized yet. Ask an admin to add your email, then try again."
+            : "Sign-in failed. Please try again."}
+        </div>
+      ) : null}
       <form action={signInWithGoogle}>
         <Button type="submit" variant="secondary" size="lg" className="w-full">
           <GoogleIcon />

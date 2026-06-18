@@ -9,6 +9,7 @@ import {
   CalendarRange,
   BookOpen,
   Timer,
+  Shield,
   LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
@@ -23,8 +24,11 @@ const LINKS = [
   { href: "/exam", label: "Exam", icon: Timer },
 ];
 
-export function AppNav({ name }: { name?: string | null }) {
+const adminLink = { href: "/admin", label: "Admin", icon: Shield };
+
+export function AppNav({ name, role }: { name?: string | null; role?: string }) {
   const pathname = usePathname();
+  const links = role === "admin" ? [...LINKS, adminLink] : LINKS;
 
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-surface/80 backdrop-blur">
@@ -34,7 +38,7 @@ export function AppNav({ name }: { name?: string | null }) {
           <span className="hidden font-semibold sm:inline">PCA Prep</span>
         </Link>
         <nav className="flex flex-1 items-center gap-0.5 overflow-x-auto">
-          {LINKS.map((l) => {
+          {links.map((l) => {
             const active = pathname === l.href || pathname.startsWith(l.href + "/");
             return (
               <Link
