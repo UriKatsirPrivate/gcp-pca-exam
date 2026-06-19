@@ -26,7 +26,7 @@ Quick rundown of what's in it:
 
 **One thing before you can log in:** it's Google sign-in only and on an allowlist, so I have to add you manually first. **Fill out this quick form with the Google email you'll use** and I'll get you registered — then you're good to go.
 
-Form: [FORM_LINK_HERE](https://forms.gle/gDmJD96nVgGgx4Lt9)
+Form: [Sign-up form](https://forms.gle/gDmJD96nVgGgx4Lt9)
 
 Heads-up: you won't get a notification once you're added — just give it about **24 hours** and try logging in.
 
