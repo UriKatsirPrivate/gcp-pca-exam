@@ -13,10 +13,11 @@ I put together a little web app for prepping the **Google Cloud Professional Clo
 Quick rundown of what's in it:
 
 - **30 lessons** across the six exam domains, each with a short video
-- **146 exam-style practice questions** with explanations
+- **146 exam-style practice questions** with explanations — plus **"Learn more" links** to the official GCP docs on every answer
 - **Per-domain quizzes** so you can drill one topic at a time
-- A **diagnostic** to see where you're starting from
-- A **timed full-exam simulation** with a live countdown + scored results
+- A **practice mode** that automatically drills your **weakest concepts and the questions you've missed**
+- A **diagnostic** to see where you're starting from — with a full **question-by-question review** afterward
+- A **timed full-exam simulation** with a live countdown + scored results. It **autosaves**, so a refresh or a closed tab won't wipe your progress, and you can **review every question** (or just the ones you got wrong) when you're done
 - The **four official case studies** (Altostrat, Cymbal, EHR Healthcare, KnightMotives)
 - A **personalized study plan** with milestones and estimated hours
 - A **dashboard** to track your progress, plus dark mode 🌙
