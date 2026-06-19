@@ -8,6 +8,7 @@ import {
   ClipboardCheck,
   CalendarRange,
   BookOpen,
+  Dumbbell,
   Timer,
   Shield,
   LogOut,
@@ -21,6 +22,7 @@ const LINKS = [
   { href: "/assessment", label: "Assessment", icon: ClipboardCheck },
   { href: "/study-plan", label: "Study Plan", icon: CalendarRange },
   { href: "/learn", label: "Learn", icon: BookOpen },
+  { href: "/practice", label: "Practice", icon: Dumbbell },
   { href: "/exam", label: "Exam", icon: Timer },
 ];
 

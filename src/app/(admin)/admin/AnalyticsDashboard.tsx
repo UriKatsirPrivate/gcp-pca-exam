@@ -1,11 +1,12 @@
 import {
   Activity,
+  AlertTriangle,
   BarChart3,
   GraduationCap,
   Layers,
 } from "lucide-react";
 import type { AdminStats } from "@/lib/admin-stats";
-import { Card, CardBody, CardHeader, ProgressBar, Stat } from "@/components/ui";
+import { Badge, Card, CardBody, CardHeader, ProgressBar, Stat } from "@/components/ui";
 
 const pct = (n: number | null) => (n == null ? "—" : `${n}%`);
 
@@ -41,6 +42,7 @@ export function AnalyticsDashboard({ stats }: { stats: AdminStats }) {
     avgExamScore,
     examPassed,
     examPassRate,
+    hardestQuestions,
   } = stats;
 
   const moduleCells = modulesDoneCount + modulesInProgressCount + modulesNotStartedCount;
@@ -165,6 +167,45 @@ export function AnalyticsDashboard({ stats }: { stats: AdminStats }) {
               <ProgressBar value={d.avgScore ?? 0} tone={tone(d.avgScore)} />
             </div>
           ))}
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardHeader
+          title="Hardest questions"
+          subtitle="Lowest correct rate across all answers — review flagged items for mis-keys."
+          icon={<AlertTriangle className="h-5 w-5" />}
+        />
+        <CardBody>
+          {hardestQuestions.length === 0 ? (
+            <p className="text-sm text-muted">
+              Not enough answers yet to rank question difficulty.
+            </p>
+          ) : (
+            <ul className="flex flex-col divide-y divide-line">
+              {hardestQuestions.map((q) => (
+                <li key={q.questionId} className="flex items-start gap-3 py-3">
+                  <span
+                    className={`mt-0.5 shrink-0 text-sm font-semibold tabular-nums ${
+                      q.correctPct < 50 ? "text-danger" : "text-warning"
+                    }`}
+                  >
+                    {q.correctPct}%
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="line-clamp-2 text-sm">{q.prompt}</p>
+                    <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
+                      <span>{q.shortTitle}</span>
+                      <span>· {q.attempts} attempts</span>
+                      {q.suspectMiskey ? (
+                        <Badge tone="danger">possible mis-key</Badge>
+                      ) : null}
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </CardBody>
       </Card>
     </div>

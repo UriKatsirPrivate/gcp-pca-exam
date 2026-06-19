@@ -21,6 +21,11 @@ import {
   type Question,
   type Quiz,
 } from "../src/lib/content/schema";
+import { CONCEPT_DOCS } from "../src/lib/concept-docs";
+import { CONCEPT_TIPS } from "../src/lib/feedback/rules";
+
+// A domain with fewer than this many questions can't fill its exam quota comfortably.
+const DOMAIN_QUESTION_FLOOR = 10;
 
 const ROOT = path.join(process.cwd(), "content");
 const errors: string[] = [];
@@ -130,6 +135,49 @@ for (const z of quizzes) {
   for (const qid of z.questionIds) if (!qById.has(qid)) errors.push(`Quiz ${z.id} -> missing question ${qid}`);
 }
 for (const q of [...allQuestions, ...assessment]) if (q.caseStudyId && !caseIds.has(q.caseStudyId)) errors.push(`Question ${q.id} -> missing case study ${q.caseStudyId}`);
+
+// per-question choice + correct id uniqueness
+for (const q of [...allQuestions, ...assessment]) {
+  const choiceIds = q.choices.map((c) => c.id);
+  if (new Set(choiceIds).size !== choiceIds.length) errors.push(`Question ${q.id} has duplicate choice ids`);
+  if (new Set(q.correct).size !== q.correct.length) errors.push(`Question ${q.id} has duplicate correct ids`);
+}
+
+// quiz question domain must match the quiz's module domain
+for (const z of quizzes) {
+  const mod = mById.get(z.moduleId);
+  if (!mod) continue;
+  for (const qid of z.questionIds) {
+    const q = qById.get(qid);
+    if (q && q.domainId !== mod.domainId) {
+      warnings.push(`Quiz ${z.id} question ${qid} domain ${q.domainId} != module domain ${mod.domainId}`);
+    }
+  }
+}
+
+// domain question-count floor
+for (const d of DOMAIN_IDS) {
+  if (perDomain[d].q < DOMAIN_QUESTION_FLOOR) {
+    warnings.push(`Domain ${d} has only ${perDomain[d].q} questions (< ${DOMAIN_QUESTION_FLOOR})`);
+  }
+}
+
+// concept vocabulary: build usage and verify the curated CONCEPT_TIPS /
+// CONCEPT_DOCS keys reference concepts that actually exist (a key that doesn't is
+// a dead tip/link). Singletons are reported informationally, not as warnings —
+// many concepts are legitimately used once.
+const conceptCount = new Map<string, number>();
+for (const q of [...allQuestions, ...assessment]) {
+  for (const c of q.concepts) conceptCount.set(c, (conceptCount.get(c) ?? 0) + 1);
+}
+const singletons = [...conceptCount.entries()].filter(([, n]) => n === 1).map(([c]) => c).sort();
+for (const key of Object.keys(CONCEPT_TIPS)) {
+  if (!conceptCount.has(key)) warnings.push(`CONCEPT_TIPS key "${key}" matches no question concept (dead tip)`);
+}
+for (const key of Object.keys(CONCEPT_DOCS)) {
+  if (!conceptCount.has(key)) warnings.push(`CONCEPT_DOCS key "${key}" matches no question concept (dead link)`);
+}
+console.log(`\nConcepts: ${conceptCount.size} distinct, ${singletons.length} used once.`);
 
 // report
 console.log("\n=== Content stats ===");

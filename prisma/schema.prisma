@@ -178,6 +178,8 @@ model ExamRun {
   scorePct    Float?
   // perDomain: Record<DomainId, { correct, total }>
   perDomain   Json?
+  // In-progress autosave: { selections, flagged, timeMs, updatedAt }. Cleared on submit.
+  draft       Json?
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])

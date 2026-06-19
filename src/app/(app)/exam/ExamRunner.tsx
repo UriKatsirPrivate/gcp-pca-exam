@@ -19,8 +19,8 @@ import { Markdown } from "@/components/Markdown";
 import { QuestionCard } from "@/components/QuestionCard";
 import { Badge, Button } from "@/components/ui";
 import { cn } from "@/lib/cn";
-import type { ClientQuestion, SubmittedAnswer } from "@/types/client";
-import { submitExam } from "./actions";
+import type { ClientQuestion, ExamDraft, SubmittedAnswer } from "@/types/client";
+import { saveExamDraft, submitExam } from "./actions";
 
 type CaseStudyData = {
   name: string;
@@ -39,26 +39,50 @@ export function ExamRunner({
   questions,
   caseStudies,
   durationSec,
+  initialDraft,
 }: {
   examId: string;
   questions: ClientQuestion[];
   caseStudies: Record<string, CaseStudyData>;
   durationSec: number;
+  initialDraft?: ExamDraft | null;
 }) {
   const total = questions.length;
   const [current, setCurrent] = useState(0);
-  const [selections, setSelections] = useState<Record<string, string[]>>({});
-  const [flagged, setFlagged] = useState<Record<string, boolean>>({});
+  // Hydrate from a persisted draft so a reload/crash mid-exam restores state.
+  const [selections, setSelections] = useState<Record<string, string[]>>(
+    () => initialDraft?.selections ?? {},
+  );
+  const [flagged, setFlagged] = useState<Record<string, boolean>>(
+    () => initialDraft?.flagged ?? {},
+  );
   const [reviewing, setReviewing] = useState(false);
   const [casePanelOpen, setCasePanelOpen] = useState(true); // desktop split-screen
   const [mobileCaseOpen, setMobileCaseOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
+  const [announce, setAnnounce] = useState("");
 
   // Single start timestamp; set once on mount, never reset on re-render.
   const startedAtRef = useRef<number | null>(null);
   const [remaining, setRemaining] = useState(durationSec);
   const submittedRef = useRef(false);
+
+  // Per-question dwell time. Committed totals live in timeAccumRef; activeRef
+  // tracks which question is on screen and since when, so we can add the elapsed
+  // slice on navigation / save / submit. Hydrated from the draft.
+  const timeAccumRef = useRef<Record<string, number>>(initialDraft?.timeMs ?? {});
+  const activeRef = useRef<{ qid: string; since: number } | null>(null);
+  const announcedRef = useRef<Set<number>>(new Set());
+
+  function commitActiveTime() {
+    const a = activeRef.current;
+    if (!a) return;
+    const now = Date.now();
+    timeAccumRef.current[a.qid] = (timeAccumRef.current[a.qid] ?? 0) + (now - a.since);
+    a.since = now;
+  }
 
   const q = questions[current];
   const selected = q ? selections[q.id] ?? [] : [];
@@ -78,13 +102,34 @@ export function ExamRunner({
   );
 
   function buildAnswers(): SubmittedAnswer[] {
-    const elapsed = Date.now() - (startedAtRef.current ?? Date.now());
+    commitActiveTime();
     return questions.map((item) => ({
       questionId: item.id,
       selected: selections[item.id] ?? [],
-      atMs: elapsed,
+      atMs: Math.round(timeAccumRef.current[item.id] ?? 0),
     }));
   }
+
+  // Persist the in-progress draft. Kept in a ref (refreshed in an effect, not
+  // during render) so the debounce/interval effects and nav handlers always call
+  // the latest closure without re-subscribing.
+  const saveDraftRef = useRef<() => void>(() => {});
+  useEffect(() => {
+    saveDraftRef.current = () => {
+      if (submittedRef.current) return;
+      commitActiveTime();
+      const draft: ExamDraft = {
+        selections,
+        flagged,
+        timeMs: { ...timeAccumRef.current },
+        updatedAt: new Date().toISOString(),
+      };
+      setSaveState("saving");
+      saveExamDraft(examId, draft)
+        .then(() => setSaveState("saved"))
+        .catch(() => setSaveState("idle"));
+    };
+  });
 
   function doSubmit() {
     if (submittedRef.current) return;
@@ -102,18 +147,54 @@ export function ExamRunner({
     });
   }
 
-  // Fix the start timestamp once on mount (avoids calling Date.now() in render).
+  // Fix the start timestamp + mark the first question active, once on mount.
   useEffect(() => {
     startedAtRef.current = Date.now();
+    if (questions[0]) activeRef.current = { qid: questions[0].id, since: Date.now() };
+  }, [questions]);
+
+  // Warn before leaving an unsubmitted exam (compounds with autosave recovery).
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (submittedRef.current) return;
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, []);
+
+  // Debounced autosave whenever answers or flags change.
+  const firstChangeRef = useRef(true);
+  useEffect(() => {
+    if (firstChangeRef.current) {
+      firstChangeRef.current = false;
+      return;
+    }
+    const id = setTimeout(() => saveDraftRef.current(), 3000);
+    return () => clearTimeout(id);
+  }, [selections, flagged]);
+
+  // Periodic autosave so accumulated per-question time persists even without
+  // answer changes (e.g. a long read), bounded to one write / 20s.
+  useEffect(() => {
+    const id = setInterval(() => saveDraftRef.current(), 20000);
+    return () => clearInterval(id);
   }, []);
 
   // Countdown ticker — recompute from the fixed start so it stays accurate even
-  // if the tab is throttled. Auto-submits at zero.
+  // if the tab is throttled. Announces milestones for screen readers; auto-submits at zero.
   useEffect(() => {
     const id = setInterval(() => {
       const start = startedAtRef.current ?? Date.now();
       const left = durationSec - Math.floor((Date.now() - start) / 1000);
       setRemaining(left);
+      for (const threshold of [1800, 900, 300, 60]) {
+        if (left <= threshold && !announcedRef.current.has(threshold)) {
+          announcedRef.current.add(threshold);
+          setAnnounce(`${Math.round(threshold / 60)} minutes remaining.`);
+        }
+      }
       if (left <= 0) {
         clearInterval(id);
         doSubmit();
@@ -134,9 +215,20 @@ export function ExamRunner({
   }
 
   function go(index: number) {
-    setCurrent(Math.max(0, Math.min(total - 1, index)));
+    const next = Math.max(0, Math.min(total - 1, index));
+    commitActiveTime();
+    const nextQ = questions[next];
+    activeRef.current = nextQ ? { qid: nextQ.id, since: Date.now() } : null;
+    setCurrent(next);
     setReviewing(false);
     setMobileCaseOpen(false);
+  }
+
+  function enterReview() {
+    commitActiveTime();
+    activeRef.current = null;
+    saveDraftRef.current();
+    setReviewing(true);
   }
 
   if (!q) return null;
@@ -154,6 +246,15 @@ export function ExamRunner({
           <Badge tone="brand">{total} questions</Badge>
         </div>
         <div className="flex items-center gap-4">
+          <span
+            className={cn(
+              "text-xs",
+              saveState === "saving" ? "text-muted" : "text-success",
+            )}
+            aria-live="polite"
+          >
+            {saveState === "saving" ? "Saving…" : saveState === "saved" ? "Saved" : ""}
+          </span>
           <span className="text-sm text-muted">
             {answeredCount}/{total} answered
             {flaggedCount > 0 ? ` · ${flaggedCount} flagged` : ""}
@@ -170,6 +271,11 @@ export function ExamRunner({
             {formatTime(remaining)}
           </div>
         </div>
+      </div>
+
+      {/* Screen-reader-only time milestone announcements. */}
+      <div className="sr-only" role="status" aria-live="polite">
+        {announce}
       </div>
 
       {error ? (
@@ -276,7 +382,7 @@ export function ExamRunner({
               {isLast ? (
                 <Button
                   type="button"
-                  onClick={() => setReviewing(true)}
+                  onClick={enterReview}
                   disabled={isPending}
                 >
                   Review & submit <ArrowRight size={16} />

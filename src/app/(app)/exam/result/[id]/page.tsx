@@ -14,11 +14,12 @@ import {
   ProgressBar,
   Stat,
 } from "@/components/ui";
-import { DOMAINS, getDomain } from "@/lib/content";
+import { DOMAINS, getDomain, getQuestion, toClientQuestion } from "@/lib/content";
 import type { DomainId, Proficiency } from "@/lib/content/schema";
 import { prisma } from "@/lib/prisma";
 import { proficiencyFromPct, type DomainScore, type PerDomainScore } from "@/lib/scoring";
 import { requireUser } from "@/lib/session";
+import { AnswerReview, type ReviewItem } from "@/components/AnswerReview";
 
 export const dynamic = "force-dynamic";
 
@@ -88,6 +89,24 @@ export default async function ExamResultPage({
 
   const run = await prisma.examRun.findUnique({ where: { id } });
   if (!run || run.userId !== user.id) notFound();
+
+  // Per-question review: pair each frozen exam question with the user's answer.
+  const answerRows = await prisma.answer.findMany({
+    where: { userId: user.id, refId: id, context: "exam" },
+  });
+  const ansByQ = new Map(answerRows.map((a) => [a.questionId, a]));
+  const reviewItems: ReviewItem[] = run.questionIds
+    .map((qid): ReviewItem | null => {
+      const q = getQuestion(qid);
+      if (!q) return null;
+      const a = ansByQ.get(qid);
+      return {
+        question: { ...toClientQuestion(q), correct: q.correct, explanation: q.explanation },
+        selected: a?.selected ?? [],
+        isCorrect: a?.correct ?? false,
+      };
+    })
+    .filter((x): x is ReviewItem => x !== null);
 
   const score = Math.round(run.scorePct ?? 0);
   const overallProf = proficiencyFromPct(score);
@@ -256,6 +275,8 @@ export default async function ExamResultPage({
           </div>
         </CardBody>
       </Card>
+
+      <AnswerReview items={reviewItems} />
     </div>
   );
 }

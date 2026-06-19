@@ -4,6 +4,7 @@ import {
   BookOpen,
   CalendarDays,
   ClipboardCheck,
+  Dumbbell,
   GraduationCap,
   Lock,
   Sparkles,
@@ -304,6 +305,25 @@ export default async function DashboardPage() {
 
       {/* Quick links ------------------------------------------------------ */}
       <div className="grid gap-6 sm:grid-cols-2">
+        <Card>
+          <CardBody className="flex items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="text-brand-600">
+                <Dumbbell className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="font-semibold">Practice drills</h3>
+                <p className="mt-0.5 text-sm text-muted">
+                  Unlimited targeted practice on your weakest concepts.
+                </p>
+              </div>
+            </div>
+            <ButtonLink href="/practice" variant="secondary" className="shrink-0">
+              Drill
+            </ButtonLink>
+          </CardBody>
+        </Card>
+
         <Card>
           <CardBody className="flex items-center justify-between gap-4">
             <div className="flex items-start gap-3">

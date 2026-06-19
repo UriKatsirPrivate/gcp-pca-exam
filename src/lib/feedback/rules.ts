@@ -40,9 +40,9 @@ export const CONCEPT_TIPS: Record<string, string> = {
   "committed-use-discounts":
     "Committed Use Discounts (CUDs) reward steady-state, predictable usage with deep discounts for a 1- or 3-year commitment. Use Spot VMs for fault-tolerant, interruptible batch work, and on-demand for spiky/unpredictable load. Match the pricing model to the workload's predictability.",
   // A handful more high-frequency PCA confusions.
-  "load-balancer-selection":
+  "load-balancing":
     "Pick the load balancer by traffic type and scope: global external Application LB for HTTP(S) with global anycast; regional external for regional HTTP(S); Network (passthrough) LB for TCP/UDP/L4; internal LB for VPC-internal traffic. Don't put L4 traffic behind an L7 LB.",
-  "storage-class-selection":
+  "storage-selection":
     "Match Cloud Storage class to access frequency: Standard (hot/frequent), Nearline (~monthly), Coldline (~quarterly), Archive (rarely, long-term). Use lifecycle rules to auto-transition objects and avoid paying Standard rates for cold data.",
   "iam-roles":
     "Favor predefined roles over basic roles (Owner/Editor/Viewer), and custom roles only when predefined ones are too broad. Grant at the lowest effective level of the resource hierarchy and prefer groups over individual user bindings.",

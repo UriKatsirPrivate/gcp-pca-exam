@@ -19,15 +19,48 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
+/** Round-robin across difficulty 1/2/3 so picks from a pool stay mixed. */
+function interleaveByDifficulty(qs: Question[]): Question[] {
+  const buckets: Record<number, Question[]> = { 1: [], 2: [], 3: [] };
+  for (const q of qs) (buckets[q.difficulty] ?? (buckets[q.difficulty] = [])).push(q);
+  const out: Question[] = [];
+  let progressed = true;
+  while (progressed) {
+    progressed = false;
+    for (const d of [1, 2, 3]) {
+      const b = buckets[d];
+      if (b?.length) {
+        out.push(b.shift()!);
+        progressed = true;
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * Order a pool for selection: unseen questions first (variety across retakes),
+ * then already-seen ones, each group shuffled then difficulty-interleaved so the
+ * picks taken off the front are both fresh and difficulty-varied.
+ */
+function orderPool(pool: Question[], seen: Set<string>): Question[] {
+  const unseen = interleaveByDifficulty(shuffle(pool.filter((q) => !seen.has(q.id))));
+  const seenQs = interleaveByDifficulty(shuffle(pool.filter((q) => seen.has(q.id))));
+  return [...unseen, ...seenQs];
+}
+
 /**
  * Build a single full-length simulation exam: pick 2 case studies that each have
  * at least 2 associated questions, then select ~55 questions balanced to domain
  * weights while guaranteeing a healthy block of case-tied questions.
  */
-export function generateExam(): {
+export function generateExam(
+  { seenIds }: { seenIds?: Set<string> } = {},
+): {
   questionIds: string[];
   caseStudyIds: CaseStudyId[];
 } {
+  const seen = seenIds ?? new Set<string>();
   const all = getAllQuestions();
 
   // --- 1. Group questions by case study and find eligible studies. ---------
@@ -57,9 +90,10 @@ export function generateExam(): {
   }
 
   // --- 2. Pull case-tied questions for the 2 chosen studies first. ---------
-  // Mix difficulty by interleaving a difficulty-sorted shuffle.
-  const caseTiedPool = shuffle(
+  // Unseen-first, difficulty-interleaved.
+  const caseTiedPool = orderPool(
     chosenCaseStudies.flatMap((id) => byCaseStudy.get(id) ?? []),
+    seen,
   );
   for (const q of caseTiedPool) {
     if (selected.length >= CASE_TIED_TARGET) break;
@@ -76,7 +110,7 @@ export function generateExam(): {
     arr.push(q);
     freePoolByDomain.set(q.domainId, arr);
   }
-  for (const [k, v] of freePoolByDomain) freePoolByDomain.set(k, shuffle(v));
+  for (const [k, v] of freePoolByDomain) freePoolByDomain.set(k, orderPool(v, seen));
 
   // Per-domain quota from weightPct, then top up to the exact total.
   const quotas = DOMAINS.map((d) => ({
@@ -102,8 +136,9 @@ export function generateExam(): {
 
   // --- 4. Backfill to reach the target count from any remaining pool. ------
   if (selected.length < EXAM_QUESTION_COUNT) {
-    const leftovers = shuffle(
+    const leftovers = orderPool(
       all.filter((q) => !picked.has(q.id)),
+      seen,
     );
     for (const q of leftovers) {
       if (selected.length >= EXAM_QUESTION_COUNT) break;

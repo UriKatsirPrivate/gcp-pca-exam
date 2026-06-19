@@ -178,6 +178,24 @@ export function getQuestions(ids: string[]): Question[] {
 export function getQuestionsByDomain(domainId: DomainId): Question[] {
   return store().questionsByDomain.get(domainId) ?? [];
 }
+
+/**
+ * Questions tagged with any of `concepts`, for the drill/practice mode. Excludes
+ * `excludeIds`, returns a freshly shuffled slice capped at `limit`. Drawn from the
+ * domain banks (not the diagnostic-only pool).
+ */
+export function getQuestionsByConcept(
+  concepts: string[],
+  { limit = 20, excludeIds }: { limit?: number; excludeIds?: Set<string> } = {},
+): Question[] {
+  if (concepts.length === 0) return [];
+  const want = new Set(concepts);
+  const matches = store().questions.filter(
+    (q) =>
+      !excludeIds?.has(q.id) && q.concepts.some((c) => want.has(c)),
+  );
+  return shuffle(matches).slice(0, limit);
+}
 export function getModuleVideos(moduleId: string): Video[] {
   // `?.` guards against a stale cached store (e.g. a dev server that built the
   // store before this field existed); degrades to "no videos" instead of a 500.
@@ -241,6 +259,7 @@ export function toClientQuestion(q: Question) {
     type: q.type,
     domainId: q.domainId,
     caseStudyId: q.caseStudyId,
+    concepts: q.concepts,
     prompt: q.prompt,
     choices: q.choices,
     difficulty: q.difficulty,

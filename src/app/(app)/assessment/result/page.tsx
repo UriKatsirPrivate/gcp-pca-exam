@@ -7,12 +7,13 @@ import {
   EmptyState,
   ProgressBar,
 } from "@/components/ui";
-import { DOMAINS, getDomain } from "@/lib/content";
+import { DOMAINS, getDomain, getQuestion, toClientQuestion } from "@/lib/content";
 import type { DomainId, Proficiency } from "@/lib/content/schema";
 import { prisma } from "@/lib/prisma";
 import type { PerDomainScore, DomainScore } from "@/lib/scoring";
 import { proficiencyFromPct } from "@/lib/scoring";
 import { requireUser } from "@/lib/session";
+import { AnswerReview, type ReviewItem } from "@/components/AnswerReview";
 
 export const dynamic = "force-dynamic";
 
@@ -55,6 +56,23 @@ export default async function AssessmentResultPage() {
   const perDomain = run.perDomain as unknown as PerDomainScore;
   const overall = Math.round(run.overallPct);
   const overallTone = PROGRESS_TONE[proficiencyFromPct(overall)];
+
+  // Per-question review for this run's answers (no stored order — show as answered).
+  const answerRows = await prisma.answer.findMany({
+    where: { userId: user.id, refId: run.id, context: "assessment" },
+    orderBy: { createdAt: "asc" },
+  });
+  const reviewItems: ReviewItem[] = answerRows
+    .map((a): ReviewItem | null => {
+      const q = getQuestion(a.questionId);
+      if (!q) return null;
+      return {
+        question: { ...toClientQuestion(q), correct: q.correct, explanation: q.explanation },
+        selected: a.selected,
+        isCorrect: a.correct,
+      };
+    })
+    .filter((x): x is ReviewItem => x !== null);
 
   // Per-domain rows, weakest-first.
   const rows = DOMAINS.map((d) => {
@@ -156,6 +174,8 @@ export default async function AssessmentResultPage() {
           </div>
         </CardBody>
       </Card>
+
+      <AnswerReview items={reviewItems} />
     </div>
   );
 }

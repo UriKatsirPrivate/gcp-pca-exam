@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -32,9 +32,22 @@ export function AssessmentRunner({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  // Single start timestamp; each answer records elapsed ms at the moment it's set.
-  const [startedAt] = useState(() => Date.now());
-  const [atMsById, setAtMsById] = useState<Record<string, number>>({});
+  // Per-question dwell time: committed totals in timeAccumRef; activeRef tracks
+  // the on-screen question and since when, so we add the slice on nav / submit.
+  const timeAccumRef = useRef<Record<string, number>>({});
+  const activeRef = useRef<{ qid: string; since: number } | null>(null);
+
+  function commitActiveTime() {
+    const a = activeRef.current;
+    if (!a) return;
+    const now = Date.now();
+    timeAccumRef.current[a.qid] = (timeAccumRef.current[a.qid] ?? 0) + (now - a.since);
+    a.since = now;
+  }
+
+  useEffect(() => {
+    if (questions[0]) activeRef.current = { qid: questions[0].id, since: Date.now() };
+  }, [questions]);
 
   const q = questions[current];
   const selected = q ? selections[q.id] ?? [] : [];
@@ -54,20 +67,24 @@ export function AssessmentRunner({
   function setSelection(next: string[]) {
     if (!q) return;
     setSelections((prev) => ({ ...prev, [q.id]: next }));
-    setAtMsById((prev) => ({ ...prev, [q.id]: Date.now() - startedAt }));
   }
 
   function go(index: number) {
-    setCurrent(Math.max(0, Math.min(total - 1, index)));
+    const nextIdx = Math.max(0, Math.min(total - 1, index));
+    commitActiveTime();
+    const nextQ = questions[nextIdx];
+    activeRef.current = nextQ ? { qid: nextQ.id, since: Date.now() } : null;
+    setCurrent(nextIdx);
     setDrawerOpen(false);
   }
 
   function handleSubmit() {
     setError(null);
+    commitActiveTime();
     const answers: SubmittedAnswer[] = questions.map((item) => ({
       questionId: item.id,
       selected: selections[item.id] ?? [],
-      atMs: atMsById[item.id] ?? 0,
+      atMs: Math.round(timeAccumRef.current[item.id] ?? 0),
     }));
     startTransition(async () => {
       try {

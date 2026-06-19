@@ -6,6 +6,7 @@ export type ClientQuestion = {
   type: "single" | "multiple";
   domainId: DomainId;
   caseStudyId?: CaseStudyId;
+  concepts: string[];
   prompt: string;
   choices: Choice[];
   difficulty: 1 | 2 | 3;
@@ -21,4 +22,12 @@ export type SubmittedAnswer = {
   questionId: string;
   selected: string[];
   atMs?: number;
+};
+
+/** In-progress exam state persisted server-side for crash/reload recovery. */
+export type ExamDraft = {
+  selections: Record<string, string[]>;
+  flagged: Record<string, boolean>;
+  timeMs: Record<string, number>;
+  updatedAt: string;
 };

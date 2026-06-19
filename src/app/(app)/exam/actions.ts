@@ -8,6 +8,7 @@ import { getUserProgress } from "@/lib/progress";
 import { requireUser } from "@/lib/session";
 import { scoreByDomain, overallPct, type GradedItem } from "@/lib/scoring";
 import { EXAM_DURATION_SEC, generateExam } from "@/lib/exam";
+import type { ExamDraft } from "@/types/client";
 
 /**
  * Start a new full-length simulation exam. Requires the exam to be unlocked,
@@ -20,7 +21,15 @@ export async function startExam(): Promise<void> {
   const progress = await getUserProgress(user.id);
   if (!progress.examUnlocked) redirect("/exam");
 
-  const { questionIds, caseStudyIds } = generateExam();
+  // Prefer questions the user hasn't already seen in a prior exam (variety on retakes).
+  const seenRows = await prisma.answer.findMany({
+    where: { userId: user.id, context: "exam" },
+    select: { questionId: true },
+    distinct: ["questionId"],
+  });
+  const seenIds = new Set(seenRows.map((r) => r.questionId));
+
+  const { questionIds, caseStudyIds } = generateExam({ seenIds });
 
   const run = await prisma.examRun.create({
     data: {
@@ -33,6 +42,28 @@ export async function startExam(): Promise<void> {
   });
 
   redirect(`/exam?run=${run.id}`);
+}
+
+/**
+ * Autosave in-progress exam state (selections, flags, per-question time) so a
+ * reload or crash mid-exam can restore it. Best-effort: only writes to a run the
+ * caller owns that's still in progress; a finalized/foreign run is a silent no-op.
+ */
+export async function saveExamDraft(
+  examId: string,
+  draft: ExamDraft,
+): Promise<void> {
+  const user = await requireUser();
+  const run = await prisma.examRun.findUnique({
+    where: { id: examId },
+    select: { userId: true, status: true },
+  });
+  if (!run || run.userId !== user.id || run.status !== "in-progress") return;
+
+  await prisma.examRun.update({
+    where: { id: examId },
+    data: { draft: draft as unknown as object },
+  });
 }
 
 export type ExamAnswer = {

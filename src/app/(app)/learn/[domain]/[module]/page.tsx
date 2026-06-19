@@ -55,6 +55,7 @@ export default async function ModulePage({
         type: q.type,
         domainId: q.domainId,
         caseStudyId: q.caseStudyId,
+        concepts: q.concepts,
         prompt: q.prompt,
         choices: q.choices,
         difficulty: q.difficulty,

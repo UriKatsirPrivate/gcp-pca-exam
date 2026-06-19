@@ -1,9 +1,10 @@
 "use client";
 
-import { Check, X } from "lucide-react";
+import { Check, ExternalLink, X } from "lucide-react";
 import { Markdown } from "@/components/Markdown";
 import { Badge } from "@/components/ui";
 import { cn } from "@/lib/cn";
+import { docsForConcepts } from "@/lib/concept-docs";
 import type { ClientQuestion } from "@/types/client";
 
 export type Reveal = {
@@ -137,6 +138,29 @@ export function QuestionCard({
           <div className="prose-content text-sm">
             <Markdown>{reveal.explanation}</Markdown>
           </div>
+          {(() => {
+            const docs = docsForConcepts(question.concepts);
+            return docs.length > 0 ? (
+              <div className="mt-3 border-t border-line/60 pt-3">
+                <div className="mb-1.5 text-xs font-semibold text-muted">Learn more</div>
+                <ul className="flex flex-wrap gap-x-4 gap-y-1">
+                  {docs.map((doc) => (
+                    <li key={doc.url}>
+                      <a
+                        href={doc.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs font-medium text-brand-600 hover:underline"
+                      >
+                        {doc.label}
+                        <ExternalLink size={12} />
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null;
+          })()}
         </div>
       ) : null}
     </div>

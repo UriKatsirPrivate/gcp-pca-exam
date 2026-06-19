@@ -30,7 +30,7 @@ import { prisma } from "@/lib/prisma";
 import { getUserProgress } from "@/lib/progress";
 import { requireUser } from "@/lib/session";
 import { proficiencyFromPct } from "@/lib/scoring";
-import type { ClientQuestion } from "@/types/client";
+import type { ClientQuestion, ExamDraft } from "@/types/client";
 import { ExamRunner } from "./ExamRunner";
 import { startExam } from "./actions";
 
@@ -84,6 +84,7 @@ export default async function ExamPage({
           questions={questions}
           caseStudies={caseStudies}
           durationSec={remaining}
+          initialDraft={(run.draft as ExamDraft | null) ?? null}
         />
       );
     }

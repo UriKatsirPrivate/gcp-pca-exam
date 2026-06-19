@@ -1,6 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import { getAllModules } from "@/lib/content";
+import { getAllModules, getQuestion } from "@/lib/content";
 import { DOMAINS, DOMAIN_BY_ID } from "@/lib/content/domains";
 import { bootstrapAdminEmails, normalizeEmail } from "@/lib/access";
 import type { DomainId } from "@/lib/content/schema";
@@ -10,11 +10,27 @@ import type { DomainId } from "@/lib/content/schema";
 const PASS_PCT = 70;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+// Question-QA thresholds: only rank questions with enough attempts to be
+// meaningful, and flag a likely mis-key when almost everyone gets it wrong.
+const QA_MIN_ATTEMPTS = 3;
+const QA_TOP_N = 10;
+const MISKEY_RATE_PCT = 20;
+const MISKEY_MIN_ATTEMPTS = 5;
+
 export interface DomainQuizStat {
   domainId: DomainId;
   shortTitle: string;
   avgScore: number | null;
   attempts: number;
+}
+
+export interface HardQuestionStat {
+  questionId: string;
+  prompt: string;
+  shortTitle: string; // domain short title
+  attempts: number;
+  correctPct: number;
+  suspectMiskey: boolean; // very low correct rate with enough attempts
 }
 
 export interface AdminStats {
@@ -50,6 +66,50 @@ export interface AdminStats {
   avgExamScore: number | null;
   examPassed: number;
   examPassRate: number | null; // % of submitted runs scoring ≥ PASS_PCT
+
+  // Content QA: questions answered correctly least often (possible mis-keys).
+  hardestQuestions: HardQuestionStat[];
+}
+
+/**
+ * Hardest questions across every answer context: group by question + correctness,
+ * fold into attempts/correct, keep those with enough attempts, and rank by lowest
+ * correct rate. Joins content for the prompt/domain; stale ids are dropped.
+ */
+async function getHardestQuestions(): Promise<HardQuestionStat[]> {
+  const groups = await prisma.answer.groupBy({
+    by: ["questionId", "correct"],
+    _count: { _all: true },
+  });
+
+  const tally = new Map<string, { attempts: number; correct: number }>();
+  for (const g of groups) {
+    const t = tally.get(g.questionId) ?? { attempts: 0, correct: 0 };
+    t.attempts += g._count._all;
+    if (g.correct) t.correct += g._count._all;
+    tally.set(g.questionId, t);
+  }
+
+  const rows: HardQuestionStat[] = [];
+  for (const [questionId, { attempts, correct }] of tally) {
+    if (attempts < QA_MIN_ATTEMPTS) continue;
+    const q = getQuestion(questionId);
+    if (!q) continue;
+    const correctPct = Math.round((correct / attempts) * 100);
+    rows.push({
+      questionId,
+      prompt: q.prompt,
+      shortTitle: DOMAIN_BY_ID[q.domainId]?.shortTitle ?? q.domainId,
+      attempts,
+      correctPct,
+      suspectMiskey:
+        correctPct < MISKEY_RATE_PCT && attempts >= MISKEY_MIN_ATTEMPTS,
+    });
+  }
+
+  return rows
+    .sort((a, b) => a.correctPct - b.correctPct || b.attempts - a.attempts)
+    .slice(0, QA_TOP_N);
 }
 
 /**
@@ -106,6 +166,7 @@ export async function getAdminStats(): Promise<AdminStats> {
     examScoreAgg,
     examPassed,
     usersWithProgressRows,
+    hardestQuestions,
   ] = await Promise.all([
     prisma.user.count(),
     prisma.user.count({ where: { examUnlocked: true } }),
@@ -132,6 +193,7 @@ export async function getAdminStats(): Promise<AdminStats> {
     }),
     prisma.examRun.count({ where: { status: "submitted", scorePct: { gte: PASS_PCT } } }),
     prisma.moduleProgress.groupBy({ by: ["userId"] }).then((rows) => rows.length),
+    getHardestQuestions(),
   ]);
 
   // Allowed = allowlist emails ∪ bootstrap admins (who can sign in at all).
@@ -207,5 +269,7 @@ export async function getAdminStats(): Promise<AdminStats> {
     examPassed,
     examPassRate:
       examRunsSubmitted > 0 ? Math.round((examPassed / examRunsSubmitted) * 100) : null,
+
+    hardestQuestions,
   };
 }
