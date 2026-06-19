@@ -1,9 +1,11 @@
-import { GraduationCap, ShieldCheck } from "lucide-react";
+import { BarChart3, GraduationCap, ShieldCheck } from "lucide-react";
 import { bootstrapAdminEmails, normalizeEmail } from "@/lib/access";
+import { getAdminStats } from "@/lib/admin-stats";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/session";
 import { Badge, Card, CardBody, CardHeader } from "@/components/ui";
 import { AdminUsersTable } from "./AdminUsersTable";
+import { AnalyticsDashboard } from "./AnalyticsDashboard";
 import { ExamAccessTable } from "./ExamAccessTable";
 
 export const dynamic = "force-dynamic";
@@ -11,13 +13,14 @@ export const dynamic = "force-dynamic";
 export default async function AdminPage() {
   const me = await requireAdmin();
 
-  const [rows, bootstrap, users] = await Promise.all([
+  const [rows, bootstrap, users, stats] = await Promise.all([
     prisma.allowedUser.findMany({ orderBy: { createdAt: "asc" } }),
     Promise.resolve(bootstrapAdminEmails()),
     prisma.user.findMany({
       orderBy: { createdAt: "asc" },
       select: { id: true, name: true, email: true, examUnlocked: true },
     }),
+    getAdminStats(),
   ]);
 
   const tableRows = rows.map((r) => ({
@@ -50,9 +53,40 @@ export default async function AdminPage() {
     };
   });
 
+  const sections = [
+    { href: "#analytics", label: "Analytics", icon: BarChart3 },
+    { href: "#users", label: "Users", icon: ShieldCheck },
+    { href: "#exam-access", label: "Exam access", icon: GraduationCap },
+  ];
+
   return (
     <div className="flex flex-col gap-6">
-      <Card>
+      <nav
+        aria-label="Admin sections"
+        className="sticky top-14 z-20 -mx-4 border-b border-line bg-surface/80 px-4 py-2 backdrop-blur"
+      >
+        <div className="flex items-center gap-1 overflow-x-auto">
+          <span className="mr-1 shrink-0 text-xs font-medium uppercase tracking-wide text-muted">
+            Jump to
+          </span>
+          {sections.map((s) => (
+            <a
+              key={s.href}
+              href={s.href}
+              className="flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-muted transition-colors hover:bg-surface-2 hover:text-foreground"
+            >
+              <s.icon size={16} />
+              {s.label}
+            </a>
+          ))}
+        </div>
+      </nav>
+
+      <section id="analytics" className="scroll-mt-28">
+        <AnalyticsDashboard stats={stats} />
+      </section>
+
+      <Card id="users" className="scroll-mt-28">
         <CardHeader
           title="Admin · Users"
           subtitle="Only listed users (plus ADMIN_EMAILS) can sign in to the service."
@@ -76,8 +110,8 @@ export default async function AdminPage() {
                 <code className="rounded bg-surface-2 px-1 py-0.5 text-xs">
                   ADMIN_EMAILS
                 </code>{" "}
-                environment variable. Always allowed, always admin, and can't be
-                edited here.
+                environment variable. Always allowed, always admin, and can&apos;t
+                be edited here.
               </p>
               <ul className="divide-y divide-line rounded-lg border border-line">
                 {bootstrap.map((email) => (
@@ -100,7 +134,7 @@ export default async function AdminPage() {
         </CardBody>
       </Card>
 
-      <Card>
+      <Card id="exam-access" className="scroll-mt-28">
         <CardHeader
           title="Final exam access"
           subtitle="Force-unlock the final exam for a user, regardless of their progress."
