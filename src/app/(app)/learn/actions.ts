@@ -16,15 +16,20 @@ export async function markProgress(
 ): Promise<void> {
   const user = await requireUser();
 
+  // Reject unknown module ids: only real, content-backed modules may get a
+  // progress row. Otherwise a caller could inject junk rows that skew the
+  // exam-unlock math and admin analytics (which count rows by status).
+  const m = getModule(moduleId);
+  if (!m) return;
+
   await prisma.moduleProgress.upsert({
     where: { userId_moduleId: { userId: user.id, moduleId } },
     update: { status },
     create: { userId: user.id, moduleId, status },
   });
 
-  const m = getModule(moduleId);
   revalidatePath("/learn");
-  if (m) revalidatePath(`/learn/${m.domainId}`);
+  revalidatePath(`/learn/${m.domainId}`);
   revalidatePath("/dashboard");
 }
 

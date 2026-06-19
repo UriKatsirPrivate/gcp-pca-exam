@@ -28,6 +28,27 @@ export interface FeedbackResult {
 const RECENT_ANSWER_LIMIT = 200;
 const LLM_MAX_TOKENS = 700;
 
+// Minimum gap between forced ("Refresh analysis") LLM regenerations per user.
+// A forced refresh inside this window is served from cache, so a user can't spin
+// the button to drive Vertex AI cost.
+const FORCE_REFRESH_MIN_MS = 60_000;
+
+// Per-instance cache of the last generated feedback, keyed by user. The key fact
+// is the latest answer timestamp: feedback only changes when the user answers
+// something new, so an unchanged timestamp means the cached result is still valid
+// and we can skip the (expensive) LLM call entirely. Lives on globalThis so it
+// survives HMR / module re-eval, exactly like the Prisma client.
+type FeedbackCacheEntry = {
+  latestAnswerAt: number;
+  generatedAtMs: number;
+  result: FeedbackResult;
+};
+const globalForFeedback = globalThis as unknown as {
+  feedbackCache?: Map<string, FeedbackCacheEntry>;
+};
+const feedbackCache: Map<string, FeedbackCacheEntry> = (globalForFeedback.feedbackCache ??=
+  new Map());
+
 /** Stable ordering: patterns first, tips in the middle, strengths last. */
 const KIND_ORDER: Record<FeedbackKind, number> = {
   pattern: 0,
@@ -47,10 +68,11 @@ function sortInsights(items: FeedbackInsightItem[]): FeedbackInsightItem[] {
  */
 export async function generateFeedback(
   userId: string,
-  _opts?: { force?: boolean },
+  opts?: { force?: boolean },
 ): Promise<FeedbackResult> {
-  void _opts; // rules are deterministic + LLM always re-runs, so force is a no-op
-  const generatedAt = new Date().toISOString();
+  const force = opts?.force ?? false;
+  const now = Date.now();
+  const generatedAt = new Date(now).toISOString();
 
   const answers = await prisma.answer.findMany({
     where: { userId },
@@ -71,6 +93,17 @@ export async function generateFeedback(
       ],
       generatedAt,
     };
+  }
+
+  // ---- Cache check -------------------------------------------------------
+  // Serve the cached result when the user hasn't answered anything new. A forced
+  // refresh bypasses this only once the per-user rate-limit window has elapsed.
+  const latestAnswerAt = answers[0].createdAt.getTime();
+  const cached = feedbackCache.get(userId);
+  if (cached && cached.latestAnswerAt === latestAnswerAt) {
+    if (!force || now - cached.generatedAtMs < FORCE_REFRESH_MIN_MS) {
+      return cached.result;
+    }
   }
 
   const answerLikes: AnswerLike[] = answers.map((a) => ({
@@ -115,11 +148,14 @@ export async function generateFeedback(
   }
 
   const combined = sortInsights([...ruleItems, ...llmItems]);
+  const result: FeedbackResult = { insights: combined, generatedAt };
 
-  // ---- Persistence (best-effort) ----------------------------------------
+  // Cache for this instance and persist a history row — both only happen here, on
+  // an actual (re)generation, so neither grows on cache hits or every page load.
+  feedbackCache.set(userId, { latestAnswerAt, generatedAtMs: now, result });
   void persistInsights(userId, combined);
 
-  return { insights: combined, generatedAt };
+  return result;
 }
 
 function buildLLMPrompt(answers: AnswerLike[], weak: string[]): string {

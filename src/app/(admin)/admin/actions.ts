@@ -47,7 +47,16 @@ export async function setAllowedRole(
   id: string,
   role: "user" | "admin",
 ): Promise<ActionResult> {
-  await requireAdmin();
+  const me = await requireAdmin();
+
+  const row = await prisma.allowedUser.findUnique({ where: { id } });
+  if (!row) return { ok: false, error: "That user no longer exists." };
+
+  // Guard against an admin demoting their own allowlist row mid-session (the
+  // same footgun removeAllowedUser protects against).
+  if (me.email && normalizeEmail(row.email) === normalizeEmail(me.email)) {
+    return { ok: false, error: "You can't change your own role." };
+  }
 
   await prisma.allowedUser.update({
     where: { id },
