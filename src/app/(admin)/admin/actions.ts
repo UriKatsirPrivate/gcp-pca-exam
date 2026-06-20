@@ -68,8 +68,12 @@ export async function setAllowedRole(
 }
 
 /**
- * Remove an allowlist entry. Guarded so an admin can't lock themselves out of
- * the console by deleting their own row mid-session.
+ * Remove a user entirely. Deletes the allowlist entry AND the User row (by
+ * email), so all of their progress — assessments, answers, study plans, module
+ * progress, quiz attempts, exam runs, feedback, accounts, sessions — is wiped
+ * via the onDelete: Cascade relations. Re-adding the email later yields a fresh
+ * User on next sign-in, starting from scratch. Guarded so an admin can't lock
+ * themselves out of the console by deleting their own row mid-session.
  */
 export async function removeAllowedUser(id: string): Promise<ActionResult> {
   const me = await requireAdmin();
@@ -81,7 +85,13 @@ export async function removeAllowedUser(id: string): Promise<ActionResult> {
     return { ok: false, error: "You can't remove yourself." };
   }
 
-  await prisma.allowedUser.delete({ where: { id } });
+  const email = normalizeEmail(row.email);
+  await prisma.$transaction([
+    prisma.allowedUser.delete({ where: { id } }),
+    // deleteMany (not delete) so this is a no-op if the user never signed in;
+    // the cascade fans out to every per-user table.
+    prisma.user.deleteMany({ where: { email } }),
+  ]);
 
   revalidatePath("/admin");
   return { ok: true };
