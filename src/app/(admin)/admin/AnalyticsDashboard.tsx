@@ -2,6 +2,7 @@ import {
   Activity,
   AlertTriangle,
   BarChart3,
+  Globe,
   GraduationCap,
   Layers,
 } from "lucide-react";
@@ -43,7 +44,13 @@ export function AnalyticsDashboard({ stats }: { stats: AdminStats }) {
     examPassed,
     examPassRate,
     hardestQuestions,
+    geoByCountry,
+    usersWithGeo,
+    usersUnknownGeo,
+    countriesCount,
   } = stats;
+
+  const geoTotal = usersWithGeo + usersUnknownGeo;
 
   const moduleCells = modulesDoneCount + modulesInProgressCount + modulesNotStartedCount;
   const seg = (n: number) => (moduleCells > 0 ? (n / moduleCells) * 100 : 0);
@@ -95,6 +102,56 @@ export function AnalyticsDashboard({ stats }: { stats: AdminStats }) {
               hint={`${examPassed} of ${examRunsSubmitted} ≥ 70%`}
             />
           </div>
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardHeader
+          title="Users by country"
+          subtitle={
+            countriesCount > 0
+              ? `${usersWithGeo} of ${geoTotal} located across ${countriesCount} ${
+                  countriesCount === 1 ? "country" : "countries"
+                }`
+              : "Browser-reported, cumulative — no individual data."
+          }
+          icon={<Globe className="h-5 w-5" />}
+        />
+        <CardBody className="flex flex-col gap-3">
+          {geoByCountry.length === 0 ? (
+            <p className="text-sm text-muted">
+              No location data yet — it&apos;s captured as users sign in and open
+              the app.
+            </p>
+          ) : (
+            <>
+              {geoByCountry.map((c) => {
+                const width = geoTotal > 0 ? (c.users / geoTotal) * 100 : 0;
+                return (
+                  <div key={c.country} className="flex flex-col gap-1.5">
+                    <div className="flex items-baseline justify-between text-sm">
+                      <span className="font-medium">
+                        <span className="mr-1.5">{c.flag}</span>
+                        {c.countryName}
+                      </span>
+                      <span className="text-muted tabular-nums">
+                        {c.users} {c.users === 1 ? "user" : "users"}
+                      </span>
+                    </div>
+                    <ProgressBar value={width} tone="brand" />
+                  </div>
+                );
+              })}
+              {usersUnknownGeo > 0 ? (
+                <div className="mt-1 flex items-center justify-between border-t border-line pt-3 text-sm">
+                  <span className="text-muted">Unknown</span>
+                  <span className="font-medium tabular-nums">
+                    {usersUnknownGeo} {usersUnknownGeo === 1 ? "user" : "users"}
+                  </span>
+                </div>
+              ) : null}
+            </>
+          )}
         </CardBody>
       </Card>
 

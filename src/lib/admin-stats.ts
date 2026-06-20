@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getAllModules, getQuestion } from "@/lib/content";
 import { DOMAINS, DOMAIN_BY_ID } from "@/lib/content/domains";
 import { bootstrapAdminEmails, normalizeEmail } from "@/lib/access";
+import { countryName, flagEmoji } from "@/lib/geo";
 import type { DomainId } from "@/lib/content/schema";
 
 // The score at or above which an attempt counts as a "pass" — mirrors the
@@ -33,6 +34,13 @@ export interface HardQuestionStat {
   suspectMiskey: boolean; // very low correct rate with enough attempts
 }
 
+export interface GeoCountryStat {
+  country: string; // ISO-3166 alpha-2
+  countryName: string;
+  flag: string; // emoji
+  users: number;
+}
+
 export interface AdminStats {
   // Users
   signedInUsers: number; // have a User row (signed in at least once)
@@ -40,6 +48,12 @@ export interface AdminStats {
   activeUsers7d: number;
   activeUsers30d: number;
   examUnlockedOverrides: number; // User.examUnlocked === true
+
+  // Geo (browser-reported, cumulative by country)
+  geoByCountry: GeoCountryStat[]; // users with a known country, desc by count
+  usersWithGeo: number;
+  usersUnknownGeo: number; // signed-in users not yet geolocated
+  countriesCount: number;
 
   // Module progress (cumulative across all signed-in users)
   totalModules: number;
@@ -167,6 +181,7 @@ export async function getAdminStats(): Promise<AdminStats> {
     examPassed,
     usersWithProgressRows,
     hardestQuestions,
+    geoGroups,
   ] = await Promise.all([
     prisma.user.count(),
     prisma.user.count({ where: { examUnlocked: true } }),
@@ -194,6 +209,11 @@ export async function getAdminStats(): Promise<AdminStats> {
     prisma.examRun.count({ where: { status: "submitted", scorePct: { gte: PASS_PCT } } }),
     prisma.moduleProgress.groupBy({ by: ["userId"] }).then((rows) => rows.length),
     getHardestQuestions(),
+    prisma.user.groupBy({
+      by: ["country"],
+      where: { country: { not: null } },
+      _count: { _all: true },
+    }),
   ]);
 
   // Allowed = allowlist emails ∪ bootstrap admins (who can sign in at all).
@@ -240,12 +260,32 @@ export async function getAdminStats(): Promise<AdminStats> {
   const round = (n: number | null | undefined) =>
     n == null ? null : Math.round(n);
 
+  // Geo: each row's country is non-null (filtered in the query). Map to display
+  // name + flag and rank by headcount.
+  const geoByCountry: GeoCountryStat[] = geoGroups
+    .map((g) => {
+      const iso = (g.country ?? "").toUpperCase();
+      return {
+        country: iso,
+        countryName: countryName(iso),
+        flag: flagEmoji(iso),
+        users: g._count._all,
+      };
+    })
+    .sort((a, b) => b.users - a.users || a.countryName.localeCompare(b.countryName));
+  const usersWithGeo = geoByCountry.reduce((s, g) => s + g.users, 0);
+
   return {
     signedInUsers,
     allowedUsers: allowedEmails.size,
     activeUsers7d: active.d7,
     activeUsers30d: active.d30,
     examUnlockedOverrides,
+
+    geoByCountry,
+    usersWithGeo,
+    usersUnknownGeo: Math.max(0, signedInUsers - usersWithGeo),
+    countriesCount: geoByCountry.length,
 
     totalModules,
     avgModuleCompletionPct,

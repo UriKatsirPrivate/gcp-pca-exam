@@ -26,6 +26,8 @@ model User {
   passwordHash  String? // set for Credentials sign-in
   role          String    @default("user")
   examUnlocked  Boolean   @default(false) // admin override: force-unlock the final exam
+  country       String? // ISO-3166 alpha-2, derived from the browser (geo stats)
+  timezone      String? // IANA tz, e.g. "Asia/Jerusalem" — source for country
   createdAt     DateTime  @default(now())
 
   accounts        Account[]
