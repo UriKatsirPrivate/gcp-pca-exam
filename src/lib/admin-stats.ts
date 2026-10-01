@@ -44,7 +44,6 @@ export interface GeoCountryStat {
 export interface AdminStats {
   // Users
   signedInUsers: number; // have a User row (signed in at least once)
-  allowedUsers: number; // allowlist ∪ bootstrap admins (can sign in)
   activeUsers7d: number;
   activeUsers30d: number;
   examUnlockedOverrides: number; // User.examUnlocked === true
@@ -169,7 +168,6 @@ export async function getAdminStats(): Promise<AdminStats> {
   const [
     signedInUsers,
     examUnlockedOverrides,
-    allowedRows,
     active,
     moduleStatusGroups,
     doneByUser,
@@ -185,7 +183,6 @@ export async function getAdminStats(): Promise<AdminStats> {
   ] = await Promise.all([
     prisma.user.count(),
     prisma.user.count({ where: { examUnlocked: true } }),
-    prisma.allowedUser.findMany({ select: { email: true } }),
     activeUserCounts(now),
     prisma.moduleProgress.groupBy({ by: ["status"], _count: { _all: true } }),
     prisma.moduleProgress.groupBy({
@@ -215,11 +212,6 @@ export async function getAdminStats(): Promise<AdminStats> {
       _count: { _all: true },
     }),
   ]);
-
-  // Allowed = allowlist emails ∪ bootstrap admins (who can sign in at all).
-  const allowedEmails = new Set<string>(allowedRows.map((r) => normalizeEmail(r.email)));
-  for (const e of bootstrapAdminEmails()) allowedEmails.add(normalizeEmail(e));
-  allowedEmails.delete("");
 
   // Module status tallies.
   const statusCount = (s: string) =>
@@ -277,7 +269,6 @@ export async function getAdminStats(): Promise<AdminStats> {
 
   return {
     signedInUsers,
-    allowedUsers: allowedEmails.size,
     activeUsers7d: active.d7,
     activeUsers30d: active.d30,
     examUnlockedOverrides,

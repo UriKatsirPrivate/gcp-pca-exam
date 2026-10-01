@@ -1,5 +1,10 @@
 import { BarChart3, GraduationCap, ShieldCheck } from "lucide-react";
-import { bootstrapAdminEmails, normalizeEmail } from "@/lib/access";
+import {
+  allowedEmailDomains,
+  bootstrapAdminEmails,
+  isAllowedEmailDomain,
+  normalizeEmail,
+} from "@/lib/access";
 import { getAdminStats } from "@/lib/admin-stats";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/session";
@@ -14,7 +19,7 @@ export default async function AdminPage() {
   const me = await requireAdmin();
 
   const [rows, bootstrap, users, stats] = await Promise.all([
-    prisma.allowedUser.findMany({ orderBy: { createdAt: "asc" } }),
+    prisma.allowedUser.findMany({ where: { role: "admin" }, orderBy: { createdAt: "asc" } }),
     Promise.resolve(bootstrapAdminEmails()),
     prisma.user.findMany({
       orderBy: { createdAt: "asc" },
@@ -26,23 +31,23 @@ export default async function AdminPage() {
   const tableRows = rows.map((r) => ({
     id: r.id,
     email: r.email,
-    role: r.role === "admin" ? "admin" : "user",
     addedBy: r.addedBy,
     createdAt: r.createdAt.toISOString(),
   }));
 
-  // Exam access is driven by who CAN sign in (bootstrap admins + allowlist),
-  // not by who happens to have a User row yet. Join each allowed email with its
-  // User record (if any) for name + current override state.
+  // Exam access is listed for everyone who can sign in: users who have already
+  // signed in (and still match the domain rule) plus admins who haven't yet.
+  // Anyone else can be pre-unlocked by email from the form below the list.
   const userByEmail = new Map(
     users.map((u) => [normalizeEmail(u.email), u]),
   );
   const allowedEmails = [
     ...new Set([
+      ...users.map((u) => normalizeEmail(u.email)),
       ...bootstrap.map((e) => normalizeEmail(e)),
       ...rows.map((r) => normalizeEmail(r.email)),
     ]),
-  ].filter(Boolean);
+  ].filter((e) => e && isAllowedEmailDomain(e));
   const examUsers = allowedEmails.map((email) => {
     const u = userByEmail.get(email);
     return {
@@ -53,9 +58,10 @@ export default async function AdminPage() {
     };
   });
 
+  const domains = allowedEmailDomains().map((d) => `@${d}`).join(", ");
   const sections = [
     { href: "#analytics", label: "Analytics", icon: BarChart3 },
-    { href: "#users", label: "Users", icon: ShieldCheck },
+    { href: "#users", label: "Admins", icon: ShieldCheck },
     { href: "#exam-access", label: "Exam access", icon: GraduationCap },
   ];
 
@@ -88,18 +94,16 @@ export default async function AdminPage() {
 
       <Card id="users" className="scroll-mt-28">
         <CardHeader
-          title="Admin · Users"
-          subtitle="Only listed users (plus ADMIN_EMAILS) can sign in to the service."
+          title="Admin · Access & admins"
+          subtitle={`Anyone with a ${domains} Google account can sign in; this list grants the admin role.`}
           icon={<ShieldCheck className="h-5 w-5" />}
         />
         <CardBody className="flex flex-col gap-6">
           <p className="text-sm text-muted">
-            Add the email of the Google account you want to allow. They sign in
-            with Google; only allowlisted emails (plus{" "}
-            <code className="rounded bg-surface-2 px-1 py-0.5 text-xs">
-              ADMIN_EMAILS
-            </code>
-            ) can use the service.
+            There is no allowlist: any verified Google account on{" "}
+            <span className="font-medium text-foreground">{domains}</span> can
+            sign in as a regular user. Add an email below to make that person an
+            admin (they must be on an allowed domain).
           </p>
 
           {bootstrap.length > 0 ? (
@@ -110,8 +114,8 @@ export default async function AdminPage() {
                 <code className="rounded bg-surface-2 px-1 py-0.5 text-xs">
                   ADMIN_EMAILS
                 </code>{" "}
-                environment variable. Always allowed, always admin, and can&apos;t
-                be edited here.
+                environment variable. Always admin, and can&apos;t be edited here.
+                They still need an allowed-domain account to sign in.
               </p>
               <ul className="divide-y divide-line rounded-lg border border-line">
                 {bootstrap.map((email) => (

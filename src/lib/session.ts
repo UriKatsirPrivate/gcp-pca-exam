@@ -17,8 +17,9 @@ export type SessionUser = {
 
 /**
  * For server components / actions in protected routes. Redirects signed-out
- * users to /login, and re-checks the allowlist on every request so a user an
- * admin just removed (or whose role changed) is reflected on the next page load.
+ * users to /login, and re-checks the email-domain rule and role on every request
+ * so a role change (or a changed ALLOWED_EMAIL_DOMAINS) is reflected on the next
+ * page load.
  */
 export async function requireUser(): Promise<SessionUser> {
   const user = await getCurrentUser();

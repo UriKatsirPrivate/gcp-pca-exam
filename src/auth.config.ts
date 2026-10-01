@@ -61,7 +61,7 @@ export const authConfig = {
       const isPublic = PUBLIC_PATHS.has(pathname);
 
       // Send logged-in users from /login to the app — UNLESS there's an error
-      // (e.g. ?error=AccessDenied for an authenticated-but-not-allowlisted user).
+      // (e.g. ?error=AccessDenied for an authenticated user outside the allowed email domain).
       // Without this guard, requireUser() bouncing such a user to /login and this
       // rule bouncing them back to /dashboard would loop forever.
       if (

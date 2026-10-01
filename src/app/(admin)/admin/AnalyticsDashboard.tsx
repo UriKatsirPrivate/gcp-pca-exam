@@ -21,7 +21,6 @@ function tone(score: number | null): "brand" | "success" | "warning" | "danger" 
 export function AnalyticsDashboard({ stats }: { stats: AdminStats }) {
   const {
     signedInUsers,
-    allowedUsers,
     activeUsers7d,
     activeUsers30d,
     examUnlockedOverrides,
@@ -73,7 +72,7 @@ export function AnalyticsDashboard({ stats }: { stats: AdminStats }) {
             <Stat
               label="Signed-in users"
               value={signedInUsers}
-              hint={`of ${allowedUsers} allowed to sign in`}
+              hint="Google accounts on allowed domains"
             />
             <Stat
               label="Avg. module completion"

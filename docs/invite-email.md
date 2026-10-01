@@ -13,7 +13,7 @@ I put together a little web app for prepping the **Google Cloud Professional Clo
 Quick rundown of what's in it:
 
 - **30 lessons** across the six exam domains, each with a short video
-- **146 exam-style practice questions** with explanations — plus **"Learn more" links** to the official GCP docs on every answer
+- **400 exam-style practice questions** with a rationale for every answer option — plus **"Learn more" links** to the official GCP docs on every answer
 - **Per-domain quizzes** so you can drill one topic at a time
 - A **practice mode** that automatically drills your **weakest concepts and the questions you've missed**
 - A **diagnostic** to see where you're starting from — with a full **question-by-question review** afterward
@@ -24,13 +24,9 @@ Quick rundown of what's in it:
 
 **👉 Start with the diagnostic exam.** It only takes a few minutes, and it's the key to everything else — **your study plan is built automatically from your diagnostic results**, so it points you straight at your weak spots instead of having you grind through stuff you already know.
 
-**One thing before you can log in:** it's Google sign-in only and on an allowlist, so I have to add you manually first. **Fill out this quick form with the Google email you'll use** and I'll get you registered — then you're good to go.
+**Logging in:** it's Google sign-in with your **@google.com account** — that's the only requirement, there's nothing to sign up for or wait on.
 
-Form: [Sign-up form](https://forms.gle/gDmJD96nVgGgx4Lt9)
-
-Heads-up: you won't get a notification once you're added — just give it about **24 hours** and try logging in.
-
-Link (won't work until I add you): https://pca-app-hrqoscmbca-zf.a.run.app
+Link: https://pca-app-hrqoscmbca-zf.a.run.app
 
 Give it a spin and let me know what you think — feedback and feature ideas welcome.
 

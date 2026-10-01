@@ -11,12 +11,12 @@ export default async function LoginPage({
     <div>
       <h1 className="mb-1 text-xl font-semibold">Sign in</h1>
       <p className="mb-6 text-sm text-muted">
-        Continue with your Google account to start your prep.
+        Continue with your @google.com account to start your prep.
       </p>
       {error ? (
         <div className="mb-4 rounded-lg border border-danger/40 bg-danger/10 p-3 text-sm text-danger">
           {error === "AccessDenied"
-            ? "This account isn't authorized yet. Ask an admin to add your email, then try again."
+            ? "Only @google.com accounts can sign in. Choose your Google work account and try again."
             : "Sign-in failed. Please try again."}
         </div>
       ) : null}

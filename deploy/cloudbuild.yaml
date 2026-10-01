@@ -34,7 +34,8 @@ substitutions:
   _AUTH_SECRET_SECRET: auth-secret:latest
   # Vertex AI (Claude) project for ADC-based LLM calls at runtime.
   _ANTHROPIC_VERTEX_PROJECT_ID: PROJECT_ID
-  # Bootstrap admin emails (comma-separated): always allowed and granted admin.
+  # Bootstrap admin emails (space-separated): granted the admin role. They must still
+  # be on an allowed email domain (ALLOWED_EMAIL_DOMAINS, default google.com) to sign in.
   _ADMIN_EMAILS: ""
   # Cloud Run container resources.
   _CPU: "2"

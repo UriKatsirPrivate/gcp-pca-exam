@@ -80,9 +80,11 @@ model VerificationToken {
 // App models
 // ---------------------------------------------------------------------------
 
-// Allowlist of emails permitted to sign in, with their role. Email-keyed (not a
-// User FK) so an admin can pre-authorize someone who has never signed in. The
-// ADMIN_EMAILS env var is an always-on superset (bootstrap admins).
+// Admin grants (role "admin"). Sign-in itself is gated by email domain (see
+// src/lib/email-domain.ts), not by this table; legacy rows with role "user" are
+// ignored. Email-keyed (not a User FK) so an admin can be granted before their
+// first sign-in. The ADMIN_EMAILS env var is an always-on superset (bootstrap
+// admins).
 model AllowedUser {
   id        String   @id @default(cuid())
   email     String   @unique // stored lowercased

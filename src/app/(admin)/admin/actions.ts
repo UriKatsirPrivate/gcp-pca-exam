@@ -1,66 +1,47 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { normalizeEmail, type Role } from "@/lib/access";
+import { allowedEmailDomains, isAllowedEmailDomain, normalizeEmail } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/session";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
-// Conservative email shape check — the real gate is Google sign-in, this just
-// catches typos before we persist an allowlist entry no one can ever match.
+// Conservative email shape check — the real gate is Google sign-in plus the
+// email-domain rule, this just catches typos before we persist a grant no one
+// can ever match.
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-function coerceRole(role: string): Role {
-  return role === "admin" ? "admin" : "user";
-}
-
-/**
- * Allow an email to sign in (or update its role). Upsert keyed on the unique,
- * lowercased email so re-adding an existing entry just changes its role.
- */
-export async function addAllowedUser(
-  email: string,
-  role: "user" | "admin",
-): Promise<ActionResult> {
-  const me = await requireAdmin();
-
+function validateEmail(email: string): { ok: true; email: string } | { ok: false; error: string } {
   const normalized = normalizeEmail(email);
   if (!normalized) return { ok: false, error: "Email is required." };
   if (!EMAIL_RE.test(normalized)) {
     return { ok: false, error: "That doesn't look like a valid email." };
   }
-
-  const nextRole = coerceRole(role);
-
-  await prisma.allowedUser.upsert({
-    where: { email: normalized },
-    update: { role: nextRole },
-    create: { email: normalized, role: nextRole, addedBy: me.email ?? null },
-  });
-
-  revalidatePath("/admin");
-  return { ok: true };
+  if (!isAllowedEmailDomain(normalized)) {
+    return {
+      ok: false,
+      error: `Only ${allowedEmailDomains().map((d) => `@${d}`).join(", ")} accounts can sign in.`,
+    };
+  }
+  return { ok: true, email: normalized };
 }
 
-export async function setAllowedRole(
-  id: string,
-  role: "user" | "admin",
-): Promise<ActionResult> {
+/**
+ * Grant the admin role to an email (upsert keyed on the unique, lowercased
+ * email). Access itself is the email-domain rule, so the email must be on an
+ * allowed domain. Works before the person's first sign-in.
+ */
+export async function addAdmin(email: string): Promise<ActionResult> {
   const me = await requireAdmin();
 
-  const row = await prisma.allowedUser.findUnique({ where: { id } });
-  if (!row) return { ok: false, error: "That user no longer exists." };
+  const v = validateEmail(email);
+  if (!v.ok) return v;
 
-  // Guard against an admin demoting their own allowlist row mid-session (the
-  // same footgun removeAllowedUser protects against).
-  if (me.email && normalizeEmail(row.email) === normalizeEmail(me.email)) {
-    return { ok: false, error: "You can't change your own role." };
-  }
-
-  await prisma.allowedUser.update({
-    where: { id },
-    data: { role: coerceRole(role) },
+  await prisma.allowedUser.upsert({
+    where: { email: v.email },
+    update: { role: "admin" },
+    create: { email: v.email, role: "admin", addedBy: me.email ?? null },
   });
 
   revalidatePath("/admin");
@@ -68,30 +49,21 @@ export async function setAllowedRole(
 }
 
 /**
- * Remove a user entirely. Deletes the allowlist entry AND the User row (by
- * email), so all of their progress — assessments, answers, study plans, module
- * progress, quiz attempts, exam runs, feedback, accounts, sessions — is wiped
- * via the onDelete: Cascade relations. Re-adding the email later yields a fresh
- * User on next sign-in, starting from scratch. Guarded so an admin can't lock
- * themselves out of the console by deleting their own row mid-session.
+ * Revoke a grant. Only removes the AllowedUser row (and so the admin role); the
+ * person keeps their account and progress and can still sign in as a regular
+ * user. Guarded so an admin can't revoke themselves mid-session.
  */
-export async function removeAllowedUser(id: string): Promise<ActionResult> {
+export async function removeAdmin(id: string): Promise<ActionResult> {
   const me = await requireAdmin();
 
   const row = await prisma.allowedUser.findUnique({ where: { id } });
-  if (!row) return { ok: false, error: "That user no longer exists." };
+  if (!row) return { ok: false, error: "That admin no longer exists." };
 
   if (me.email && normalizeEmail(row.email) === normalizeEmail(me.email)) {
     return { ok: false, error: "You can't remove yourself." };
   }
 
-  const email = normalizeEmail(row.email);
-  await prisma.$transaction([
-    prisma.allowedUser.delete({ where: { id } }),
-    // deleteMany (not delete) so this is a no-op if the user never signed in;
-    // the cascade fans out to every per-user table.
-    prisma.user.deleteMany({ where: { email } }),
-  ]);
+  await prisma.allowedUser.delete({ where: { id } });
 
   revalidatePath("/admin");
   return { ok: true };
@@ -110,13 +82,13 @@ export async function setExamUnlocked(
 ): Promise<ActionResult> {
   await requireAdmin();
 
-  const normalized = normalizeEmail(email);
-  if (!normalized) return { ok: false, error: "Email is required." };
+  const v = validateEmail(email);
+  if (!v.ok) return v;
 
   await prisma.user.upsert({
-    where: { email: normalized },
+    where: { email: v.email },
     update: { examUnlocked: unlocked },
-    create: { email: normalized, examUnlocked: unlocked },
+    create: { email: v.email, examUnlocked: unlocked },
   });
 
   revalidatePath("/admin");
