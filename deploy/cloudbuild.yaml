@@ -36,7 +36,7 @@ substitutions:
   _ANTHROPIC_VERTEX_PROJECT_ID: PROJECT_ID
   # Bootstrap admin emails (space-separated): granted the admin role. They must still
   # be on an allowed email domain (ALLOWED_EMAIL_DOMAINS, default google.com) to sign in.
-  _ADMIN_EMAILS: ""
+  _ADMIN_EMAILS: "ukatsir@google.com"
   # Cloud Run container resources.
   _CPU: "2"
   _MEMORY: 1Gi
