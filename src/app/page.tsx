@@ -13,7 +13,7 @@ import { getCurrentUser } from "@/lib/session";
 import { DOMAINS } from "@/lib/content/domains";
 
 const FEATURES = [
-  { icon: ClipboardCheck, title: "Diagnostic assessment", body: "An 18-question diagnostic across all six domains scores your proficiency per domain." },
+  { icon: ClipboardCheck, title: "Diagnostic assessment", body: "A blueprint-weighted 30-question diagnostic across all six domains shows where to start." },
   { icon: CalendarRange, title: "Tailored study plan", body: "A time-bound plan that front-loads your weakest, highest-weight domains." },
   { icon: BookOpen, title: "Visual modules", body: "Concise modules with Mermaid architecture diagrams for every domain." },
   { icon: Brain, title: "Intelligent feedback", body: "Claude analyzes your mistakes to spot patterns and give targeted tips." },
@@ -85,6 +85,10 @@ export default async function HomePage() {
           ))}
         </div>
       </section>
+
+      <footer className="mt-10 border-t border-line pt-6 text-center text-xs text-muted">
+        Independent study material. Not affiliated with or endorsed by Google.
+      </footer>
     </main>
   );
 }

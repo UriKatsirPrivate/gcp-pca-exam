@@ -17,7 +17,7 @@ export interface StudyPlanMilestone {
  * Build an ordered list of study milestones (one per domain) from per-domain
  * percentages. Weaker + higher-weight domains get a higher priority and are
  * scheduled earlier. Milestones are packed into weekly time budgets and stamped
- * with an ISO target date.
+ * with an ISO target date: the day the milestone should be finished by.
  */
 export function generateMilestones(
   perDomainPct: Record<DomainId, number>,
@@ -57,6 +57,11 @@ export function generateMilestones(
     }
 
     const weekStart = currentWeek;
+    // Minutes into the whole plan at which this milestone finishes; the week that
+    // contains that point is its completion week (a big domain can spill over
+    // several weeks, and never past the final one).
+    const endMinutes = (weekStart - 1) * weeklyBudget + usedThisWeek + s.estMinutes;
+    const endWeek = Math.min(weeks, Math.max(weekStart, Math.ceil(endMinutes / weeklyBudget)));
     usedThisWeek += s.estMinutes;
 
     // A single domain can exceed one week's budget; spill into following weeks.
@@ -65,8 +70,10 @@ export function generateMilestones(
       usedThisWeek -= weeklyBudget;
     }
 
+    // "by <date>" is a completion date: the last day of the milestone's final
+    // week (week 1 covers today through today + 6), not the day its first week starts.
     const target = new Date(now);
-    target.setDate(target.getDate() + (weekStart - 1) * 7);
+    target.setDate(target.getDate() + endWeek * 7 - 1);
     const targetDate = target.toISOString().slice(0, 10);
 
     return {

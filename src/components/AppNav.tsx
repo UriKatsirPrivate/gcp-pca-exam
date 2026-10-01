@@ -10,6 +10,7 @@ import {
   BookOpen,
   Dumbbell,
   Timer,
+  CalendarClock,
   Shield,
   LogOut,
 } from "lucide-react";
@@ -24,6 +25,7 @@ const LINKS = [
   { href: "/learn", label: "Learn", icon: BookOpen },
   { href: "/practice", label: "Practice", icon: Dumbbell },
   { href: "/exam", label: "Exam", icon: Timer },
+  { href: "/review", label: "Final Review", icon: CalendarClock },
 ];
 
 const adminLink = { href: "/admin", label: "Admin", icon: Shield };
@@ -46,22 +48,24 @@ export function AppNav({ name, role }: { name?: string | null; role?: string }) 
               <Link
                 key={l.href}
                 href={l.href}
+                title={l.label}
+                aria-label={l.label}
                 className={cn(
-                  "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
+                  "flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors",
                   active
                     ? "bg-brand-50 text-brand-700"
                     : "text-muted hover:bg-surface-2 hover:text-foreground",
                 )}
               >
                 <l.icon size={16} />
-                <span className="hidden md:inline">{l.label}</span>
+                <span className="hidden xl:inline">{l.label}</span>
               </Link>
             );
           })}
         </nav>
         <div className="flex items-center gap-3 pl-2">
           {name ? (
-            <span className="hidden text-sm text-muted sm:inline">{name}</span>
+            <span className="hidden text-sm text-muted 2xl:inline">{name}</span>
           ) : null}
           <ThemeToggle />
           <form action={signOutAction}>
