@@ -14,10 +14,16 @@ import {
   ProgressBar,
   Stat,
 } from "@/components/ui";
-import { DOMAINS, getDomain, getQuestion, toClientQuestion } from "@/lib/content";
+import { DOMAINS, getDomain, getQuestion, toRevealQuestion } from "@/lib/content";
 import type { DomainId, Proficiency } from "@/lib/content/schema";
 import { prisma } from "@/lib/prisma";
-import { proficiencyFromPct, type DomainScore, type PerDomainScore } from "@/lib/scoring";
+import {
+  canReportProficiency,
+  proficiencyFromPct,
+  smallSampleNote,
+  type DomainScore,
+  type PerDomainScore,
+} from "@/lib/scoring";
 import { requireUser } from "@/lib/session";
 import { AnswerReview, type ReviewItem } from "@/components/AnswerReview";
 
@@ -101,7 +107,7 @@ export default async function ExamResultPage({
       if (!q) return null;
       const a = ansByQ.get(qid);
       return {
-        question: { ...toClientQuestion(q), correct: q.correct, explanation: q.explanation },
+        question: toRevealQuestion(q, { seed: id }),
         selected: a?.selected ?? [],
         isCorrect: a?.correct ?? false,
       };
@@ -223,9 +229,13 @@ export default async function ExamResultPage({
                     </div>
                     <h3 className="mt-0.5 font-semibold leading-tight">{domain.title}</h3>
                   </div>
-                  <Badge tone={PROFICIENCY_TONE[sc.proficiency]}>
-                    {proficiencyLabel(sc.proficiency)}
-                  </Badge>
+                  {canReportProficiency(sc.total) ? (
+                    <Badge tone={PROFICIENCY_TONE[sc.proficiency]}>
+                      {proficiencyLabel(sc.proficiency)}
+                    </Badge>
+                  ) : (
+                    <Badge tone="neutral">Too few items</Badge>
+                  )}
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted">
@@ -233,7 +243,13 @@ export default async function ExamResultPage({
                   </span>
                   <span className="font-semibold">{sc.pct}%</span>
                 </div>
-                <ProgressBar value={sc.pct} tone={PROGRESS_TONE[sc.proficiency]} />
+                <ProgressBar
+                  value={sc.pct}
+                  tone={canReportProficiency(sc.total) ? PROGRESS_TONE[sc.proficiency] : "neutral"}
+                />
+                {!canReportProficiency(sc.total) ? (
+                  <p className="text-xs text-muted">{smallSampleNote(sc.correct, sc.total)}</p>
+                ) : null}
               </CardBody>
             </Card>
           ))}

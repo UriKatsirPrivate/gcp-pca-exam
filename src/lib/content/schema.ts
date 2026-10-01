@@ -49,9 +49,24 @@ export type Proficiency = (typeof PROFICIENCY_LEVELS)[number];
 // Content schemas (authored JSON under /content)
 // ---------------------------------------------------------------------------
 
+// Per-choice rationale (why this option is right/wrong). Authored per choice
+// rather than as letter-prefixed prose inside `explanation` so that choices can
+// be shuffled at render without the rationale referring to the wrong letter.
 export const choiceSchema = z.object({
   id: z.string().min(1),
   text: z.string().min(1),
+  rationale: z.string().min(1).optional(),
+});
+
+// An evidence artifact shown with the stem: a log excerpt, config/IaC snippet,
+// code block, metrics or cost table the candidate must reason from. Rendered
+// verbatim in a monospace block (`table` is rendered as markdown).
+export const exhibitSchema = z.object({
+  label: z.string().min(1),
+  format: z.enum(["log", "config", "code", "table", "metrics"]),
+  content: z.string().min(1),
+  // Fence info-string for `code`/`config`/`log` (e.g. "yaml", "python").
+  language: z.string().optional(),
 });
 
 export const questionSchema = z.object({
@@ -60,10 +75,30 @@ export const questionSchema = z.object({
   domainId: domainIdSchema,
   concepts: z.array(z.string()).default([]),
   caseStudyId: caseStudyIdSchema.optional(),
+  // The exam-guide objective this item assesses, as a reference of the form
+  // "<domainId>.<n>" (1-based) into ./domains.ts. A reference, not the text.
+  // Resolve with `resolveSubObjective()`.
+  subObjective: z
+    .string()
+    .regex(/^[a-z-]+\.\d+$/, 'must be a "<domainId>.<n>" reference into domains.ts')
+    .optional(),
+  // Provenance: the doc page the keyed answer was verified against, and the date
+  // it was last checked. Drift control — see the content lint.
+  sourceUrl: z.string().url().optional(),
+  lastVerified: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  exhibit: exhibitSchema.optional(),
+  // Held out of quizzes, practice and the diagnostic so simulation exams draw
+  // novel items.
+  examOnly: z.boolean().default(false),
   prompt: z.string().min(1),
   choices: z.array(choiceSchema).min(2),
   correct: z.array(z.string()).min(1),
-  explanation: z.string().min(1),
+  // Optional overall takeaway. Per-choice reasoning belongs in
+  // `choices[].rationale`; this is only for what doesn't fit a single choice.
+  explanation: z.string().min(1).optional(),
   difficulty: z.union([z.literal(1), z.literal(2), z.literal(3)]),
 });
 
@@ -79,6 +114,21 @@ export const videoSchema = z.object({
 export const moduleVideosSchema = z.record(z.string(), z.array(videoSchema));
 
 export type Video = z.infer<typeof videoSchema>;
+
+// Domain-level recap takeaways, authored in content/takeaways/<domainId>.json.
+export const takeawaySchema = z.object({
+  title: z.string().min(1),
+  body: z.string().min(1),
+});
+
+export const domainTakeawaysSchema = z.object({
+  domainId: domainIdSchema,
+  takeaways: z.array(takeawaySchema).default([]),
+  sources: z.array(z.string()).default([]),
+});
+
+export type Takeaway = z.infer<typeof takeawaySchema>;
+export type DomainTakeaways = z.infer<typeof domainTakeawaysSchema>;
 
 export const diagramSchema = z.object({
   title: z.string().min(1),
@@ -118,6 +168,7 @@ export const caseStudySchema = z.object({
 });
 
 export type Choice = z.infer<typeof choiceSchema>;
+export type Exhibit = z.infer<typeof exhibitSchema>;
 export type Question = z.infer<typeof questionSchema>;
 export type Diagram = z.infer<typeof diagramSchema>;
 export type Module = z.infer<typeof moduleSchema>;

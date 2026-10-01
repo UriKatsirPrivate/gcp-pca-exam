@@ -126,9 +126,10 @@ export function ProgressBar({
 }: {
   value: number; // 0..100
   className?: string;
-  tone?: "brand" | "success" | "warning" | "danger";
+  tone?: "brand" | "success" | "warning" | "danger" | "neutral";
 }) {
   const toneClass = {
+    neutral: "bg-muted",
     brand: "bg-brand-600",
     success: "bg-success",
     warning: "bg-warning",

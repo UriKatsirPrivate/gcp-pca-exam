@@ -49,7 +49,7 @@ export default async function ExamPage({
     const run = await prisma.examRun.findUnique({ where: { id: runId } });
     if (run && run.userId === user.id && run.status === "in-progress") {
       const questions: ClientQuestion[] = getQuestions(run.questionIds).map(
-        toClientQuestion,
+        (q) => toClientQuestion(q, { seed: run.id }),
       );
 
       const caseStudies: Record<

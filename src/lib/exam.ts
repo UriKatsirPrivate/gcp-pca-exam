@@ -1,6 +1,5 @@
 import "server-only";
-import { getAllQuestions } from "@/lib/content";
-import { DOMAINS } from "@/lib/content/domains";
+import { blueprintQuotas, getAllQuestions } from "@/lib/content";
 import type { CaseStudyId, Question } from "@/lib/content/schema";
 
 export const EXAM_QUESTION_COUNT = 55;
@@ -39,14 +38,21 @@ function interleaveByDifficulty(qs: Question[]): Question[] {
 }
 
 /**
- * Order a pool for selection: unseen questions first (variety across retakes),
- * then already-seen ones, each group shuffled then difficulty-interleaved so the
- * picks taken off the front are both fresh and difficulty-varied.
+ * Order a pool for selection, best-first:
+ *   1. held-out exam-only items the candidate has never answered
+ *   2. any other unseen item
+ *   3. items already answered somewhere (quiz, practice, a prior exam)
+ * each group shuffled then difficulty-interleaved so the picks taken off the
+ * front are fresh and difficulty-varied.
+ *
+ * Tier 1 is what makes this a simulation rather than a review session: without a
+ * holdout, most of a candidate's first form is items they met during study.
  */
 function orderPool(pool: Question[], seen: Set<string>): Question[] {
-  const unseen = interleaveByDifficulty(shuffle(pool.filter((q) => !seen.has(q.id))));
-  const seenQs = interleaveByDifficulty(shuffle(pool.filter((q) => seen.has(q.id))));
-  return [...unseen, ...seenQs];
+  const tier = (q: Question) => (seen.has(q.id) ? 2 : q.examOnly ? 0 : 1);
+  return [0, 1, 2].flatMap((t) =>
+    interleaveByDifficulty(shuffle(pool.filter((q) => tier(q) === t))),
+  );
 }
 
 /**
@@ -112,11 +118,8 @@ export function generateExam(
   }
   for (const [k, v] of freePoolByDomain) freePoolByDomain.set(k, orderPool(v, seen));
 
-  // Per-domain quota from weightPct, then top up to the exact total.
-  const quotas = DOMAINS.map((d) => ({
-    domainId: d.id,
-    quota: Math.round((d.weightPct / 100) * EXAM_QUESTION_COUNT),
-  }));
+  // Per-domain quota from the blueprint weights; sums exactly to the total.
+  const quotas = blueprintQuotas(EXAM_QUESTION_COUNT);
 
   // Subtract case-tied questions already selected from their domain's quota.
   const selectedByDomain = new Map<string, number>();

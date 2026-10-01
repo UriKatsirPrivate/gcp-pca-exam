@@ -1,5 +1,11 @@
 // Client-safe types (no server-only imports). Shared by the question runners.
-import type { Choice, DomainId, CaseStudyId } from "@/lib/content/schema";
+import type { CaseStudyId, DomainId, Exhibit } from "@/lib/content/schema";
+
+/** An option as sent during an active attempt: no rationale, order shuffled. */
+export type ClientChoice = { id: string; text: string };
+
+/** An option on a review screen: carries why it is right or wrong. */
+export type RevealChoice = ClientChoice & { rationale?: string };
 
 export type ClientQuestion = {
   id: string;
@@ -8,14 +14,16 @@ export type ClientQuestion = {
   caseStudyId?: CaseStudyId;
   concepts: string[];
   prompt: string;
-  choices: Choice[];
+  exhibit: Exhibit | null;
+  choices: ClientChoice[];
   difficulty: 1 | 2 | 3;
 };
 
 /** A question with its answer key — only sent to the client for low-stakes quizzes. */
-export type RevealQuestion = ClientQuestion & {
+export type RevealQuestion = Omit<ClientQuestion, "choices"> & {
+  choices: RevealChoice[];
   correct: string[];
-  explanation: string;
+  explanation?: string;
 };
 
 export type SubmittedAnswer = {

@@ -105,3 +105,17 @@ export const DOMAIN_BY_ID: Record<DomainId, Domain> = Object.fromEntries(
 export function getDomain(id: DomainId): Domain {
   return DOMAIN_BY_ID[id];
 }
+
+/** `"security.2"` -> the objective text, or null if it doesn't resolve. */
+export function resolveSubObjective(
+  ref: string,
+): { domainId: DomainId; index: number; text: string } | null {
+  const dot = ref.lastIndexOf(".");
+  if (dot < 1) return null;
+  const domainId = ref.slice(0, dot) as DomainId;
+  const index = Number(ref.slice(dot + 1));
+  const domain = DOMAIN_BY_ID[domainId];
+  if (!domain || !Number.isInteger(index)) return null;
+  const text = domain.subObjectives[index - 1];
+  return text ? { domainId, index, text } : null;
+}

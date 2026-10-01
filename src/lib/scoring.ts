@@ -9,6 +9,29 @@ export interface DomainScore {
 
 export type PerDomainScore = Record<DomainId, DomainScore>;
 
+/**
+ * Minimum items answered in a domain before its score may be reported as a
+ * proficiency band rather than a raw tally. Below this, one item moves the label
+ * two bands.
+ */
+export const MIN_ITEMS_FOR_PROFICIENCY = 8;
+
+/**
+ * True when a domain has been sampled enough times for its percentage to be
+ * reported as a band ("Proficient") rather than as a bare tally.
+ */
+export function canReportProficiency(totalItems: number): boolean {
+  return totalItems >= MIN_ITEMS_FOR_PROFICIENCY;
+}
+
+/**
+ * The one wording of the small-sample caveat, for a domain scored on fewer than
+ * MIN_ITEMS_FOR_PROFICIENCY items.
+ */
+export function smallSampleNote(correct: number, total: number): string {
+  return `${correct}/${total} correct — too few items to score this domain yet. It gets a proficiency band once you've answered ${MIN_ITEMS_FOR_PROFICIENCY} of its questions (module quizzes and practice count).`;
+}
+
 /** Map a percentage (0-100) to a proficiency band. */
 export function proficiencyFromPct(pct: number): Proficiency {
   if (pct >= 85) return "expert";

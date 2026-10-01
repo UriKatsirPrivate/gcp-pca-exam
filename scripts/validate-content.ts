@@ -13,6 +13,7 @@ import fs from "node:fs";
 import path from "node:path";
 import {
   caseStudySchema,
+  domainTakeawaysSchema,
   moduleSchema,
   questionSchema,
   quizSchema,
@@ -21,11 +22,14 @@ import {
   type Question,
   type Quiz,
 } from "../src/lib/content/schema";
+import { parseExamTips } from "../src/lib/content/exam-tips";
 import { CONCEPT_DOCS } from "../src/lib/concept-docs";
 import { CONCEPT_TIPS } from "../src/lib/feedback/rules";
 
 // A domain with fewer than this many questions can't fill its exam quota comfortably.
 const DOMAIN_QUESTION_FLOOR = 10;
+// Study modules are exam-prep depth, not a stub: fewer words than this fails.
+const MODULE_WORD_FLOOR = 1200;
 
 const ROOT = path.join(process.cwd(), "content");
 const errors: string[] = [];
@@ -90,6 +94,10 @@ for (const domainId of DOMAIN_IDS) {
     const m = parsed.data;
     if (m.domainId !== domainId) errors.push(`Module ${m.id} domainId mismatch`);
     uid(m.id, "module"); modules.push(m); perDomain[domainId].mods++;
+    const words = (m.bodyMarkdown.match(/\S+/g) ?? []).length;
+    if (words < MODULE_WORD_FLOOR) errors.push(`Module ${m.id} has ${words} words (< ${MODULE_WORD_FLOOR})`);
+    // Every module must end with an "## Exam tips" bullet list (feeds /review).
+    if (parseExamTips(m.bodyMarkdown).length === 0) errors.push(`Module ${m.id} has no parseable "## Exam tips" bullet list`);
   }
   // quizzes
   for (const f of listJson(path.join(ROOT, "quizzes", domainId))) {
@@ -124,6 +132,20 @@ for (const f of listJson(caseDir)) {
 for (const want of ["altostrat-media", "cymbal-retail", "ehr-healthcare", "knightmotives-automotive"]) {
   if (!caseIds.has(want)) errors.push(`Missing case study: ${want}`);
 }
+
+// takeaways: content/takeaways/<domainId>.json (one per domain)
+let takeawayCards = 0;
+const takeawayDomains = new Set<string>();
+for (const f of listJson(path.join(ROOT, "takeaways"))) {
+  const parsed = domainTakeawaysSchema.safeParse(readJson(f));
+  if (!parsed.success) { errors.push(`Bad takeaways ${f}: ${JSON.stringify(parsed.error.issues[0])}`); continue; }
+  const t = parsed.data;
+  if (t.domainId !== path.basename(f, ".json")) errors.push(`Takeaways ${f} domainId "${t.domainId}" doesn't match filename`);
+  if (t.takeaways.length === 0) errors.push(`Takeaways ${f} has no takeaways`);
+  takeawayDomains.add(t.domainId);
+  takeawayCards += t.takeaways.length;
+}
+for (const d of DOMAIN_IDS) if (!takeawayDomains.has(d)) errors.push(`Missing takeaways file for domain ${d}`);
 
 // cross-references
 const qById = new Map([...allQuestions, ...assessment].map((q) => [q.id, q]));
@@ -188,7 +210,7 @@ for (const d of DOMAIN_IDS) {
     `${d.padEnd(14)} ${String(s.q).padStart(2)}   ${String(s.single).padStart(3)}  ${String(s.multiple).padStart(3)}  ${String(s.d1).padStart(2)} ${String(s.d2).padStart(2)} ${String(s.d3).padStart(2)}   ${String(s.cased).padStart(3)}  ${String(s.mods).padStart(3)} ${String(s.quizzes).padStart(3)}`,
   );
 }
-console.log(`\nTotals: bank=${allQuestions.length}, assessment=${assessment.length}, modules=${modules.length}, quizzes=${quizzes.length}, caseStudies=${caseIds.size}`);
+console.log(`\nTotals: bank=${allQuestions.length}, assessment=${assessment.length}, modules=${modules.length}, quizzes=${quizzes.length}, caseStudies=${caseIds.size}, takeaways=${takeawayCards}`);
 
 if (warnings.length) { console.log(`\n--- ${warnings.length} warning(s) ---`); for (const w of warnings) console.log("  ⚠ " + w); }
 if (errors.length) {

@@ -7,11 +7,11 @@ import {
   EmptyState,
   ProgressBar,
 } from "@/components/ui";
-import { DOMAINS, getDomain, getQuestion, toClientQuestion } from "@/lib/content";
+import { DOMAINS, getDomain, getQuestion, toRevealQuestion } from "@/lib/content";
 import type { DomainId, Proficiency } from "@/lib/content/schema";
 import { prisma } from "@/lib/prisma";
 import type { PerDomainScore, DomainScore } from "@/lib/scoring";
-import { proficiencyFromPct } from "@/lib/scoring";
+import { canReportProficiency, proficiencyFromPct, smallSampleNote } from "@/lib/scoring";
 import { requireUser } from "@/lib/session";
 import { AnswerReview, type ReviewItem } from "@/components/AnswerReview";
 
@@ -67,7 +67,7 @@ export default async function AssessmentResultPage() {
       const q = getQuestion(a.questionId);
       if (!q) return null;
       return {
-        question: { ...toClientQuestion(q), correct: q.correct, explanation: q.explanation },
+        question: toRevealQuestion(q, { seed: user.id }),
         selected: a.selected,
         isCorrect: a.correct,
       };
@@ -137,9 +137,13 @@ export default async function AssessmentResultPage() {
                       {domain.title}
                     </h3>
                   </div>
-                  <Badge tone={PROFICIENCY_TONE[score.proficiency]}>
-                    {proficiencyLabel(score.proficiency)}
-                  </Badge>
+                  {canReportProficiency(score.total) ? (
+                    <Badge tone={PROFICIENCY_TONE[score.proficiency]}>
+                      {proficiencyLabel(score.proficiency)}
+                    </Badge>
+                  ) : (
+                    <Badge tone="neutral">Too few items</Badge>
+                  )}
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted">
@@ -147,7 +151,13 @@ export default async function AssessmentResultPage() {
                   </span>
                   <span className="font-semibold">{score.pct}%</span>
                 </div>
-                <ProgressBar value={score.pct} tone={PROGRESS_TONE[score.proficiency]} />
+                <ProgressBar
+                  value={score.pct}
+                  tone={canReportProficiency(score.total) ? PROGRESS_TONE[score.proficiency] : "neutral"}
+                />
+                {!canReportProficiency(score.total) ? (
+                  <p className="text-xs text-muted">{smallSampleNote(score.correct, score.total)}</p>
+                ) : null}
               </CardBody>
             </Card>
           ))}

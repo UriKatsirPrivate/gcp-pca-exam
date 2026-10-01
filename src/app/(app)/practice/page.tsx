@@ -5,7 +5,7 @@ import {
   getQuestion,
   getQuestionsByConcept,
   getQuestionsByDomain,
-  toClientQuestion,
+  toRevealQuestion,
 } from "@/lib/content";
 import { DOMAIN_IDS, type DomainId, type Question } from "@/lib/content/schema";
 import { weakConceptSlugs } from "@/lib/feedback/rules";
@@ -87,11 +87,9 @@ export default async function PracticePage({
     );
   }
 
-  const questions: RevealQuestion[] = picked.map((q) => ({
-    ...toClientQuestion(q),
-    correct: q.correct,
-    explanation: q.explanation,
-  }));
+  const questions: RevealQuestion[] = picked.map((q) =>
+    toRevealQuestion(q, { seed: user.id }),
+  );
 
   return (
     <div className="space-y-6">

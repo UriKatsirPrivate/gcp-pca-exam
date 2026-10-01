@@ -8,6 +8,7 @@ import {
   getModules,
   getQuestions,
   getQuizByModule,
+  toRevealQuestion,
 } from "@/lib/content";
 import { DOMAIN_IDS, type DomainId } from "@/lib/content/schema";
 import { getUserProgress } from "@/lib/progress";
@@ -50,18 +51,7 @@ export default async function ModulePage({
   // Quiz: send answer keys to the client for instant, low-stakes feedback.
   const quiz = getQuizByModule(m.id);
   const revealQuestions: RevealQuestion[] = quiz
-    ? getQuestions(quiz.questionIds).map((q) => ({
-        id: q.id,
-        type: q.type,
-        domainId: q.domainId,
-        caseStudyId: q.caseStudyId,
-        concepts: q.concepts,
-        prompt: q.prompt,
-        choices: q.choices,
-        difficulty: q.difficulty,
-        correct: q.correct,
-        explanation: q.explanation,
-      }))
+    ? getQuestions(quiz.questionIds).map((q) => toRevealQuestion(q, { seed: user.id }))
     : [];
 
   return (

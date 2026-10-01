@@ -26,7 +26,8 @@ export default async function AssessmentPage({
   });
 
   const questions = sampleAssessment();
-  const clientQs = questions.map(toClientQuestion);
+  // Option order is seeded per user so the diagnostic and its review agree.
+  const clientQs = questions.map((q) => toClientQuestion(q, { seed: user.id }));
 
   // Only the case studies actually referenced by these questions.
   const caseStudies: Record<string, CaseStudy> = {};

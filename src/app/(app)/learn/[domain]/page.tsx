@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, ChevronLeft, Clock } from "lucide-react";
-import { getDomain, getModules } from "@/lib/content";
+import { getDomain, getDomainTakeaways, getModules } from "@/lib/content";
 import { DOMAIN_IDS, type DomainId } from "@/lib/content/schema";
 import { getUserProgress } from "@/lib/progress";
 import { requireUser } from "@/lib/session";
 import { Badge, Card, CardBody } from "@/components/ui";
+import { KeyTakeaways } from "@/components/KeyTakeaways";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +34,7 @@ export default async function DomainPage({
 
   const d = getDomain(domainId);
   const modules = getModules(domainId);
+  const takeaways = getDomainTakeaways(domainId);
 
   return (
     <div>
@@ -103,6 +105,13 @@ export default async function DomainPage({
           })}
         </ul>
       )}
+
+      {takeaways ? (
+        <>
+          <h2 className="mt-8 mb-3 text-lg font-semibold">Key takeaways</h2>
+          <KeyTakeaways takeaways={takeaways.takeaways} sources={takeaways.sources} />
+        </>
+      ) : null}
     </div>
   );
 }

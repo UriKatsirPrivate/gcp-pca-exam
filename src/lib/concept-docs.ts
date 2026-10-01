@@ -4,8 +4,8 @@
 //
 // Client-safe (no server-only imports). These point at stable product/landing
 // doc pages on cloud.google.com — spot-check periodically as docs are reorganized.
-// Populating every one of the ~750 questions individually is out of scope; this
-// map covers the high-frequency concepts.
+// Per-question provenance lives on each question (`sourceUrl`, `lastVerified`);
+// this map covers the high-frequency concepts as a fallback "Learn more" list.
 
 export interface ConceptDoc {
   label: string;

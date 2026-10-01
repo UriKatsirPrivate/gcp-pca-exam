@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "npm run content:validate && npm run content:lint",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -14,7 +15,8 @@
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
     "db:reset": "prisma migrate reset --force",
-    "content:validate": "tsx scripts/validate-content.ts"
+    "content:validate": "tsx scripts/validate-content.ts",
+    "content:lint": "tsx scripts/lint-content.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
