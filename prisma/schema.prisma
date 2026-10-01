@@ -111,7 +111,7 @@ model Answer {
   id         String   @id @default(cuid())
   userId     String
   questionId String
-  context    String // "assessment" | "quiz" | "exam"
+  context    String // "assessment" | "quiz" | "practice" | "exam" | "examOnly"
   refId      String? // runId / quizId / examId the answer belongs to
   domainId   String
   concepts   String[] // copied from the question for fast aggregation

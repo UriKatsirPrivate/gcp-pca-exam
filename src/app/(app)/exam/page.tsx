@@ -192,11 +192,16 @@ export default async function ExamPage({
             ))}
           </div>
 
-          <form action={startExam}>
-            <Button type="submit" size="lg">
-              <ClipboardList size={18} /> Start simulation exam
-            </Button>
-          </form>
+          <div className="flex flex-wrap items-center gap-3">
+            <form action={startExam}>
+              <Button type="submit" size="lg">
+                <ClipboardList size={18} /> Start simulation exam
+              </Button>
+            </form>
+            <ButtonLink href="/exam/pool" variant="secondary">
+              <Layers size={16} /> Review held-out question pool
+            </ButtonLink>
+          </div>
           <p className="text-xs text-muted">
             The timer starts as soon as the exam loads. Set aside the full{" "}
             {EXAM_DURATION_SEC / 3600} hours.

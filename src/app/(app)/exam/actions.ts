@@ -21,9 +21,11 @@ export async function startExam(): Promise<void> {
   const progress = await getUserProgress(user.id);
   if (!progress.examUnlocked) redirect("/exam");
 
-  // Prefer questions the user hasn't already seen in a prior exam (variety on retakes).
+  // Prefer questions the user has never answered anywhere (quiz, practice, the
+  // diagnostic, held-out pool review or a prior exam), so retakes stay varied and
+  // a first simulation is mostly novel.
   const seenRows = await prisma.answer.findMany({
-    where: { userId: user.id, context: "exam" },
+    where: { userId: user.id },
     select: { questionId: true },
     distinct: ["questionId"],
   });
