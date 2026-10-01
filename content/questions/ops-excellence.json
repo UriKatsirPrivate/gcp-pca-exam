@@ -7,29 +7,36 @@
       "slo-sli",
       "error-budget"
     ],
+    "subObjective": "ops-excellence.4",
+    "sourceUrl": "https://sre.google/workbook/error-budget-policy/",
+    "lastVerified": "2026-10-01",
     "prompt": "Your team commits to a **99.9% monthly availability SLO** for a checkout API. Over the first 18 days of a 30-day month, fast-moving feature releases have already consumed **90% of the monthly error budget**. According to Site Reliability Engineering practice, what is the most appropriate response for the rest of the month?",
     "choices": [
       {
         "id": "a",
-        "text": "Raise the SLO target to 99.95% so the remaining errors fit inside the budget."
+        "text": "Raise the SLO to 99.95% for the month so the errors already incurred fit inside a recalculated budget",
+        "rationale": "Tightening the target shrinks the budget to 0.05%, which makes the overspend worse. Changing the SLO after the fact to absorb failures hides the miss instead of managing it."
       },
       {
         "id": "b",
-        "text": "Freeze risky feature launches and prioritize reliability work until the budget recovers."
+        "text": "Freeze risky feature launches and shift engineering effort to reliability work until the budget recovers",
+        "rationale": "The budget is the agreed tolerance for unreliability. With 90% spent after 60% of the window, the SRE response is to slow or halt risky changes and invest in reliability. An example Google error budget policy halts all changes except P0 and security fixes once the SLO is missed."
       },
       {
         "id": "c",
-        "text": "Ignore the budget because SLOs are aspirational targets, not hard limits."
+        "text": "Keep releasing at the current pace, since an SLO is an aspirational target rather than a hard limit",
+        "rationale": "An SLO is not a contractual limit, but a budget nobody acts on gives no control signal. The whole point of the budget is to trigger concrete action as it runs low."
       },
       {
         "id": "d",
-        "text": "Switch the SLO from availability to latency so the breaches no longer count."
+        "text": "Redefine the SLI from availability to latency so the failed requests stop counting against the budget",
+        "rationale": "Swapping the indicator after the fact is metric gaming. The failures still happened and users still felt them; SLIs should track user-visible experience rather than be chosen so the numbers pass."
       }
     ],
     "correct": [
       "b"
     ],
-    "explanation": "The **error budget** (1 - SLO = 0.1% allowed unavailability) is the agreed amount of unreliability the business tolerates. When most of it is burned, SRE practice is to **slow the release cadence and shift engineering effort toward reliability** (hardening, testing, rollback safety) until the budget regenerates in the next window. This makes the budget a self-regulating policy that balances velocity and stability.\n\n- **(a)** is wrong: raising the SLO makes the target *harder*, shrinking the budget further, and is not a legitimate way to mask breaches.\n- **(c)** is wrong: a budget that everyone ignores provides no control; the whole point is that it triggers concrete action.\n- **(d)** is wrong: changing the SLI to hide failures is gaming the metric, not managing reliability.",
+    "explanation": "The error budget is 1 minus the SLO (0.1% here); it turns the velocity-versus-stability trade-off into a policy instead of an argument.",
     "difficulty": 2
   },
   {
@@ -40,27 +47,35 @@
       "monitoring-logging",
       "alerting"
     ],
-    "prompt": "Following the Google SRE **'Four Golden Signals'** model, which signals should you instrument first when defining the core dashboard for a user-facing web service? (Select all that apply.)",
+    "subObjective": "ops-excellence.2",
+    "sourceUrl": "https://sre.google/sre-book/monitoring-distributed-systems/",
+    "lastVerified": "2026-10-01",
+    "prompt": "Following the Google SRE 'Four Golden Signals' model, which signals should you instrument first when defining the core dashboard for a user-facing web service? Choose four.",
     "choices": [
       {
         "id": "a",
-        "text": "Latency"
+        "text": "Latency, tracked separately for successful requests and for failed requests",
+        "rationale": "Latency is a golden signal. SRE guidance stresses separating successful from failed request latency because a slow error is worse than a fast one."
       },
       {
         "id": "b",
-        "text": "Traffic"
+        "text": "Traffic, the demand placed on the service, such as HTTP requests per second",
+        "rationale": "Traffic measures demand on the system (requests per second for web services) and gives context for every other signal."
       },
       {
         "id": "c",
-        "text": "Errors"
+        "text": "Errors, covering explicit failures like HTTP 500s and implicit ones like wrong content",
+        "rationale": "Errors is a golden signal and includes explicit failures, implicit ones (a 200 carrying the wrong content) and failures by policy."
       },
       {
         "id": "d",
-        "text": "Saturation"
+        "text": "Saturation, how full the most constrained resource is, such as memory or CPU",
+        "rationale": "Saturation shows how full the service is and, when trended, predicts impending capacity problems."
       },
       {
         "id": "e",
-        "text": "Number of Git commits per day"
+        "text": "Commit frequency, the number of Git commits merged to the main branch per day",
+        "rationale": "Commit rate is a development-process metric. It says nothing about whether the deployed service is healthy for users right now."
       }
     ],
     "correct": [
@@ -69,7 +84,6 @@
       "c",
       "d"
     ],
-    "explanation": "The **Four Golden Signals** are **Latency, Traffic, Errors, and Saturation**. Latency measures how long requests take (separating successful vs. failed latency), Traffic measures demand (e.g., requests/sec), Errors measures the rate of failed requests, and Saturation measures how 'full' the most constrained resource is (CPU, memory, I/O). Together they give a compact, high-signal view of service health and are the recommended starting point for Cloud Monitoring dashboards and alerting policies.\n\n- **(e)** is wrong: commit count is a development-process metric, not a runtime health signal for a deployed service.",
     "difficulty": 1
   },
   {
@@ -80,29 +94,36 @@
       "deployment-release-management",
       "canary"
     ],
+    "subObjective": "ops-excellence.3",
+    "sourceUrl": "https://docs.cloud.google.com/deploy/docs/deployment-strategies/canary",
+    "lastVerified": "2026-10-01",
     "prompt": "You want to release a new revision of a stateless service to production so that **only 5% of live traffic** hits it first, automatically compare its error rate against the stable version, and promote to 100% only if it stays healthy. Which Google Cloud approach fits best?",
     "choices": [
       {
         "id": "a",
-        "text": "A canary deployment using Cloud Deploy with a canary rollout strategy and automated verification."
+        "text": "Cloud Deploy canary with a 5% phase, a verify job checking error rate, and automation to advance or roll back",
+        "rationale": "Cloud Deploy canary phases use configurable traffic percentages on GKE and Cloud Run. A verify job (your own test container) runs per phase, and advanceRolloutRule and repairRolloutRule automations promote on success or roll back on failure."
       },
       {
         "id": "b",
-        "text": "A blue-green deployment that cuts 100% of traffic over at once."
+        "text": "Blue-green cutover that shifts 100% of traffic to the new revision at once after pre-release testing in staging",
+        "rationale": "Blue-green gives fast rollback but exposes every user at the same instant, so it never tests on a 5% slice of live traffic."
       },
       {
         "id": "c",
-        "text": "A recreate strategy that terminates all old pods before starting new ones."
+        "text": "Recreate strategy that stops every old pod and starts the new ones, then checks dashboards afterwards",
+        "rationale": "Recreate causes downtime and has no incremental exposure or health gate; it is the opposite of a gradual rollout."
       },
       {
         "id": "d",
-        "text": "Manually editing the production deployment YAML and watching logs by hand."
+        "text": "Hand-edit the production Deployment manifest to the new image and watch logs for errors by eye",
+        "rationale": "Manual edits with eyeball monitoring are unrepeatable and slow to detect a regression. They also cannot compare error rates between versions automatically."
       }
     ],
     "correct": [
       "a"
     ],
-    "explanation": "A **canary deployment** exposes the new version to a small fraction of traffic (here 5%), lets you observe golden signals, and promotes progressively. **Cloud Deploy** supports a **canary release strategy** with configurable traffic percentages and **automated canary analysis / verification**, which can gate promotion or trigger automatic rollback. This minimizes blast radius.\n\n- **(b)** is wrong: blue-green flips all traffic at once; it gives instant rollback but does not test on a small slice first.\n- **(c)** is wrong: recreate causes downtime and tests nothing incrementally.\n- **(d)** is wrong: manual edits with eyeball monitoring are error-prone and not the recommended, repeatable practice.",
+    "explanation": "Cloud Deploy verification fails the rollout by itself; the rollback comes from a repairRolloutRule automation.",
     "difficulty": 2
   },
   {
@@ -113,29 +134,35 @@
       "deployment-release-management",
       "blue-green"
     ],
+    "subObjective": "ops-excellence.3",
+    "sourceUrl": "https://docs.cloud.google.com/run/docs/rollouts-rollbacks-traffic-migration",
+    "lastVerified": "2026-10-01",
     "prompt": "A payments service cannot tolerate two versions serving traffic at the same time because of a strict database migration constraint, but the business requires **near-instant rollback** if the new version misbehaves. Which deployment strategy best satisfies both requirements?",
     "choices": [
       {
         "id": "a",
-        "text": "Canary, gradually shifting 10% increments of traffic."
+        "text": "Canary release that shifts traffic to the new version in 10% increments over several hours",
+        "rationale": "A canary serves the old and new versions side by side for the whole ramp-up, which is exactly what the migration constraint forbids."
       },
       {
         "id": "b",
-        "text": "Rolling update across the managed instance group."
+        "text": "Rolling update across the managed instance group, replacing a few instances at a time",
+        "rationale": "Automated MIG updates run up to two template versions during the rollout, so both versions serve traffic mid-update. Rollback also means another rolling pass, not an instant switch."
       },
       {
         "id": "c",
-        "text": "Blue-green, with the standby environment fully validated before an atomic traffic switch."
+        "text": "Blue-green, with the standby environment fully validated before an atomic traffic switch",
+        "rationale": "Only one version serves at a time, and the old environment stays warm, so rollback is a switch back (for example redirecting all Cloud Run traffic to the previous revision or swapping load balancer backends)."
       },
       {
         "id": "d",
-        "text": "A/B testing split by user cohort indefinitely."
+        "text": "A/B testing that splits users by cohort so each group sees only one fixed version",
+        "rationale": "A/B testing keeps two versions live for different cohorts, so it still violates the single-version constraint. It is a product-experiment technique with no fast rollback path."
       }
     ],
     "correct": [
       "c"
     ],
-    "explanation": "**Blue-green** keeps two complete environments. The 'green' (new) environment is fully deployed and validated while 'blue' (old) still serves all traffic; then traffic is switched **atomically** (e.g., via a load balancer backend swap or DNS). Because only one version serves at a time and the old environment stays warm, rollback is **near-instant** by switching traffic back. This matches the no-mixed-versions and fast-rollback constraints.\n\n- **(a)** and **(b)** both run old and new versions simultaneously, violating the migration constraint.\n- **(d)** A/B testing is for product experimentation, not safe release/rollback.",
     "difficulty": 2
   },
   {
@@ -146,29 +173,35 @@
       "monitoring-logging",
       "profiling-benchmarking"
     ],
-    "prompt": "A Cloud Run service shows acceptable latency in load tests but consumes far more CPU in production than expected, raising cost. You need to find **which functions in the running code consume the most CPU and memory**, continuously and with negligible overhead. Which tool should you use?",
+    "subObjective": "ops-excellence.2",
+    "sourceUrl": "https://docs.cloud.google.com/profiler/docs/about-profiler",
+    "lastVerified": "2026-10-01",
+    "prompt": "A service running on GKE shows acceptable latency in load tests but consumes far more CPU in production than expected, raising cost. You need to find **which functions in the running code consume the most CPU and memory**, continuously and with negligible overhead. Which tool should you use?",
     "choices": [
       {
         "id": "a",
-        "text": "Cloud Trace"
+        "text": "Cloud Trace, to inspect span timelines and see where each request spends its time",
+        "rationale": "Trace shows request latency across spans and services. It does not attribute CPU or memory consumption to individual functions."
       },
       {
         "id": "b",
-        "text": "Cloud Profiler"
+        "text": "Cloud Profiler, to attribute continuously sampled CPU and heap use to specific functions",
+        "rationale": "Profiler is a statistical, low-overhead profiler that continuously gathers CPU and memory-allocation data from production (overhead commonly under 0.5% amortized) and maps it to functions in Go, Java, Python and Node.js."
       },
       {
         "id": "c",
-        "text": "Cloud Logging log-based metrics"
+        "text": "Cloud Logging log-based metrics, to count and chart the entries each replica writes to stdout",
+        "rationale": "Log-based metrics derive counts or distributions from log entries. They cannot reveal which code paths burn CPU."
       },
       {
         "id": "d",
-        "text": "Cloud Monitoring uptime checks"
+        "text": "Cloud Monitoring uptime checks, to probe the public endpoint from several regions",
+        "rationale": "Uptime checks test external availability and response content; they say nothing about internal resource use."
       }
     ],
     "correct": [
       "b"
     ],
-    "explanation": "**Cloud Profiler** is a statistical, low-overhead, continuous profiler that attributes **CPU time and heap/memory allocation to specific functions** in your running application (Go, Java, Python, Node.js). It is exactly the tool for finding hot functions causing CPU/cost pressure in production.\n\n- **(a)** Cloud Trace shows distributed **request latency** across services/spans, not per-function CPU consumption.\n- **(c)** log-based metrics derive counts/distributions from log entries; they do not profile code.\n- **(d)** uptime checks verify availability from external probes, unrelated to CPU attribution.",
     "difficulty": 2
   },
   {
@@ -179,29 +212,35 @@
       "monitoring-logging",
       "profiling-benchmarking"
     ],
+    "subObjective": "ops-excellence.2",
+    "sourceUrl": "https://docs.cloud.google.com/trace/docs/overview",
+    "lastVerified": "2026-10-01",
     "prompt": "A user reports that a single checkout request is slow, and you suspect one of a dozen downstream microservices is the bottleneck. Which Google Cloud Observability tool most directly shows **where time is spent across services for that request**?",
     "choices": [
       {
         "id": "a",
-        "text": "Cloud Profiler"
+        "text": "Cloud Profiler, to compare CPU time by function across all service replicas",
+        "rationale": "Profiler aggregates resource use by function over many requests. It cannot show the cross-service timeline of one request."
       },
       {
         "id": "b",
-        "text": "Cloud Trace"
+        "text": "Cloud Trace, to view the spans for that request across each downstream service",
+        "rationale": "Trace records a request as spans with timings across services, so the slow hop in a twelve-service path stands out immediately."
       },
       {
         "id": "c",
-        "text": "Error Reporting"
+        "text": "Error Reporting, to group the exceptions and stack traces the services have raised",
+        "rationale": "Error Reporting groups application errors by root cause. A slow request that returns successfully produces no error to group."
       },
       {
         "id": "d",
-        "text": "Cloud Monitoring SLO burn-rate charts"
+        "text": "Cloud Monitoring SLO burn-rate charts, to see how quickly the error budget is spent",
+        "rationale": "Burn-rate charts show aggregate budget consumption over time, not what happened inside one request."
       }
     ],
     "correct": [
       "b"
     ],
-    "explanation": "**Cloud Trace** collects **distributed traces** made of spans, showing the latency contribution of each service/operation along a request path. This is the right tool to localize a per-request bottleneck across microservices.\n\n- **(a)** Cloud Profiler aggregates resource usage by function across many requests; it does not show a single request's cross-service timeline.\n- **(c)** Error Reporting groups exceptions/stack traces, not latency breakdown.\n- **(d)** SLO burn-rate charts show budget consumption trends, not a single request's path.",
     "difficulty": 1
   },
   {
@@ -212,29 +251,35 @@
       "monitoring-logging",
       "alerting"
     ],
+    "subObjective": "ops-excellence.2",
+    "sourceUrl": "https://docs.cloud.google.com/logging/docs/alerting/log-based-alerts",
+    "lastVerified": "2026-10-01",
     "prompt": "Your application writes structured JSON logs to Cloud Logging that include a field `payment.declined`. The business wants a Cloud Monitoring alert when the **rate of declined payments** spikes. What is the recommended way to make this measurable for alerting?",
     "choices": [
       {
         "id": "a",
-        "text": "Create a log-based metric (counter) that matches the declined-payment log entries, then alert on that metric."
+        "text": "Create a counter log-based metric matching the declined-payment entries, then alert on its rate in Cloud Monitoring",
+        "rationale": "A counter log-based metric turns matching entries into a time series that a Monitoring alerting policy can evaluate. Log-based alerting policies cannot derive counts from logs, so a rate needs a metric."
       },
       {
         "id": "b",
-        "text": "Export every log line to BigQuery and run a scheduled query alert."
+        "text": "Export every log line to BigQuery with a log sink and run a scheduled query that emails the team",
+        "rationale": "This works for analytics but adds latency and cost, and is not the native path to a metric-based alerting policy."
       },
       {
         "id": "c",
-        "text": "Add a uptime check on the payment endpoint."
+        "text": "Add an uptime check on the payment endpoint and alert when the check reports a failed response",
+        "rationale": "An uptime check measures reachability and response content. A healthy endpoint can decline many payments and the check still passes."
       },
       {
         "id": "d",
-        "text": "Increase the log retention period to 400 days."
+        "text": "Raise log retention on the _Default bucket to 400 days so the declined entries stay searchable",
+        "rationale": "Retention controls how long entries are stored. It creates no metric and triggers no alert."
       }
     ],
     "correct": [
       "a"
     ],
-    "explanation": "A **log-based metric** converts matching log entries into a Cloud Monitoring time series. A **counter** log-based metric filtered on `payment.declined` lets you build an alerting policy on the decline rate directly in Cloud Monitoring, which is the native, low-latency pattern.\n\n- **(b)** BigQuery export plus scheduled queries works for analytics but adds latency and cost and is not the direct alerting path.\n- **(c)** an uptime check measures endpoint reachability, not business-level declines.\n- **(d)** retention affects how long logs are stored, not alerting.",
     "difficulty": 2
   },
   {
@@ -246,23 +291,30 @@
       "slo-sli",
       "error-budget"
     ],
-    "prompt": "You are configuring **SLO burn-rate alerting** in Cloud Monitoring. Which statements about a good burn-rate alerting strategy are correct? (Select all that apply.)",
+    "subObjective": "ops-excellence.2",
+    "sourceUrl": "https://docs.cloud.google.com/stackdriver/docs/solutions/slo-monitoring/alerting-on-budget-burn-rate",
+    "lastVerified": "2026-10-01",
+    "prompt": "You are configuring **SLO burn-rate alerting** in Cloud Monitoring. Which statements about a good burn-rate alerting strategy are correct? Choose three.",
     "choices": [
       {
         "id": "a",
-        "text": "Use a fast-burn alert (high burn rate over a short window) to catch sudden, severe outages quickly."
+        "text": "A fast-burn alert, a high burn rate over a short window, catches sudden severe outages quickly",
+        "rationale": "Cloud Monitoring suggests roughly 10x the baseline over a 1-2 hour lookback as a starting point for fast burn; the SRE workbook pages at 14.4x over 1 hour (2% of a 30-day budget)."
       },
       {
         "id": "b",
-        "text": "Use a slow-burn alert (lower burn rate over a longer window) to catch gradual budget erosion."
+        "text": "A slow-burn alert, a lower burn rate over a longer window, catches gradual error-budget erosion",
+        "rationale": "A modest but sustained excess (Cloud Monitoring suggests about 2x over 24 hours) would still breach the SLO by period end, and only a longer window catches it."
       },
       {
         "id": "c",
-        "text": "Combining multiple burn-rate windows reduces both false positives and detection time."
+        "text": "Pairing a long window with a short window keeps the alert precise and lets it reset quickly after recovery",
+        "rationale": "The short window (about one twelfth of the long one) confirms the budget is still being consumed now, cutting false positives and stale alerts after the problem ends."
       },
       {
         "id": "d",
-        "text": "Alert on every single failed request to guarantee nothing is missed."
+        "text": "Alerting on every individual failed request, so that no budget-consuming error ever goes unnoticed by on-call",
+        "rationale": "Paging on single errors causes alert fatigue. Alerts should be urgent and actionable, which means tying them to the rate at which the budget is threatened."
       }
     ],
     "correct": [
@@ -270,7 +322,6 @@
       "b",
       "c"
     ],
-    "explanation": "Multi-window, multi-burn-rate alerting is the recommended SRE pattern. A **fast-burn** alert (e.g., burning the budget ~14x over 1 hour) pages immediately for severe incidents; a **slow-burn** alert (e.g., ~3x over 24 hours) catches slow leaks. **Combining windows** lets a single short spike that does not threaten the budget be ignored while genuine threats still page quickly, improving both precision and detection time.\n\n- **(d)** is wrong: alerting on every failed request produces alert fatigue and pages on noise that never threatens the SLO; you should alert on budget threat, not individual errors.",
     "difficulty": 3
   },
   {
@@ -281,29 +332,35 @@
       "reliability-production",
       "chaos-engineering"
     ],
+    "subObjective": "ops-excellence.4",
+    "sourceUrl": "https://docs.cloud.google.com/architecture/framework/reliability/perform-testing-for-recovery-from-failures",
+    "lastVerified": "2026-10-01",
     "prompt": "Your platform team wants to proactively validate that the system survives the loss of a zone and that auto-healing and failover actually work, **before** a real outage occurs. Which practice describes this?",
     "choices": [
       {
         "id": "a",
-        "text": "Chaos engineering: deliberately injecting controlled failures in production-like environments to verify resilience."
+        "text": "Chaos engineering: injecting controlled failures, such as draining a zone, to confirm failover and healing",
+        "rationale": "Deliberately executing failures and testing cascading effects shows whether redundancy and auto-healing really work. The Well-Architected reliability guidance recommends running this periodically, for example quarterly."
       },
       {
         "id": "b",
-        "text": "Penetration testing: simulating attacks to find security vulnerabilities."
+        "text": "Penetration testing: simulating attacker behavior against the deployed system to find exploitable vulnerabilities",
+        "rationale": "Penetration tests probe security weaknesses. They do not exercise recovery from infrastructure faults such as losing a zone."
       },
       {
         "id": "c",
-        "text": "Load testing: driving synthetic traffic to find performance limits."
+        "text": "Load testing: driving synthetic traffic at the service to find its throughput and latency limits",
+        "rationale": "Load testing finds capacity limits under demand. It does not verify that failover and auto-healing work when a component disappears (though it is best combined with failure scenarios)."
       },
       {
         "id": "d",
-        "text": "Postmortem review: analyzing an incident after it happens."
+        "text": "Postmortem review: analyzing a past incident to document root causes and follow-up actions",
+        "rationale": "A postmortem is retrospective and happens after a real outage, the opposite of validating resilience before one."
       }
     ],
     "correct": [
       "a"
     ],
-    "explanation": "**Chaos engineering** deliberately introduces controlled faults (killing instances, draining a zone, adding latency, dropping dependencies) to verify that redundancy, auto-healing, and failover behave as designed. The goal is to discover weaknesses **before** customers do.\n\n- **(b)** penetration testing targets security, not resilience to infrastructure faults.\n- **(c)** load testing measures capacity/performance under load, not failure recovery.\n- **(d)** postmortems are retrospective, after an incident, not proactive injection.",
     "difficulty": 1
   },
   {
@@ -314,29 +371,35 @@
       "incident-management",
       "postmortems"
     ],
+    "subObjective": "ops-excellence.3",
+    "sourceUrl": "https://sre.google/sre-book/postmortem-culture/",
+    "lastVerified": "2026-10-01",
     "prompt": "After a major outage, your team writes a postmortem. To align with Google SRE culture, what is the single most important characteristic of the postmortem?",
     "choices": [
       {
         "id": "a",
-        "text": "It should be blameless, focusing on systemic causes and improvements rather than punishing individuals."
+        "text": "Blameless: it focuses on systemic causes and tracked fixes, not on punishing individuals",
+        "rationale": "Blameless postmortems assume people acted with good intentions on the information they had, which encourages honest disclosure and surfaces systemic causes that can be fixed."
       },
       {
         "id": "b",
-        "text": "It should name the engineer responsible so accountability is clear."
+        "text": "Accountable: it names the engineer who made the faulty change so responsibility is unambiguous",
+        "rationale": "Blaming individuals teaches people to hide mistakes, so root causes stay buried and incidents recur."
       },
       {
         "id": "c",
-        "text": "It should be kept private to the leadership team to avoid alarming staff."
+        "text": "Confidential: it is shared only with leadership so staff are not alarmed by the details",
+        "rationale": "Postmortems are meant to be shared widely so the whole organization learns from them, not locked behind management."
       },
       {
         "id": "d",
-        "text": "It should be skipped if the service recovered quickly."
+        "text": "Optional: it is skipped when the service recovered quickly and no customers complained",
+        "rationale": "Postmortems are expected after significant events, and triggers include on-call interventions such as rollbacks, not just long outages. Fast recovery can still hide a systemic weakness."
       }
     ],
     "correct": [
       "a"
     ],
-    "explanation": "Google SRE practices a **blameless postmortem** culture: the focus is on the systemic and process factors that allowed the incident, with concrete, tracked action items, on the assumption that people acted reasonably given the information they had. Blamelessness encourages honest disclosure, which surfaces root causes and prevents recurrence.\n\n- **(b)** naming and blaming suppresses honesty and discourages reporting.\n- **(c)** postmortems should be widely shared so the whole org learns.\n- **(d)** near misses and fast recoveries are still valuable learning; significant incidents warrant a postmortem regardless of duration.",
     "difficulty": 1
   },
   {
@@ -347,29 +410,35 @@
       "reliability-production",
       "load-testing"
     ],
+    "subObjective": "ops-excellence.4",
+    "sourceUrl": "https://sre.google/sre-book/addressing-cascading-failures/",
+    "lastVerified": "2026-10-01",
     "prompt": "Before a major product launch, you must verify the system holds its latency SLO at **3x expected peak traffic** and identify the breaking point. Which activity directly addresses this requirement?",
     "choices": [
       {
         "id": "a",
-        "text": "Load and stress testing with a tool that ramps synthetic traffic to and beyond expected peak."
+        "text": "Load and stress testing that ramps synthetic traffic to and beyond expected peak until limits appear",
+        "rationale": "Google's guidance is to load test components until they break, learning the breaking point and failure mode before real users find it."
       },
       {
         "id": "b",
-        "text": "A blameless postmortem rehearsal."
+        "text": "A blameless postmortem rehearsal where the team walks through a simulated launch-day incident",
+        "rationale": "A rehearsal builds incident-handling skill but generates no traffic and proves nothing about whether the latency SLO holds at 3x peak."
       },
       {
         "id": "c",
-        "text": "Enabling Cloud Profiler in production."
+        "text": "Enabling Cloud Profiler in production so hot functions are visible while real users are on the system",
+        "rationale": "Profiling explains where resources go but does not generate load, so it cannot show whether capacity holds at 3x peak or where the system breaks."
       },
       {
         "id": "d",
-        "text": "Rotating service account keys."
+        "text": "Rotating service account keys on a schedule so credentials never live longer than ninety days",
+        "rationale": "Key rotation is a security hygiene control, unrelated to capacity or latency under load."
       }
     ],
     "correct": [
       "a"
     ],
-    "explanation": "**Load testing** (and its stress-testing variant) drives synthetic traffic up to and beyond the expected peak to validate that SLOs hold under target load and to find the saturation/breaking point. This is the standard pre-launch reliability validation.\n\n- **(b)** postmortems are retrospective.\n- **(c)** profiling explains where resources are spent but does not generate load or prove capacity.\n- **(d)** key rotation is a security hygiene task, unrelated to capacity validation.",
     "difficulty": 1
   },
   {
@@ -380,29 +449,35 @@
       "deployment-release-management",
       "support-operations"
     ],
+    "subObjective": "ops-excellence.3",
+    "sourceUrl": "https://docs.cloud.google.com/compute/docs/instance-groups/rolling-out-updates-to-managed-instance-groups",
+    "lastVerified": "2026-10-01",
     "prompt": "You run a stateless web app on a **Compute Engine managed instance group (MIG)** behind a load balancer. You need to roll out a new instance template gradually with **zero downtime**, controlling how many instances update at once and how many extra instances may be created during the update. Which mechanism should you use?",
     "choices": [
       {
         "id": "a",
-        "text": "A MIG rolling update with maxSurge and maxUnavailable parameters."
+        "text": "Start a MIG rolling update to the new template, tuning maxSurge and maxUnavailable",
+        "rationale": "A proactive rolling update replaces instances gradually. With maxUnavailable at 0 and maxSurge above 0, new instances come up before old ones are removed, giving zero downtime."
       },
       {
         "id": "b",
-        "text": "Deleting the MIG and recreating it with the new template."
+        "text": "Delete the MIG and recreate it from the new instance template while the load balancer waits",
+        "rationale": "Deleting the group removes all serving capacity until the new group is healthy, so it causes downtime and offers no pace control."
       },
       {
         "id": "c",
-        "text": "Manually SSHing into each VM to patch the binary."
+        "text": "Connect to each VM over SSH in turn and patch the application binary in place by hand",
+        "rationale": "Hand patching is slow, unrepeatable and causes drift from the instance template, so new VMs will not match patched ones."
       },
       {
         "id": "d",
-        "text": "Scaling the MIG to zero, then back up."
+        "text": "Scale the MIG to zero instances, switch the template, then scale back up to the old size",
+        "rationale": "Dropping to zero instances is a full outage; the gradual, parameter-controlled replacement is what a rolling update provides."
       }
     ],
     "correct": [
       "a"
     ],
-    "explanation": "A **MIG rolling update** (automated update with a new instance template) replaces instances in a controlled way. **maxSurge** controls how many extra instances can be created above the target size, and **maxUnavailable** controls how many can be down at once, enabling zero-downtime, incremental rollout. You can also use canary by updating only a portion of instances.\n\n- **(b)** deleting/recreating causes downtime and loses gradual control.\n- **(c)** manual patching is unrepeatable and drift-prone.\n- **(d)** scaling to zero is an outage.",
     "difficulty": 2
   },
   {
@@ -413,23 +488,30 @@
       "operational-excellence",
       "quality-control"
     ],
+    "subObjective": "ops-excellence.1",
+    "sourceUrl": "https://docs.cloud.google.com/architecture/framework/operational-excellence",
+    "lastVerified": "2026-10-01",
     "prompt": "Which practices align with the **Operational Excellence pillar** of the Google Cloud Well-Architected Framework? (Select all that apply.)",
     "choices": [
       {
         "id": "a",
-        "text": "Automate toil and manual operational tasks where feasible."
+        "text": "Automate toil and repetitive operational tasks wherever it is feasible to do so",
+        "rationale": "The pillar's change-management guidance stresses automation (IaC, CI/CD, configuration management) to remove manual labor and error."
       },
       {
         "id": "b",
-        "text": "Define and measure SLOs/SLIs to make reliability decisions data-driven."
+        "text": "Define and measure SLOs and SLIs so reliability decisions are driven by data",
+        "rationale": "Operational readiness starts by defining SMART SLOs and measuring against them, which makes reliability trade-offs data-driven."
       },
       {
         "id": "c",
-        "text": "Continuously improve through blameless postmortems and tracked action items."
+        "text": "Improve continuously through blameless postmortems whose action items are tracked to completion",
+        "rationale": "The pillar's incident guidance calls for blameless post-incident reviews and a knowledge base so lessons turn into preventive changes."
       },
       {
         "id": "d",
-        "text": "Treat every production change as a one-off manual procedure to maximize human oversight."
+        "text": "Run each production change as a one-off manual procedure so humans can inspect every step",
+        "rationale": "Manual one-off changes are slow and inconsistent and add risk. The pillar favors codified, tested, automated change."
       }
     ],
     "correct": [
@@ -437,7 +519,6 @@
       "b",
       "c"
     ],
-    "explanation": "The **Operational Excellence** pillar emphasizes operational readiness, automation of repetitive work (reducing toil), data-driven reliability via **SLIs/SLOs**, observability, and continuous improvement through learning from incidents (**blameless postmortems** with tracked actions).\n\n- **(d)** is wrong: manual, one-off procedures increase toil, risk, and inconsistency; the pillar favors codified, automated, repeatable operations (IaC, CI/CD, runbooks/playbooks).",
     "difficulty": 2
   },
   {
@@ -448,29 +529,36 @@
       "monitoring-logging",
       "support-operations"
     ],
+    "subObjective": "ops-excellence.2",
+    "sourceUrl": "https://docs.cloud.google.com/logging/docs/buckets",
+    "lastVerified": "2026-10-01",
     "prompt": "A compliance team requires that **all admin activity audit logs** from across the organization be retained immutably for 7 years and be queryable, while keeping them out of the projects that generate them. What is the recommended Cloud Logging design?",
     "choices": [
       {
         "id": "a",
-        "text": "Create an aggregated log sink at the organization level that routes the relevant logs to a dedicated, access-controlled destination (e.g., a Cloud Storage bucket or BigQuery dataset) with appropriate retention/lock."
+        "text": "Use an organization aggregated sink to route audit logs to a locked 7-year log bucket in a security project",
+        "rationale": "An aggregated sink with includeChildren centralizes logs from every project. A user-defined log bucket supports retention up to 3650 days (7 years is 2,555) and can be locked, which blocks deletion until entries age out, and it stays queryable."
       },
       {
         "id": "b",
-        "text": "Increase the _Default log bucket retention in every project to 7 years."
+        "text": "Raise the _Default log bucket retention to 7 years in every project that generates admin activity audit logs",
+        "rationale": "Admin Activity audit logs are written to the _Required bucket, not _Default, and that bucket's 400-day retention cannot be changed. Per-project settings also leave the logs inside the projects that produce them."
       },
       {
         "id": "c",
-        "text": "Manually download logs from the Logs Explorer each month and email them."
+        "text": "Have an engineer export admin activity logs from the Logs Explorer each month and archive the files",
+        "rationale": "A manual export is not immutable, auditable or scalable, and any gap between exports is a compliance hole."
       },
       {
         "id": "d",
-        "text": "Disable audit logs to reduce noise and cost."
+        "text": "Disable admin activity audit logging in the source projects to reduce noise and storage costs",
+        "rationale": "Admin Activity logs are always written and cannot be disabled or excluded, and disabling them would contradict the compliance requirement anyway."
       }
     ],
     "correct": [
       "a"
     ],
-    "explanation": "An **aggregated sink** at the organization (or folder) level with `includeChildren` routes matching log entries from all projects to a **centralized, access-controlled destination**. Routing to a Cloud Storage bucket (with retention/bucket lock) or BigQuery gives long-term, immutable, queryable retention separated from the source projects, which is the standard compliance pattern.\n\n- **(b)** per-project retention is unmanageable at scale and does not centralize or isolate the data.\n- **(c)** manual export is not immutable, auditable, or scalable.\n- **(d)** disabling audit logs defeats the compliance requirement.",
+    "explanation": "Admin Activity logs always land in the _Required bucket (400 days, not configurable), so long retention needs a sink to a bucket you control.",
     "difficulty": 2
   },
   {
@@ -480,29 +568,35 @@
     "concepts": [
       "slo-sli"
     ],
+    "subObjective": "ops-excellence.4",
+    "sourceUrl": "https://docs.cloud.google.com/stackdriver/docs/solutions/slo-monitoring",
+    "lastVerified": "2026-10-01",
     "prompt": "When defining reliability targets, what is the precise distinction between an **SLI** and an **SLO**?",
     "choices": [
       {
         "id": "a",
-        "text": "An SLI is a measured quantity (e.g., the proportion of successful requests); an SLO is the target/threshold for that indicator over a window (e.g., 99.9% over 30 days)."
+        "text": "An SLI is a measured quantity such as the ratio of good requests; an SLO is the target for it",
+        "rationale": "The SLI is the measurement (for example successful requests over valid requests); the SLO is the target for it over a compliance period, and the gap to 100% is the error budget."
       },
       {
         "id": "b",
-        "text": "An SLI is the legal contract with the customer; an SLO is an internal guess."
+        "text": "An SLI is the contractual commitment made to customers; an SLO is merely an internal estimate of it",
+        "rationale": "The customer-facing commitment with consequences is the SLA. Internal SLOs are deliberately set tighter than the SLA to give early warning."
       },
       {
         "id": "c",
-        "text": "An SLI and SLO are the same thing with different names."
+        "text": "An SLI and an SLO are the same measurement; the term depends on which team reports it",
+        "rationale": "They are distinct concepts: a measurement and a target for that measurement."
       },
       {
         "id": "d",
-        "text": "An SLO is the raw metric; an SLI is the financial penalty when it is missed."
+        "text": "An SLO is the raw metric stream; an SLI is the financial penalty applied when it is missed",
+        "rationale": "This reverses the definitions and confuses penalties, which belong to an SLA, with measurement."
       }
     ],
     "correct": [
       "a"
     ],
-    "explanation": "An **SLI (Service Level Indicator)** is a quantitative measure of service behavior, typically expressed as a ratio of good events to valid events (e.g., successful requests / total requests, or fraction of requests under 300 ms). An **SLO (Service Level Objective)** is the **target value or range** for that SLI over a time window (e.g., 99.9% over 30 days). The gap to 100% defines the error budget.\n\n- **(b)** the customer-facing contract with penalties is an **SLA**, not an SLI.\n- **(c)** they are distinct: measurement vs. target.\n- **(d)** reverses the definitions and conflates penalties (SLA) with measurement.",
     "difficulty": 1
   },
   {
@@ -513,29 +607,35 @@
       "reliability-production",
       "penetration-testing"
     ],
+    "subObjective": "ops-excellence.4",
+    "sourceUrl": "https://support.google.com/cloud/answer/6262505",
+    "lastVerified": "2026-10-01",
     "prompt": "Your security team wants to run a **penetration test** against your production Google Cloud environment. What is the correct expectation regarding Google Cloud's rules?",
     "choices": [
       {
         "id": "a",
-        "text": "You may test your own projects/resources without pre-authorizing with Google, as long as you stay within your resources and comply with the Acceptable Use and Terms of Service."
+        "text": "Test your own projects without notifying Google, staying within your resources and the Acceptable Use Policy",
+        "rationale": "Google does not require customers to notify it before penetration testing, provided the tests affect only the customer's own projects and comply with the Acceptable Use Policy and Terms of Service."
       },
       {
         "id": "b",
-        "text": "You must always open a support case and wait weeks for written approval before any test."
+        "text": "Open a support case and wait for written approval from Google before any test can start",
+        "rationale": "No pre-approval or notification is required. This reflects an older practice of requesting permission."
       },
       {
         "id": "c",
-        "text": "Penetration testing of any kind is strictly forbidden on Google Cloud."
+        "text": "Penetration testing of any kind is prohibited on Google Cloud, so use external lab copies",
+        "rationale": "Testing your own resources is explicitly allowed. Only testing that affects other customers or violates the AUP is prohibited."
       },
       {
         "id": "d",
-        "text": "You may attack other tenants' resources to test isolation."
+        "text": "Probe any tenant's resources that share your network ranges so isolation can be validated",
+        "rationale": "Targeting other customers' resources is forbidden. Tests must be confined to your own projects."
       }
     ],
     "correct": [
       "a"
     ],
-    "explanation": "Google Cloud allows customers to **conduct penetration testing against their own projects/resources without prior notification to Google**, provided the activity stays within the customer's own resources and complies with the Acceptable Use Policy and Terms of Service. The testing must not target other customers or Google's underlying infrastructure.\n\n- **(b)** prior written approval is not required for testing your own resources (though you remain bound by policy).\n- **(c)** pen testing is permitted within the rules, not forbidden.\n- **(d)** attacking other tenants violates the AUP and the law.",
     "difficulty": 2
   },
   {
@@ -548,29 +648,35 @@
       "reliability-production"
     ],
     "caseStudyId": "altostrat-media",
+    "subObjective": "ops-excellence.3",
+    "sourceUrl": "https://docs.cloud.google.com/deploy/docs/automation",
+    "lastVerified": "2026-10-01",
     "prompt": "Altostrat Media streams video globally and deploys its recommendation service to GKE several times a day. They want each release to automatically expose a small slice of users, run health checks against latency and error SLOs, and roll back without human intervention if the slice degrades. Which combination best implements this?",
     "choices": [
       {
         "id": "a",
-        "text": "Cloud Deploy with a canary strategy plus automated verification gated on Cloud Monitoring SLO/golden-signal checks, configured to auto-rollback on failure."
+        "text": "Cloud Deploy canary with a verify job querying Cloud Monitoring latency and errors, and a repair rule that rolls back",
+        "rationale": "Canary phases limit exposure on GKE. The verify container is your own code, so it can query Cloud Monitoring SLO metrics, and a failed verification fails the rollout. A repairRolloutRule then creates a rollback to the last good release with no human step."
       },
       {
         "id": "b",
-        "text": "A nightly recreate deployment with manual smoke tests the next morning."
+        "text": "A nightly recreate deployment of the GKE workload with manual smoke tests run the following morning by the team",
+        "rationale": "Recreate means downtime and a once-a-day cadence, which cannot support several releases per day or fast feedback."
       },
       {
         "id": "c",
-        "text": "Blue-green with a manual approval and a 24-hour soak before every switch."
+        "text": "Blue-green releases that wait on a manual approval and a 24-hour soak period before every traffic switch",
+        "rationale": "Mandatory manual gates and a day-long soak defeat the goal of rapid, self-service, automated releases."
       },
       {
         "id": "d",
-        "text": "Pushing directly to the production branch and relying on user bug reports."
+        "text": "Merge straight to the production branch and rely on subscriber bug reports to reveal problems after release",
+        "rationale": "Customer reports are the slowest detection signal and give maximum blast radius. They are not a health check against the latency and error SLOs."
       }
     ],
     "correct": [
       "a"
     ],
-    "explanation": "For frequent, low-risk GKE releases, **Cloud Deploy's canary strategy** progressively shifts traffic and supports **automated verification** steps that can query Cloud Monitoring (latency, errors, SLO burn). Gating promotion on those checks and enabling **automatic rollback** delivers the self-service, low-blast-radius pipeline Altostrat needs.\n\n- **(b)** nightly recreate adds downtime and slow feedback, unsuitable for several daily releases.\n- **(c)** a mandatory 24-hour manual soak defeats the goal of fast, automated releases.\n- **(d)** relying on user reports has the largest blast radius and slowest detection.",
     "difficulty": 2
   },
   {
@@ -583,29 +689,35 @@
       "error-budget"
     ],
     "caseStudyId": "cymbal-retail",
+    "subObjective": "ops-excellence.3",
+    "sourceUrl": "https://sre.google/sre-book/managing-incidents/",
+    "lastVerified": "2026-10-01",
     "prompt": "Cymbal Retail's order API has a 99.95% availability SLO. During a flash sale, a partial outage is burning the error budget at roughly **20x the sustainable rate**. The on-call engineer is alone and overwhelmed. What is the most appropriate incident-management action?",
     "choices": [
       {
         "id": "a",
-        "text": "Declare an incident, assign an incident commander, and follow the escalation/communication runbook while mitigating."
+        "text": "Declare an incident, name an incident commander, and follow the escalation runbook while mitigating",
+        "rationale": "A fast burn during a customer-facing event warrants a declared incident. SRE practice splits roles (commander, operations, communications) so one overwhelmed engineer is not doing everything, and mitigation comes first."
       },
       {
         "id": "b",
-        "text": "Wait until the budget is fully exhausted before involving anyone else."
+        "text": "Wait until the entire monthly error budget is exhausted before pulling any other engineers in to help",
+        "rationale": "At 20x burn the budget is gone in hours. Waiting extends customer impact and leaves the lone on-call engineer to cope."
       },
       {
         "id": "c",
-        "text": "Immediately rewrite the SLO to 99.0% so the alert clears."
+        "text": "Rewrite the availability SLO from 99.95% to 99.0% so that the burn-rate alert stops firing right away",
+        "rationale": "Changing the target silences the alert but leaves customers failing; it hides the incident instead of resolving it."
       },
       {
         "id": "d",
-        "text": "Open a postmortem document and write root-cause analysis before mitigating the live outage."
+        "text": "Start the postmortem and root-cause write-up first, and apply mitigations once it is finished",
+        "rationale": "Postmortems follow the incident. Root-cause analysis during a live outage delays mitigation."
       }
     ],
     "correct": [
       "a"
     ],
-    "explanation": "A high burn rate during a customer-facing event is a clear incident. Good incident management means **declaring an incident, establishing roles (incident commander, comms/ops leads), and following the runbook** for escalation and stakeholder communication while focusing on **mitigation first** (stop the bleeding). This scales the response beyond a single overwhelmed engineer.\n\n- **(b)** waiting wastes the remaining budget and prolongs customer impact.\n- **(c)** changing the SLO to silence the alert hides the problem.\n- **(d)** the postmortem comes **after** mitigation; writing root cause during a live outage delays recovery.",
     "difficulty": 2
   },
   {
@@ -618,23 +730,30 @@
       "support-operations"
     ],
     "caseStudyId": "ehr-healthcare",
+    "subObjective": "ops-excellence.2",
+    "sourceUrl": "https://docs.cloud.google.com/architecture/framework/operational-excellence/operational-readiness-and-performance-using-cloudops",
+    "lastVerified": "2026-10-01",
     "prompt": "EHR Healthcare runs regulated clinical workloads and is centralizing observability across many GKE clusters and on-prem systems. Which Google Cloud Observability capabilities help them meet quality-control and operational-support goals? (Select all that apply.)",
     "choices": [
       {
         "id": "a",
-        "text": "Cloud Monitoring dashboards and alerting policies on golden signals and SLOs across clusters."
+        "text": "Cloud Monitoring dashboards and alerting policies on golden signals and SLOs across all clusters",
+        "rationale": "Centralized dashboards and SLO-based alerts give the consistent monitoring EHR needs, replacing email alerts that were frequently ignored with urgent, actionable ones."
       },
       {
         "id": "b",
-        "text": "Cloud Logging with structured logs and log-based metrics for audit and quality signals."
+        "text": "Cloud Logging with structured logs and log-based metrics to capture audit and quality signals",
+        "rationale": "Structured logs and log-based metrics provide consistent logging and turn audit and quality events into measurable, alertable signals."
       },
       {
         "id": "c",
-        "text": "Cloud Trace and Cloud Profiler to diagnose latency and resource hotspots in services."
+        "text": "Cloud Trace and Cloud Profiler to find latency and resource hotspots inside individual services",
+        "rationale": "Tracing and profiling support the pillar's guidance to review traces and use code profiling to find bottlenecks, helping meet the latency goal."
       },
       {
         "id": "d",
-        "text": "Disabling all logging in production to reduce attack surface and cost."
+        "text": "Turning off logging in production workloads to shrink the attack surface and lower storage costs",
+        "rationale": "Disabling logging removes the audit trail and the troubleshooting data that a regulated provider with a 99.9% target depends on."
       }
     ],
     "correct": [
@@ -642,7 +761,6 @@
       "b",
       "c"
     ],
-    "explanation": "A regulated, multi-cluster estate benefits from the full **Google Cloud Observability** stack: **Cloud Monitoring** for cross-cluster dashboards, SLOs, and alerting on golden signals; **Cloud Logging** with structured logs and **log-based metrics** for audit trails and quality indicators; and **Cloud Trace + Cloud Profiler** for latency and resource diagnostics. Managed collection (e.g., Managed Service for Prometheus) and aggregated sinks support centralization.\n\n- **(d)** is wrong: disabling logging cripples audit, troubleshooting, and compliance, the opposite of what a regulated provider needs.",
     "difficulty": 2
   },
   {
@@ -654,30 +772,37 @@
       "error-budget",
       "alerting"
     ],
+    "subObjective": "ops-excellence.2",
+    "sourceUrl": "https://sre.google/workbook/alerting-on-slos/",
+    "lastVerified": "2026-10-01",
     "prompt": "Your service has a **99.9% availability SLO** measured over 30 days. You want alerts that page quickly on fast burn but avoid noise on slow burn. Which approach aligns with Google SRE guidance?",
     "choices": [
       {
         "id": "a",
-        "text": "Multi-window, multi-burn-rate alerts on the error budget (e.g., a fast 1h/5m pair and a slow 6h/30m pair)"
+        "text": "Multi-window, multi-burn-rate alerts, such as a 14.4x page over 1h and a 1x ticket over 3 days",
+        "rationale": "For a 99.9% SLO the SRE workbook starts with 14.4x over 1 hour (2% of budget, page) and 1x over 3 days (10%, ticket), each with a short window about one twelfth of the long window to cut false positives."
       },
       {
         "id": "b",
-        "text": "A single threshold alert whenever availability drops below 99.9% in any 1-minute window"
+        "text": "A single threshold alert that fires whenever availability dips below 99.9% in any one-minute window",
+        "rationale": "Short dips that barely touch the budget would page constantly, and the alert says nothing about how fast the budget is being consumed."
       },
       {
         "id": "c",
-        "text": "Alert whenever any single 5xx error occurs"
+        "text": "An alert that fires whenever any single 5xx response is returned by the service to a client",
+        "rationale": "Every system returns occasional errors within its budget, so this would be pure noise and cause alert fatigue."
       },
       {
         "id": "d",
-        "text": "Alert only once the monthly error budget is fully exhausted"
+        "text": "An alert that fires only after the full monthly error budget has already been completely consumed",
+        "rationale": "By then the SLO is already breached and there is nothing left to protect, so the alert comes far too late to act on."
       }
     ],
     "correct": [
       "a"
     ],
-    "explanation": "Google SRE recommends **multi-window, multi-burn-rate** alerting: a short+long window pair detects fast burn (page) while longer windows catch slow burn (ticket), balancing detection speed against false positives. A 1-minute threshold is noisy, alerting on any 5xx ignores the budget, and waiting for full exhaustion alerts far too late to act.",
-    "difficulty": 3
+    "difficulty": 3,
+    "examOnly": true
   },
   {
     "id": "q-ops-excellence-021",
@@ -688,31 +813,38 @@
       "blue-green",
       "deployment-release-management"
     ],
-    "prompt": "You are choosing a progressive-delivery strategy (e.g., with Cloud Deploy) for a high-traffic API. Which statements are correct? (Choose two.)",
+    "subObjective": "ops-excellence.3",
+    "sourceUrl": "https://docs.cloud.google.com/deploy/docs/deployment-strategies/canary",
+    "lastVerified": "2026-10-01",
+    "prompt": "You are choosing a progressive-delivery strategy for a high-traffic API on Google Cloud. Which statements are correct? Choose two.",
     "choices": [
       {
         "id": "a",
-        "text": "Canary sends a small percentage of live traffic to the new version, giving early detection with a limited blast radius"
+        "text": "Canary sends a small percentage of live traffic to the new version, giving early detection and a limited blast radius",
+        "rationale": "A canary exposes only a subset of users first, and promotion proceeds only if health signals stay good."
       },
       {
         "id": "b",
-        "text": "Blue-green runs two full environments and switches traffic at once, enabling near-instant rollback by flipping back"
+        "text": "Blue-green runs two full environments and switches traffic at once, so rollback means flipping back",
+        "rationale": "Keeping the old environment intact makes rollback a fast traffic switch, at the cost of running two full environments during the cutover."
       },
       {
         "id": "c",
-        "text": "Canary inherently requires roughly double the steady-state infrastructure of blue-green"
+        "text": "Canary inherently needs roughly double the steady-state infrastructure that a blue-green release needs",
+        "rationale": "This is reversed: blue-green typically needs about double capacity during cutover, while a canary adds only a fraction."
       },
       {
         "id": "d",
-        "text": "Blue-green, by itself, provides gradual percentage-based traffic shifting"
+        "text": "Blue-green on its own provides gradual, percentage-based traffic shifting between the two environments",
+        "rationale": "Gradual percentage shifting is the defining property of a canary. Blue-green by itself is an all-at-once switch."
       }
     ],
     "correct": [
       "a",
       "b"
     ],
-    "explanation": "**Canary** gradually shifts a small percentage of real traffic to the new version (small blast radius, early signal). **Blue-green** keeps two complete environments and cuts over at once, so rollback is a fast flip back to the old environment. (c) is reversed — **blue-green** is the one that typically needs ~2x capacity. (d) is wrong — gradual % shifting characterizes canary; blue-green by itself is an all-at-once switch.",
-    "difficulty": 3
+    "difficulty": 3,
+    "examOnly": true
   },
   {
     "id": "q-ops-excellence-022",
@@ -723,29 +855,1210 @@
       "profiling-benchmarking",
       "monitoring-logging"
     ],
+    "subObjective": "ops-excellence.2",
+    "sourceUrl": "https://docs.cloud.google.com/trace/docs/overview",
+    "lastVerified": "2026-10-01",
     "prompt": "Users report intermittent high latency on a microservices app spanning ~12 services. You must pinpoint **which downstream call dominates p99 latency** for affected requests. Which Cloud Observability tool is the best fit?",
     "choices": [
       {
         "id": "a",
-        "text": "Cloud Trace (distributed tracing) to inspect per-span latency across services"
+        "text": "Cloud Trace, to inspect per-span latency across the services that handle each affected request",
+        "rationale": "Trace breaks each request into spans across services, so the downstream call that dominates tail latency stands out, and the Trace Explorer heatmap helps isolate slow requests."
       },
       {
         "id": "b",
-        "text": "Cloud Logging with a log-based metric counting requests"
+        "text": "Cloud Logging with a log-based metric that counts the requests each service receives",
+        "rationale": "A request count shows volume but not where time is spent in a call chain."
       },
       {
         "id": "c",
-        "text": "Cloud Monitoring uptime checks"
+        "text": "Cloud Monitoring uptime checks that probe the public endpoint from several regions",
+        "rationale": "Uptime checks measure external availability and cannot attribute latency to an internal downstream call."
       },
       {
         "id": "d",
-        "text": "Cloud Profiler flame graphs of CPU usage"
+        "text": "Cloud Profiler flame graphs that show how CPU time is split by function inside one process",
+        "rationale": "Profiler shows in-process CPU and heap use, not time spent waiting on other services across a request path."
       }
     ],
     "correct": [
       "a"
     ],
-    "explanation": "**Cloud Trace** decomposes a request into spans across services, revealing which downstream call contributes most to tail (p99) latency. Log-based metrics count events but don't attribute cross-service latency. Uptime checks measure availability, not internal latency breakdown. Cloud Profiler shows in-process CPU/heap, not cross-service request latency.",
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "id": "q-ops-excellence-023",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "operational-excellence",
+      "well-architected-framework"
+    ],
+    "subObjective": "ops-excellence.1",
+    "sourceUrl": "https://docs.cloud.google.com/architecture/framework/operational-excellence/operational-readiness-and-performance-using-cloudops",
+    "lastVerified": "2026-10-01",
+    "prompt": "A platform team is told its migration plan must \"ensure operational readiness and performance\" before go-live, using the operational excellence pillar of the Google Cloud Well-Architected Framework. Which set of activities does the framework associate with that principle?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Right-size resources, enable autoscaling, and monitor cost closely so spend follows actual demand over time",
+        "rationale": "This is the principle of managing and optimizing cloud resources. Autoscaling supports capacity planning but the activity list here is about efficiency, not readiness."
+      },
+      {
+        "id": "b",
+        "text": "Put infrastructure in code, store it in version control, and ship it through CI/CD pipelines with tests",
+        "rationale": "These practices belong to the separate principle of automating and managing change. They matter, but they do not establish whether the system meets its service levels."
+      },
+      {
+        "id": "c",
+        "text": "Define SLOs, set up comprehensive monitoring, run performance tests, and plan capacity from usage history",
+        "rationale": "This is the readiness principle: SMART SLOs, comprehensive observability, regular performance and load testing, and capacity planning from historical usage and growth projections."
+      },
+      {
+        "id": "d",
+        "text": "Write incident runbooks, centralize incident tracking, and hold blameless reviews with a knowledge base",
+        "rationale": "These describe the principle of managing incidents and problems, which covers response after something goes wrong rather than readiness beforehand."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "difficulty": 1,
+    "examOnly": true
+  },
+  {
+    "id": "q-ops-excellence-024",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "iac-terraform",
+      "operational-excellence"
+    ],
+    "caseStudyId": "ehr-healthcare",
+    "subObjective": "ops-excellence.1",
+    "sourceUrl": "https://docs.cloud.google.com/architecture/framework/operational-excellence/automate-and-manage-change",
+    "lastVerified": "2026-10-01",
+    "prompt": "EHR Healthcare's on-premises outages were frequently caused by misconfiguration across similar-but-separate environments. As it standardizes on Google Cloud, which change management approach best addresses that root cause?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Require two senior engineers to approve every console change and record the steps in a shared wiki page",
+        "rationale": "Approvals add friction but each console change is still a manual, unrepeatable step, so environments keep drifting. Wiki notes document drift rather than prevent it."
+      },
+      {
+        "id": "b",
+        "text": "Give one platform administrator exclusive console access so that every environment is configured by one person",
+        "rationale": "A single administrator is a bottleneck and a single point of failure. Manual configuration by one person still yields inconsistent environments and no tested, reviewable change history."
+      },
+      {
+        "id": "c",
+        "text": "Snapshot each environment weekly and restore the snapshot whenever a misconfiguration causes an outage",
+        "rationale": "Restoring snapshots treats the symptom after an outage and can lose up to a week of changes. It does nothing to stop misconfigurations from being introduced."
+      },
+      {
+        "id": "d",
+        "text": "Define environments as Terraform in version control and apply changes only through a tested CI/CD pipeline",
+        "rationale": "Infrastructure as code gives consistent, repeatable environments, version control adds history and rollback, and pipeline tests catch errors before they reach production. This removes hand-made differences between environments."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "id": "q-ops-excellence-025",
+    "type": "multiple",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "incident-management",
+      "operational-excellence"
+    ],
+    "subObjective": "ops-excellence.1",
+    "sourceUrl": "https://docs.cloud.google.com/architecture/framework/operational-excellence/manage-incidents-and-problems",
+    "lastVerified": "2026-10-01",
+    "prompt": "Your operations team wants to apply the Well-Architected Framework's guidance on managing incidents and problems. Which two practices does the framework recommend? Choose two.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Keep a knowledge base of known issues and their fixes so teams stop repeating past mistakes",
+        "rationale": "A knowledge base lets teams learn from earlier incidents and shortens diagnosis the next time a similar problem appears."
+      },
+      {
+        "id": "b",
+        "text": "Limit incident details to the on-call engineer to keep the response channel quiet and focused",
+        "rationale": "Restricting information hurts coordination. The point of centralized management is shared visibility so the right people can collaborate."
+      },
+      {
+        "id": "c",
+        "text": "Skip the post-incident review whenever an automated remediation resolved the incident by itself",
+        "rationale": "The framework asks for thorough post-incident reviews to find root causes. Automation that clears the symptom does not explain why the failure happened or prevent it recurring."
+      },
+      {
+        "id": "d",
+        "text": "Document response procedures, roles and communication paths in a runbook or playbook",
+        "rationale": "The framework recommends a runbook or playbook that gives responders a standardized reference for roles, responsibilities and communication."
+      },
+      {
+        "id": "e",
+        "text": "Let each team track incidents in its own tool so teams keep full autonomy over their process",
+        "rationale": "The framework recommends a unified incident management system. Separate tools fragment visibility and make cross-team coordination slower."
+      }
+    ],
+    "correct": [
+      "a",
+      "d"
+    ],
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "id": "q-ops-excellence-026",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "support-operations",
+      "load-testing"
+    ],
+    "caseStudyId": "cymbal-retail",
+    "subObjective": "ops-excellence.3",
+    "sourceUrl": "https://docs.cloud.google.com/support/docs/premium",
+    "lastVerified": "2026-10-01",
+    "prompt": "Cymbal Retail is planning its largest flash sale and wants Google's help load testing and rehearsing disaster recovery for the event. It also wants a first meaningful response within 15 minutes on Priority 1 cases. The sale is 45 days away. Which plan fits?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Buy Enhanced Support and rely on its one-hour P1 first-response target to cover the sale period",
+        "rationale": "Enhanced Support's P1 response target is one hour, which misses the 15-minute requirement. It is a solid tier for 24/7 coverage but does not meet this specific target."
+      },
+      {
+        "id": "b",
+        "text": "Buy Premium Support, but request Event Management only two weeks before the sale so the details are fresh",
+        "rationale": "The tier is right but the timing fails: Event Management needs 30 days of lead time, so a request 14 days out cannot be accommodated."
+      },
+      {
+        "id": "c",
+        "text": "Use Personalized Service Health alerts and dashboards to spot Google Cloud problems during the sale",
+        "rationale": "Personalized Service Health tells you about Google Cloud incidents affecting your projects. It provides no load testing, DR rehearsal or faster case response."
+      },
+      {
+        "id": "d",
+        "text": "Buy Premium Support and request Event Management now, as planned events need 30 days of lead time",
+        "rationale": "Premium Support offers a 15-minute first response on P1 cases and Event Management for planned peak events, covering load testing, DR testing and post-event analysis. Event Management requires 30 days of lead time, and 45 days leaves room."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "id": "q-ops-excellence-027",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "monitoring-logging",
+      "cloud-observability"
+    ],
+    "subObjective": "ops-excellence.2",
+    "sourceUrl": "https://docs.cloud.google.com/error-reporting/docs/grouping-errors",
+    "lastVerified": "2026-10-01",
+    "prompt": "Your Cloud Run services emit thousands of stack traces per day into Cloud Logging. Developers want similar exceptions grouped by root cause so they can prioritize fixes and notice new error types. Which Google Cloud service should you use?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Cloud Trace, which stitches spans from each request into a latency timeline across services",
+        "rationale": "Trace shows where time is spent in a request. It does not group exceptions by cause or highlight new error types."
+      },
+      {
+        "id": "b",
+        "text": "Cloud Profiler, which samples CPU and heap use to show hot functions in the running code",
+        "rationale": "Profiler attributes resource consumption to functions. It has no notion of exceptions or error grouping."
+      },
+      {
+        "id": "c",
+        "text": "Error Reporting, which aggregates error events by root cause and groups similar stack traces together",
+        "rationale": "Error Reporting collects error events from the API or by scanning logs for stack traces, and groups them by exception type, stack frames or message so each distinct problem appears once."
+      },
+      {
+        "id": "d",
+        "text": "Cloud Monitoring uptime checks, which probe the service endpoint from several global regions",
+        "rationale": "Uptime checks verify external availability. A service can pass them while throwing many handled or partial exceptions."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "difficulty": 1,
+    "examOnly": true
+  },
+  {
+    "id": "q-ops-excellence-028",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "monitoring-logging",
+      "alerting"
+    ],
+    "subObjective": "ops-excellence.2",
+    "sourceUrl": "https://docs.cloud.google.com/monitoring/uptime-checks",
+    "lastVerified": "2026-10-01",
+    "prompt": "An HTTPS uptime check for a booking API runs from all regions with the default alerting condition. The exhibit shows one six-minute window in which the on-call engineer saw a failing region on the dashboard, but no notification was sent. What best explains this, and what should you do?",
+    "exhibit": {
+      "label": "Uptime check results by checker region (HTTPS check, global)",
+      "format": "table",
+      "content": "| Checker region | 10:00 | 10:01 | 10:02 | 10:03 | 10:04 | 10:05 |\n|---|---|---|---|---|---|---|\n| USA_OREGON | pass | pass | pass | pass | pass | pass |\n| USA_IOWA | pass | pass | pass | pass | pass | pass |\n| USA_VIRGINIA | pass | pass | pass | pass | pass | pass |\n| EUROPE | pass | pass | pass | pass | pass | pass |\n| SOUTH_AMERICA | pass | pass | pass | pass | pass | pass |\n| ASIA_PACIFIC | FAIL | FAIL | FAIL | FAIL | FAIL | FAIL |"
+    },
+    "choices": [
+      {
+        "id": "a",
+        "text": "The ASIA_PACIFIC checker is informational only, so its failures never contribute to any alerting condition",
+        "rationale": "Every selected checker region counts toward the uptime check's results. The condition did not fire because only one region failed, not because that region is ignored."
+      },
+      {
+        "id": "b",
+        "text": "Uptime checks alert only after five consecutive failures per region, so the policy simply had not reached its count",
+        "rationale": "No such five-failure rule exists. Even if the count were met, the failure here persisted for six minutes, far beyond the default one-minute duration."
+      },
+      {
+        "id": "c",
+        "text": "Only private uptime checks can trigger alerting policies, so this public check could never have notified anyone",
+        "rationale": "Public uptime checks can drive alerting policies. Private checks are needed for resources a public checker cannot reach, such as inside a VPC Service Controls perimeter."
+      },
+      {
+        "id": "d",
+        "text": "Default uptime alerts need at least two regions failing for a minute, so inspect the single failing region's path",
+        "rationale": "By default, notifications are sent when at least two regions report failures for at least one minute. One failing region suggests a regional network or routing problem, so investigate that path rather than assume a global outage."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "id": "q-ops-excellence-029",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "alerting",
+      "support-operations"
+    ],
+    "subObjective": "ops-excellence.2",
+    "sourceUrl": "https://docs.cloud.google.com/monitoring/support/notification-options",
+    "lastVerified": "2026-10-01",
+    "prompt": "An on-call rotation receives pages for an SLO burn-rate policy through PagerDuty only. Leadership wants alerts to still arrive when part of Google Cloud's notification delivery is degraded. What should you do?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Add Slack and a webhook channel as well, since every extra channel automatically adds real redundancy",
+        "rationale": "Slack, webhooks and PagerDuty depend on the same internal Google Cloud service, so a failure there takes all of them out at once."
+      },
+      {
+        "id": "b",
+        "text": "Shorten the policy's retest window to one minute so that the single PagerDuty notification is sent sooner",
+        "rationale": "A shorter retest window only changes when the alert opens. It adds no delivery path and increases false positives."
+      },
+      {
+        "id": "c",
+        "text": "Switch to SMS only, since text messages are a fully reliable delivery channel in every single region",
+        "rationale": "SMS is documented as not fully reliable and unavailable in some regions, so it needs an alternative backup rather than serving as the sole channel."
+      },
+      {
+        "id": "d",
+        "text": "Attach an additional channel of a different type, such as email or Pub/Sub, to the same alerting policy",
+        "rationale": "Google recommends multiple channel types for redundancy. Mobile app, PagerDuty, webhook and Slack notifications share one internal service, so email or Pub/Sub provides a genuinely independent path."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "id": "q-ops-excellence-030",
+    "type": "multiple",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "monitoring-logging",
+      "audit-logs"
+    ],
+    "subObjective": "ops-excellence.2",
+    "sourceUrl": "https://docs.cloud.google.com/logging/docs/routing/overview",
+    "lastVerified": "2026-10-01",
+    "prompt": "Your security team is tuning the Cloud Logging Log Router in a project. Which two statements are correct? Choose two.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Excluding an entry in one sink also removes it from every other sink in the same project",
+        "rationale": "Exclusion filters are per sink. An entry excluded by one sink can still be routed by another sink whose filters match."
+      },
+      {
+        "id": "b",
+        "text": "You can add an exclusion filter to the _Required sink to stop storing Admin Activity audit logs",
+        "rationale": "The _Required sink cannot be modified, and Admin Activity audit logs are always written; they cannot be configured, excluded or disabled."
+      },
+      {
+        "id": "c",
+        "text": "An exclusion filter on a sink reduces the number of entries.write API calls that your applications make",
+        "rationale": "Exclusion filters decide what a sink routes. They do not reduce entries.write API calls or quota consumption."
+      },
+      {
+        "id": "d",
+        "text": "The _Required sink cannot be modified or deleted, while the _Default sink can be modified or disabled",
+        "rationale": "_Required routes audit logs to the _Required bucket and is fixed. _Default routes everything else to the _Default bucket and can be changed or disabled."
+      },
+      {
+        "id": "e",
+        "text": "A log entry that matches the filters of several sinks is routed by each of those sinks independently",
+        "rationale": "Every sink evaluates each entry on its own, so one entry can be delivered to several destinations."
+      }
+    ],
+    "correct": [
+      "d",
+      "e"
+    ],
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "id": "q-ops-excellence-031",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "monitoring-logging",
+      "alerting"
+    ],
+    "subObjective": "ops-excellence.2",
+    "sourceUrl": "https://docs.cloud.google.com/logging/docs/logs-based-metrics",
+    "lastVerified": "2026-10-01",
+    "prompt": "A team creates a user-defined counter log-based metric today for the `payment.declined` entries and builds a chart. The chart is empty for last week, when a spike in declines occurred. How can the team get last week's decline counts?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Edit the metric filter to widen its time range, which recalculates the series over the retention period",
+        "rationale": "Metric filters do not take a time range, and editing a metric never recomputes data from earlier entries."
+      },
+      {
+        "id": "b",
+        "text": "Switch the metric to bucket scope so it re-reads the entries that are already stored in the log bucket",
+        "rationale": "Bucket scope changes which bucket's entries are evaluated going forward. It does not backfill stored entries."
+      },
+      {
+        "id": "c",
+        "text": "Convert the counter into a distribution metric, since distributions are backfilled from stored entries",
+        "rationale": "The metric type controls how values are aggregated, not whether history is included. Neither type is backfilled."
+      },
+      {
+        "id": "d",
+        "text": "Query the stored entries directly, since a metric counts only entries received after it was created",
+        "rationale": "Data for a user-defined log-based metric comes only from entries received after the metric exists. Historical counts must come from querying the retained log entries, for example in Logs Explorer."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "id": "q-ops-excellence-032",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "alerting",
+      "monitoring-logging"
+    ],
+    "subObjective": "ops-excellence.2",
+    "sourceUrl": "https://docs.cloud.google.com/monitoring/alerts/using-promql",
+    "lastVerified": "2026-10-01",
+    "prompt": "Your team built several Cloud Monitoring alert conditions in Monitoring Query Language (MQL). A new requirement asks for a condition that compares the 5xx ratio over the last 5 minutes with the same 5 minutes one week earlier. Which approach is recommended?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Author the condition as a PromQL alerting policy, and plan to migrate the remaining MQL conditions to PromQL",
+        "rationale": "PromQL is the recommended language and supports ratios and comparisons such as the last 5 minutes versus the same period a week ago. MQL support ended on July 22, 2025; existing MQL resources keep working but PromQL is the path forward."
+      },
+      {
+        "id": "b",
+        "text": "Use a basic threshold condition, since thresholds can compare a metric with its own value from a week earlier",
+        "rationale": "Basic threshold conditions compare against a fixed value and cannot compute a week-over-week comparison of a ratio."
+      },
+      {
+        "id": "c",
+        "text": "Export the metrics to BigQuery and run a weekly scheduled query that compares the two periods and emails results",
+        "rationale": "A weekly batch query would detect a regression days late and replaces a native alerting policy with a fragile pipeline."
+      },
+      {
+        "id": "d",
+        "text": "Extend the MQL condition, because MQL remains the recommended language for new Cloud Monitoring alert conditions",
+        "rationale": "MQL is deprecated: customer support ended on July 22, 2025 and it is no longer offered in the console when creating alerting policies."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-ops-excellence-033",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "cloud-observability",
+      "monitoring-logging"
+    ],
+    "caseStudyId": "altostrat-media",
+    "subObjective": "ops-excellence.2",
+    "sourceUrl": "https://docs.cloud.google.com/stackdriver/docs/managed-prometheus",
+    "lastVerified": "2026-10-01",
+    "prompt": "Altostrat Media's platform team runs open-source Prometheus servers on several GKE clusters alongside Cloud Monitoring, and alerts mostly go to email. They want one global view across clusters and projects, keeping PromQL and Grafana dashboards, without operating Prometheus storage themselves. What should they do?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Export Prometheus samples to BigQuery every few minutes, then chart the tables in Looker Studio dashboards",
+        "rationale": "A BigQuery export loses PromQL alerting and live Grafana dashboards, and adds latency and cost for something Managed Service for Prometheus provides natively."
+      },
+      {
+        "id": "b",
+        "text": "Adopt Managed Service for Prometheus with managed collection, and query all clusters globally through PromQL",
+        "rationale": "Managed Service for Prometheus is fully managed and PromQL compatible, works with existing Grafana dashboards, retains data for 24 months and queries across regions and many projects, so nobody operates storage."
+      },
+      {
+        "id": "c",
+        "text": "Rewrite every dashboard in Monitoring Query Language, then replace Prometheus with custom metrics",
+        "rationale": "MQL is deprecated, and a rewrite throws away the existing PromQL and Grafana investment instead of preserving it."
+      },
+      {
+        "id": "d",
+        "text": "Build a hierarchy of federated self-managed Prometheus servers with long-term storage on persistent disks",
+        "rationale": "Self-managed federation keeps the storage and scaling burden on the team, which is exactly what they want to avoid."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-ops-excellence-034",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "monitoring-logging",
+      "cloud-observability"
+    ],
+    "subObjective": "ops-excellence.2",
+    "sourceUrl": "https://docs.cloud.google.com/monitoring/settings",
+    "lastVerified": "2026-10-01",
+    "prompt": "A company runs staging and production in separate projects. It wants one dashboard and one set of alerting policies that cover both, while each environment keeps its own project-level permissions. What is the recommended Cloud Monitoring design?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Route all metrics from both projects into one BigQuery dataset and build every chart with scheduled queries",
+        "rationale": "BigQuery is not a live monitoring path. It would lose native alerting policies and real-time charts."
+      },
+      {
+        "id": "b",
+        "text": "Create a workload-free scoping project and add the staging and production projects to its metrics scope",
+        "rationale": "A scoping project hosts a metrics scope that can include several projects. Dashboards and alerting policies live in the scoping project, and the monitored projects keep their own IAM."
+      },
+      {
+        "id": "c",
+        "text": "Move staging and production workloads into one shared project so that a single metrics scope covers both",
+        "rationale": "Merging the projects destroys the environment isolation and separate permissions that were required, and is unnecessary because a metrics scope can span projects."
+      },
+      {
+        "id": "d",
+        "text": "Duplicate the same dashboards and alerting policies in each project and keep the copies aligned by hand",
+        "rationale": "Manual duplication drifts and still gives no single view across both environments."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "difficulty": 1,
+    "examOnly": true
+  },
+  {
+    "id": "q-ops-excellence-035",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "support-operations",
+      "monitoring-logging"
+    ],
+    "subObjective": "ops-excellence.3",
+    "sourceUrl": "https://docs.cloud.google.com/service-health/docs/overview",
+    "lastVerified": "2026-10-01",
+    "prompt": "Customers report checkout errors, yet your own services look healthy. You want to learn quickly whether a Google Cloud product incident is affecting your projects and be alerted automatically next time. Which should you use?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "The public Service Health status page, checked by the on-call engineer whenever a ticket arrives",
+        "rationale": "The public dashboard covers every customer and gives no project-specific view or automatic alerting."
+      },
+      {
+        "id": "b",
+        "text": "Cloud Profiler, which shows where your own services spend CPU time across production replicas",
+        "rationale": "Profiler analyzes your own resource consumption and says nothing about the health of Google Cloud services."
+      },
+      {
+        "id": "c",
+        "text": "Error Reporting, which groups exceptions raised by your own application code by root cause",
+        "rationale": "Error Reporting only sees errors from your code. It cannot tell you whether a Google Cloud product is degraded."
+      },
+      {
+        "id": "d",
+        "text": "Personalized Service Health, which shows incidents relevant to your projects and can alert you",
+        "rationale": "Personalized Service Health filters disruptions to those affecting your projects and supports alerts through Cloud Logging, mobile and PagerDuty integrations."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "difficulty": 1,
+    "examOnly": true
+  },
+  {
+    "id": "q-ops-excellence-036",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "deployment-release-management",
+      "canary"
+    ],
+    "subObjective": "ops-excellence.3",
+    "sourceUrl": "https://docs.cloud.google.com/run/docs/rollouts-rollbacks-traffic-migration",
+    "lastVerified": "2026-10-01",
+    "prompt": "You deploy a new revision of a Cloud Run service. You want to test it with its production configuration first, then expose it to 10% of users, and keep a one-command path back to the old revision. Which sequence fits?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Deploy normally so the new revision takes 100% of traffic, then watch dashboards and redeploy the old image if needed",
+        "rationale": "A default deploy sends all users to the new revision at once, so there is no test-first step or limited exposure."
+      },
+      {
+        "id": "b",
+        "text": "Create a second Cloud Run service for the new code and split traffic between the two services with weighted DNS",
+        "rationale": "Revision-level traffic splitting is built in. A second service with weighted DNS adds moving parts and loses the tagged-revision test URL and the simple rollback."
+      },
+      {
+        "id": "c",
+        "text": "Deploy with no traffic and a tag, test the tag URL, shift 10% with update-traffic, and roll back by pinning the old revision",
+        "rationale": "Deploying with --no-traffic and --tag gives a unique test URL with no user traffic. update-traffic then splits by percentage, and routing 100% to the previous revision is an immediate rollback."
+      },
+      {
+        "id": "d",
+        "text": "Raise the new revision's minimum instance count to 10% of max instances, which makes Cloud Run send it only that share",
+        "rationale": "Minimum instances control warm capacity, not routing. Traffic share is set explicitly by percentage across revisions."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-ops-excellence-037",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "deployment-release-management",
+      "ci-cd"
+    ],
+    "caseStudyId": "ehr-healthcare",
+    "subObjective": "ops-excellence.3",
+    "sourceUrl": "https://docs.cloud.google.com/deploy/docs/automation",
+    "lastVerified": "2026-10-01",
+    "prompt": "EHR Healthcare ships updates through a Cloud Deploy canary pipeline to GKE. The prod target has a verify job and a repair automation that retries failed rollouts twice and then rolls back. A release fails verification on every attempt in its first canary phase. What is the end state?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "The failed rollout stays on the canary phase indefinitely until an operator promotes or aborts it by hand",
+        "rationale": "That happens when no repair automation exists: a failed verification fails the rollout and waits for manual retry or ignore. This pipeline has a repair rule configured."
+      },
+      {
+        "id": "b",
+        "text": "The release is deleted and the target runs no version until the next release is created and promoted",
+        "rationale": "Rollback redeploys the last good release rather than removing the running application, so the target keeps serving."
+      },
+      {
+        "id": "c",
+        "text": "Cloud Deploy advances to the next canary phase after the retries, because verification results are advisory",
+        "rationale": "Verification is not advisory. If verification fails, the rollout fails, and a failed rollout does not advance."
+      },
+      {
+        "id": "d",
+        "text": "Cloud Deploy creates a new rollout that rolls the target back to its most recent successful release",
+        "rationale": "While retries run the rollout stays IN_PROGRESS. When all retries fail, the repair rule creates a new rollout to the most recent successful release on the target."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "id": "q-ops-excellence-038",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "support-operations",
+      "reliability-production"
+    ],
+    "subObjective": "ops-excellence.3",
+    "sourceUrl": "https://docs.cloud.google.com/compute/docs/instance-groups/autohealing-instances-in-migs",
+    "lastVerified": "2026-10-01",
+    "prompt": "A new regional MIG for a stateless API keeps recreating all of its VMs about every six minutes, although engineers confirm that the application answers correctly when tested directly. The exhibit shows the autohealing health check and the VPC ingress rules. What is the most likely cause and fix?",
+    "exhibit": {
+      "label": "Autohealing health check and firewall rules on prod-vpc",
+      "format": "config",
+      "language": "yaml",
+      "content": "autohealing_health_check:\n  name: api-autoheal-hc\n  type: HTTP\n  port: 8080\n  requestPath: /healthz\n  checkIntervalSec: 10\n  timeoutSec: 5\n  unhealthyThreshold: 3\n  initialDelaySec: 300\nfirewall_rules:   # ingress, target tag: api\n  - name: allow-office-ssh\n    allow: tcp:22\n    sourceRanges: [203.0.113.0/24]\n    priority: 1000\n  - name: allow-internal-api\n    allow: tcp:8080\n    sourceRanges: [10.20.0.0/16]\n    priority: 1000\n  - name: deny-all-ingress\n    deny: all\n    sourceRanges: [0.0.0.0/0]\n    priority: 65000"
+    },
+    "choices": [
+      {
+        "id": "a",
+        "text": "Probes from Google's health check ranges are blocked, so healthy VMs look unhealthy; allow them on 8080",
+        "rationale": "Probes originate from 130.211.0.0/22 and 35.191.0.0/16. The deny-all rule blocks them, so VMs are marked UNHEALTHY and recreated after the 300 s initial delay plus 3 failed checks, roughly 330 s."
+      },
+      {
+        "id": "b",
+        "text": "The unhealthy threshold of 3 is too aggressive for a stateless API, so raise it to 30 failures before any VM is recreated",
+        "rationale": "A higher threshold only delays recreation. The probes still never reach the application, so VMs would be recreated anyway."
+      },
+      {
+        "id": "c",
+        "text": "The request path /healthz is probably wrong, so the check hits a 404; change it to the application's root path",
+        "rationale": "Nothing in the exhibit suggests a wrong path, and the application answers correctly when tested. Probes are failing to connect at all, not receiving a 404."
+      },
+      {
+        "id": "d",
+        "text": "The 300-second initial delay is longer than the boot time, so shorten it so that VMs report healthy sooner",
+        "rationale": "A shorter delay makes things worse: with probes blocked, checks would start failing earlier and VMs would be recreated even faster."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "id": "q-ops-excellence-039",
+    "type": "multiple",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "incident-management"
+    ],
+    "subObjective": "ops-excellence.3",
+    "sourceUrl": "https://sre.google/sre-book/managing-incidents/",
+    "lastVerified": "2026-10-01",
+    "prompt": "During a multi-team outage you are setting up incident roles following Google SRE practice. Which two statements are correct? Choose two.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "The operations lead is the only role that makes changes to the system while the incident is active",
+        "rationale": "Concentrating changes in one role prevents responders from making conflicting or unrecorded modifications."
+      },
+      {
+        "id": "b",
+        "text": "The incident commander keeps a living incident document and states an explicit handoff before leaving",
+        "rationale": "Keeping a concurrently editable incident document is the commander's most important responsibility, and handoffs must be explicit and acknowledged."
+      },
+      {
+        "id": "c",
+        "text": "An incident should be declared only after at least a full day of unsuccessful investigation by one team",
+        "rationale": "The guidance is to declare early: when multiple teams are needed, customers are affected, or the problem is unresolved after about an hour of analysis."
+      },
+      {
+        "id": "d",
+        "text": "The incident commander should also work the technical fix, so the response needs no separate operations role",
+        "rationale": "The commander maintains the overall picture and assigns work. Doing hands-on fixes undermines that coordination."
+      },
+      {
+        "id": "e",
+        "text": "Every responder with a mitigation idea should apply it directly to production to cut the recovery time",
+        "rationale": "Parallel uncoordinated changes cause confusion and can worsen the outage. Changes go through the operations lead."
+      }
+    ],
+    "correct": [
+      "a",
+      "b"
+    ],
     "difficulty": 3
+  },
+  {
+    "id": "q-ops-excellence-040",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "postmortems",
+      "incident-management"
+    ],
+    "subObjective": "ops-excellence.3",
+    "sourceUrl": "https://sre.google/sre-book/postmortem-culture/",
+    "lastVerified": "2026-10-01",
+    "prompt": "An on-call engineer rolled back a bad release and rerouted traffic to another region within 10 minutes. There was no data loss and customers barely noticed. A manager says no postmortem is needed. What does Google SRE guidance say?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Postpone the decision until the error budget is exhausted, since only budget burn justifies a written review",
+        "rationale": "Budget exhaustion is one trigger among several. Waiting for it delays learning from an incident that has already shown a gap in release safety."
+      },
+      {
+        "id": "b",
+        "text": "Write one, because an on-call intervention such as a rollback or reroute is a standard postmortem trigger",
+        "rationale": "Typical triggers include user-visible degradation above a threshold, data loss, on-call interventions such as rollbacks or traffic rerouting, and monitoring failures. Fast recovery still teaches something about how the bad release got through."
+      },
+      {
+        "id": "c",
+        "text": "Skip it, because postmortems are reserved for incidents with data loss or hours of customer-visible downtime",
+        "rationale": "The trigger list is broader than severe outages. Interventions such as rollbacks qualify, and quick recoveries can still hide systemic weaknesses."
+      },
+      {
+        "id": "d",
+        "text": "Make it optional and leave the choice to the engineer who shipped the release, to keep reviews voluntary",
+        "rationale": "Postmortems are expected after significant events, not left to individual preference, and a blameless culture does not depend on the author opting in."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "difficulty": 1,
+    "examOnly": true
+  },
+  {
+    "id": "q-ops-excellence-041",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "slo-sli",
+      "error-budget"
+    ],
+    "subObjective": "ops-excellence.4",
+    "sourceUrl": "https://docs.cloud.google.com/stackdriver/docs/solutions/slo-monitoring",
+    "lastVerified": "2026-10-01",
+    "prompt": "Your customer contract (SLA) promises 99.9% monthly availability. What should the team set as the internal SLO for the service?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "A looser target such as 99.5%, because the penalty only applies when the SLA itself is breached",
+        "rationale": "A looser internal target means the SLA is breached before any internal alarm fires, so the team learns about it from the contract rather than from early warnings."
+      },
+      {
+        "id": "b",
+        "text": "A target tighter than the SLA, such as 99.95%, so a breach warns you before the contract is at risk",
+        "rationale": "Setting SLOs tighter than public commitments gives early warning before contractual violations. It also leaves a small, usable error budget."
+      },
+      {
+        "id": "c",
+        "text": "100%, because any failed request is a customer-visible defect and users expect perfection from us",
+        "rationale": "A 100% SLO leaves no error budget and is poor practice: every deployment and dependency failure would be a breach, and the target is not achievable."
+      },
+      {
+        "id": "d",
+        "text": "Exactly 99.9%, so that the internal target and the contract always mean exactly the same thing to everyone",
+        "rationale": "With identical numbers, the first SLO miss is also an SLA miss, so there is no warning margin."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "difficulty": 1,
+    "examOnly": true
+  },
+  {
+    "id": "q-ops-excellence-042",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "slo-sli",
+      "alerting",
+      "error-budget"
+    ],
+    "subObjective": "ops-excellence.4",
+    "sourceUrl": "https://sre.google/workbook/alerting-on-slos/",
+    "lastVerified": "2026-10-01",
+    "prompt": "A checkout service has a 99.9% availability SLO over 30 days. Its alerting policy pages only when the burn rate exceeds 14.4 over both a 1-hour and a 5-minute window. The exhibit shows the state at 14:05. Should the policy page, and what is the right response?",
+    "exhibit": {
+      "label": "Burn-rate evaluation at 14:05 (SLO 99.9%, allowed error ratio 0.1%)",
+      "format": "table",
+      "content": "| Window | Error ratio | Burn rate | Page threshold |\n|---|---|---|---|\n| 1 hour (13:05-14:05) | 1.6% | 16.0 | 14.4 |\n| 5 minutes (14:00-14:05) | 0.05% | 0.5 | 14.4 |"
+    },
+    "choices": [
+      {
+        "id": "a",
+        "text": "No page: any burn rate below 100 is normal variation, so raise the thresholds to avoid waking people",
+        "rationale": "A 14.4x burn consumes about 2% of the monthly budget per hour. Raising thresholds toward 100 would leave real fast burns undetected."
+      },
+      {
+        "id": "b",
+        "text": "Page now: the one-hour burn rate of 16 exceeds 14.4, and that alone proves the budget is under threat",
+        "rationale": "The long window alone would keep paging for up to an hour after recovery. The short-window requirement exists to avoid that."
+      },
+      {
+        "id": "c",
+        "text": "Page now, since a 16x burn means the error budget will be fully exhausted within the next hour",
+        "rationale": "At 16x the 30-day budget would last about 45 hours if the rate continued (720 / 16), not an hour, and the rate has already fallen to 0.5x."
+      },
+      {
+        "id": "d",
+        "text": "No page: the 5-minute window shows the errors have stopped, so log it and review the earlier spike later",
+        "rationale": "A page needs both windows above 14.4. The 5-minute burn rate of 0.5 shows the problem has already ended, which is the false-positive case the short window is designed to filter. The 1-hour spike still merits follow-up."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "difficulty": 3
+  },
+  {
+    "id": "q-ops-excellence-043",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "chaos-engineering",
+      "load-testing"
+    ],
+    "caseStudyId": "knightmotives-automotive",
+    "subObjective": "ops-excellence.4",
+    "sourceUrl": "https://docs.cloud.google.com/architecture/framework/reliability/perform-testing-for-recovery-from-failures",
+    "lastVerified": "2026-10-01",
+    "prompt": "KnightMotives wants to prove that its unreliable online build-and-order system survives the loss of a zone during a new model launch, when traffic is highest. Which validation plan is most appropriate?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Hold a periodic game day that injects a zone failure while replaying launch-level traffic against the system",
+        "rationale": "The Well-Architected guidance combines failure scenarios with load testing to mirror real usage during outages, and recommends planned periodic testing, for example quarterly."
+      },
+      {
+        "id": "b",
+        "text": "Inject zone failures only in development with no traffic, because adding load would make the results harder to read",
+        "rationale": "Failure behavior depends heavily on load. Without traffic the test hides overload, queueing and cascading effects that appear during real outages."
+      },
+      {
+        "id": "c",
+        "text": "Load test at expected peak in a staging environment, with every zone healthy, and sign off on the throughput numbers",
+        "rationale": "A healthy-state load test shows capacity but never exercises failover, so it cannot show whether the system survives losing a zone under peak demand."
+      },
+      {
+        "id": "d",
+        "text": "Commission an external penetration test of the ordering API and treat a clean report as proof of resilience",
+        "rationale": "A penetration test examines security weaknesses. It does not show how the system behaves when infrastructure fails."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 3
+  },
+  {
+    "id": "q-ops-excellence-044",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "reliability-production"
+    ],
+    "caseStudyId": "cymbal-retail",
+    "subObjective": "ops-excellence.4",
+    "sourceUrl": "https://sre.google/sre-book/addressing-cascading-failures/",
+    "lastVerified": "2026-10-01",
+    "prompt": "During a flash sale, Cymbal Retail's catalog search backend nears overload. Leadership prefers that shoppers still get answers, perhaps less fresh or less personalized, rather than errors. Which design approach matches that goal?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Load shedding alone: return HTTP 503 to every request above a threshold so the backend stays within capacity",
+        "rationale": "Load shedding protects the backend by dropping traffic, so shoppers over the threshold get errors, which is the outcome leadership wants to avoid."
+      },
+      {
+        "id": "b",
+        "text": "Graceful degradation: serve cached or simplified results so each request takes less work, with an alert",
+        "rationale": "Graceful degradation goes beyond load shedding by reducing the work per request, for example answering from cached data. The mode should be tested regularly and monitored so it alerts when active."
+      },
+      {
+        "id": "c",
+        "text": "Move the catalog to a larger machine type permanently so every request is still served at full fidelity",
+        "rationale": "Permanent upsizing is a capacity-planning decision. It does not change what happens when demand exceeds even the larger machine."
+      },
+      {
+        "id": "d",
+        "text": "Client retries without delay, so that failed searches are re-sent until the overloaded backend finally answers",
+        "rationale": "Immediate retries multiply load on a struggling backend and can turn an overload into a cascading failure."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-ops-excellence-045",
+    "type": "multiple",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "reliability-production"
+    ],
+    "subObjective": "ops-excellence.4",
+    "sourceUrl": "https://sre.google/sre-book/addressing-cascading-failures/",
+    "lastVerified": "2026-10-01",
+    "prompt": "A checkout service calls three downstream services, and a brief dependency outage triggered a retry storm that kept the dependency down. Which two retry practices from Google SRE guidance would have prevented this? Choose two.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Retry immediately at every layer of the call chain so that at least one layer will eventually succeed",
+        "rationale": "Retrying at every layer multiplies attempts, so one user action can trigger exponentially more backend calls."
+      },
+      {
+        "id": "b",
+        "text": "Enforce a service-wide retry budget, for example about 60 retries per minute, on top of per-request limits",
+        "rationale": "A retry budget caps total retry traffic so that a failing dependency is not overwhelmed, even when many requests fail at once."
+      },
+      {
+        "id": "c",
+        "text": "Allow unlimited attempts per request for as long as the user keeps on waiting, since each attempt looks cheap",
+        "rationale": "Unbounded retries are the heart of a retry storm. Limiting retries per request is a core safeguard."
+      },
+      {
+        "id": "d",
+        "text": "Retry every failed call, including permanent errors, so that no request is ever dropped by the client",
+        "rationale": "Permanent errors will never succeed on retry. Distinguishing retriable from permanent failures avoids pointless load."
+      },
+      {
+        "id": "e",
+        "text": "Use randomized exponential backoff when scheduling retries so clients spread out and stop hammering together",
+        "rationale": "Randomized exponential backoff spreads retries over time and avoids synchronized waves against a recovering dependency."
+      }
+    ],
+    "correct": [
+      "b",
+      "e"
+    ],
+    "difficulty": 3
+  },
+  {
+    "id": "q-ops-excellence-046",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "alerting",
+      "monitoring-logging"
+    ],
+    "subObjective": "ops-excellence.2",
+    "sourceUrl": "https://docs.cloud.google.com/monitoring/alerts/concepts-indepth",
+    "lastVerified": "2026-10-01",
+    "prompt": "A checkout p99 latency spike began at 10:00 and stayed above 800 ms. The on-call engineer was paged at 10:16, although the metric appeared on dashboards within a minute. The exhibit shows the alerting policy. What explains the delay, and what is the best way to improve detection?",
+    "exhibit": {
+      "label": "Alerting policy: checkout p99 latency",
+      "format": "config",
+      "language": "yaml",
+      "content": "displayName: checkout-p99-latency\ncombiner: OR\nconditions:\n- displayName: p99 latency above 800 ms\n  conditionThreshold:\n    filter: >-\n      metric.type=\"loadbalancing.googleapis.com/https/total_latencies\"\n      AND resource.type=\"https_lb_rule\"\n    aggregations:\n    - alignmentPeriod: 60s\n      perSeriesAligner: ALIGN_PERCENTILE_99\n    comparison: COMPARISON_GT\n    thresholdValue: 800\n    duration: 900s\n    trigger:\n      count: 1"
+    },
+    "choices": [
+      {
+        "id": "a",
+        "text": "A 900-second retest window needs 15 minutes of continuous breach; shorten it or adopt burn-rate alerts",
+        "rationale": "With duration 900s every aligned measurement over 15 minutes must violate the threshold before the condition is met. Add roughly a minute of metric ingestion delay and the page lands near 10:16. A shorter window or SLO burn-rate alerting trades some noise for faster detection."
+      },
+      {
+        "id": "b",
+        "text": "The OR combiner waits for every condition to be met before notifying, so switch the combiner to AND",
+        "rationale": "The policy has a single condition, so the combiner has no effect. OR opens an alert as soon as any condition is met."
+      },
+      {
+        "id": "c",
+        "text": "The notification channel is limited to one message per 15 minutes, so the first alert was held back",
+        "rationale": "The exhibit shows no such limit, and the 900-second duration already accounts for the timing observed."
+      },
+      {
+        "id": "d",
+        "text": "The 60-second alignment period delays notifications by a full 15 minutes; set the alignment period to zero",
+        "rationale": "Alignment only regularizes data into one-minute buckets. It does not add a 15-minute wait, and an alignment period of zero is not how detection speed is tuned."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 3
+  },
+  {
+    "id": "q-ops-excellence-047",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "slo-sli"
+    ],
+    "subObjective": "ops-excellence.4",
+    "sourceUrl": "https://docs.cloud.google.com/architecture/framework/reliability/define-reliability-based-on-user-experience-goals",
+    "lastVerified": "2026-10-01",
+    "prompt": "A team defines its availability SLI as \"average CPU utilization below 70% on all backend VMs\". During an incident, users could not complete purchases for 40 minutes, yet the SLI stayed green. What is the best fix?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Lower the CPU threshold to 40% so that the indicator turns red earlier in future incidents like this one",
+        "rationale": "A tighter threshold is still a server-centric proxy. Users can fail with low CPU, so it can stay green during a real outage."
+      },
+      {
+        "id": "b",
+        "text": "Keep the SLI and add a second SLO on the number of VM restarts per day to capture backend instability",
+        "rationale": "Restarts are another internal signal. If purchases fail without any restart, this SLO would stay green too."
+      },
+      {
+        "id": "c",
+        "text": "Add memory, disk and network utilization to the same server-side indicator so that more resources are covered",
+        "rationale": "More server metrics make a bigger dashboard but not a better SLI. The framework warns against relying solely on server-centric metrics."
+      },
+      {
+        "id": "d",
+        "text": "Redefine the SLI around user outcomes, such as the ratio of successful requests measured at the load balancer",
+        "rationale": "Reliability should be measured by what users experience, and measuring at the load balancer is a good point when client-side data is unavailable. Request success ratio would have turned red during the outage."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-ops-excellence-048",
+    "type": "multiple",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "profiling-benchmarking",
+      "cloud-observability"
+    ],
+    "subObjective": "ops-excellence.2",
+    "sourceUrl": "https://docs.cloud.google.com/profiler/docs/about-profiler",
+    "lastVerified": "2026-10-01",
+    "prompt": "Which two statements about Cloud Profiler are correct? Choose two.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "It continuously samples CPU and heap usage in production, with amortized overhead that is commonly under 0.5 percent",
+        "rationale": "Profiler is a statistical, low-overhead profiler: collection overhead is under 5% while sampling and commonly under 0.5% amortized across replicas."
+      },
+      {
+        "id": "b",
+        "text": "It needs the service to be restarted in debug mode, which pauses traffic while the profile is collected",
+        "rationale": "Profiling runs continuously on live production instances and does not require debug mode or pausing traffic."
+      },
+      {
+        "id": "c",
+        "text": "Profile data is retained for 30 days and can be downloaded if you need to archive it for longer",
+        "rationale": "Profiles persist for 30 days and can be downloaded for archival."
+      },
+      {
+        "id": "d",
+        "text": "It records the span timeline of each request, so it shows which downstream service caused a slow call",
+        "rationale": "That describes Cloud Trace. Profiler aggregates resource use by function rather than tracing individual requests."
+      },
+      {
+        "id": "e",
+        "text": "It works only for code running on Google Cloud, because the agent needs the Compute Engine metadata server",
+        "rationale": "Profiler also supports applications running outside Google Cloud, in addition to Compute Engine, GKE, App Engine and Dataflow."
+      }
+    ],
+    "correct": [
+      "a",
+      "c"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-ops-excellence-049",
+    "type": "multiple",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "alerting",
+      "monitoring-logging"
+    ],
+    "subObjective": "ops-excellence.2",
+    "sourceUrl": "https://sre.google/sre-book/monitoring-distributed-systems/",
+    "lastVerified": "2026-10-01",
+    "prompt": "Following Google SRE guidance that a page must be urgent, actionable, and actively or imminently user-visible, which two alerts should page the on-call engineer? Choose two.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "The ratio of failed checkout requests has burned two percent of the monthly error budget within one hour",
+        "rationale": "A fast budget burn on a user-facing flow is symptom-based, urgent and needs a human to act now."
+      },
+      {
+        "id": "b",
+        "text": "The 95th percentile latency for the search API has exceeded its SLO threshold for the last ten minutes",
+        "rationale": "A sustained SLO breach on a user-facing API is visible to users and requires action."
+      },
+      {
+        "id": "c",
+        "text": "A single backend node has crossed 85 percent CPU utilization while request latency remains within the SLO",
+        "rationale": "This is a cause-style signal with no user impact. It belongs on a dashboard or as a ticket, not a page."
+      },
+      {
+        "id": "d",
+        "text": "A persistent disk used for nightly exports has filled to 60 percent of its allocated capacity this week",
+        "rationale": "A slow-moving capacity trend is not urgent. It should become a ticket well before it matters."
+      },
+      {
+        "id": "e",
+        "text": "The nightly batch report job finished fifteen minutes later than usual, but all output was delivered correctly",
+        "rationale": "No user impact and no action needed. Paging for it creates alert fatigue."
+      }
+    ],
+    "correct": [
+      "a",
+      "b"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-ops-excellence-050",
+    "type": "multiple",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "audit-logs",
+      "monitoring-logging"
+    ],
+    "subObjective": "ops-excellence.2",
+    "sourceUrl": "https://docs.cloud.google.com/logging/docs/audit",
+    "lastVerified": "2026-10-01",
+    "prompt": "Your compliance team asks how Cloud Audit Logs behave by default. Which two statements are correct? Choose two.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Policy Denied audit logs can be disabled completely from the project's audit configuration page",
+        "rationale": "Policy Denied logs cannot be disabled; you can only exclude them with exclusion filters to avoid storing them."
+      },
+      {
+        "id": "b",
+        "text": "System Event audit logs are off by default and must be enabled per project before they are recorded",
+        "rationale": "System Event logs are always enabled and cannot be disabled."
+      },
+      {
+        "id": "c",
+        "text": "Data Access audit logs are disabled by default for most services because of their volume (BigQuery is an exception)",
+        "rationale": "Data Access logs are off by default for most services because of volume, and must be enabled explicitly; BigQuery is the exception."
+      },
+      {
+        "id": "d",
+        "text": "Admin Activity logs are stored in the _Default bucket, so raising its retention keeps them longer",
+        "rationale": "Admin Activity logs go to the _Required bucket, whose 400-day retention cannot be changed. The _Default bucket holds Data Access and Policy Denied logs."
+      },
+      {
+        "id": "e",
+        "text": "Admin Activity audit logs are always written and cannot be configured, excluded, or disabled",
+        "rationale": "Admin Activity logs are always on. This is why they are the dependable record of configuration changes."
+      }
+    ],
+    "correct": [
+      "c",
+      "e"
+    ],
+    "difficulty": 2
   }
 ]

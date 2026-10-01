@@ -3,328 +3,2528 @@
     "id": "q-optimize-process-001",
     "type": "single",
     "domainId": "optimize-process",
-    "concepts": ["ci-cd", "sdlc"],
+    "concepts": [
+      "ci-cd",
+      "sdlc"
+    ],
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://docs.cloud.google.com/deploy/docs/overview",
+    "lastVerified": "2026-10-01",
     "prompt": "A platform team wants to standardize how container images are built and promoted to production on Google Cloud. They need an immutable, versioned store for images plus a managed build service triggered from their Git repository. Which combination best fits a modern GCP CI/CD pipeline?",
     "choices": [
-      { "id": "a", "text": "Cloud Build for builds, Artifact Registry for image storage, Cloud Deploy for promotion across environments" },
-      { "id": "b", "text": "Compute Engine startup scripts for builds and Cloud Storage buckets for image storage" },
-      { "id": "c", "text": "Cloud Functions for builds and Container Registry with manual gcloud pushes" },
-      { "id": "d", "text": "GKE Jobs for builds and Filestore for image storage" }
+      {
+        "id": "a",
+        "text": "Cloud Build for builds, Artifact Registry for image storage, and Cloud Deploy for promotion across environments",
+        "rationale": "Matches the standard managed stack: Cloud Build runs triggered builds, Artifact Registry stores versioned images, and Cloud Deploy promotes a release through a defined sequence of targets."
+      },
+      {
+        "id": "b",
+        "text": "Compute Engine startup scripts to run builds, with images stored in Cloud Storage buckets and copied between environments",
+        "rationale": "Cloud Storage is object storage, not an OCI registry, and startup scripts give no build provenance, caching, or Git trigger integration."
+      },
+      {
+        "id": "c",
+        "text": "Cloud Functions to run builds, with images pushed by hand using gcloud to the legacy Container Registry service",
+        "rationale": "Container Registry was shut down on March 18, 2025, and manual pushes break the automated, auditable path to production; Cloud Functions is not a build service."
+      },
+      {
+        "id": "d",
+        "text": "GKE Jobs to run builds on a shared cluster, with images kept on Filestore NFS shares mounted by each environment",
+        "rationale": "Filestore is NFS file storage and cannot serve as an image registry; hand-rolled build Jobs reimplement what Cloud Build already provides as a managed, trigger-driven service."
+      }
     ],
-    "correct": ["a"],
-    "explanation": "**Correct: a.** The canonical 2026 GCP CI/CD stack is **Cloud Build** (managed build/test execution triggered from Cloud Source Repositories or GitHub/GitLab connections), **Artifact Registry** (the successor to the deprecated Container Registry; immutable, regional, supports container images plus language packages), and **Cloud Deploy** (managed continuous delivery with defined delivery pipelines, targets, promotion sequences, approvals, and automatic rollback).\n\n**Why the others are wrong:**\n- **b:** Cloud Storage is object storage, not an OCI image registry; startup scripts are not a build system and provide no provenance or caching.\n- **c:** Container Registry is deprecated in favor of Artifact Registry, and manual `gcloud` pushes break the automated, auditable promotion the team wants.\n- **d:** Filestore is NFS file storage, unsuitable as an image registry; running ad-hoc GKE Jobs reinvents what Cloud Build already provides.",
+    "correct": [
+      "a"
+    ],
     "difficulty": 1
   },
   {
     "id": "q-optimize-process-002",
     "type": "single",
     "domainId": "optimize-process",
-    "concepts": ["rto-rpo", "disaster-recovery"],
+    "concepts": [
+      "rto-rpo",
+      "disaster-recovery"
+    ],
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://docs.cloud.google.com/architecture/dr-scenarios-planning-guide",
+    "lastVerified": "2026-10-01",
     "prompt": "An application requires that, after a regional outage, no more than 15 minutes of data may be lost and the service must be restored within 1 hour. Which two metrics are being specified, in order?",
     "choices": [
-      { "id": "a", "text": "RPO = 15 minutes, RTO = 1 hour" },
-      { "id": "b", "text": "RTO = 15 minutes, RPO = 1 hour" },
-      { "id": "c", "text": "MTTR = 15 minutes, MTBF = 1 hour" },
-      { "id": "d", "text": "SLA = 15 minutes, SLO = 1 hour" }
+      {
+        "id": "a",
+        "text": "RPO is 15 minutes (tolerable data loss) and RTO is 1 hour (tolerable downtime)",
+        "rationale": "RPO is the maximum acceptable window of data loss, which drives backup or replication frequency; RTO is the maximum acceptable time offline, which drives the recovery architecture."
+      },
+      {
+        "id": "b",
+        "text": "RTO is 15 minutes (tolerable downtime) and RPO is 1 hour (tolerable data loss)",
+        "rationale": "Swaps the two definitions: the 15-minute figure bounds data loss, so it is the RPO, not the RTO."
+      },
+      {
+        "id": "c",
+        "text": "MTTR is 15 minutes (mean time to repair) and MTBF is 1 hour (mean time between failures)",
+        "rationale": "MTTR and MTBF are reliability statistics measured after the fact, not recovery objectives set as design constraints."
+      },
+      {
+        "id": "d",
+        "text": "SLA is 15 minutes (the contractual promise) and SLO is 1 hour (the internal reliability target)",
+        "rationale": "SLAs and SLOs describe availability commitments and targets for a service, not how much data or time may be lost after a major incident."
+      }
     ],
-    "correct": ["a"],
-    "explanation": "**Correct: a.** **RPO (Recovery Point Objective)** is the maximum acceptable amount of *data loss* measured in time — here 15 minutes, dictating backup/replication frequency. **RTO (Recovery Time Objective)** is the maximum acceptable *downtime* — here 1 hour, dictating the recovery architecture (cold vs. warm vs. hot standby).\n\n**Why the others are wrong:**\n- **b:** Reverses the two definitions.\n- **c:** MTTR (mean time to repair) and MTBF (mean time between failures) are reliability statistics, not recovery objectives.\n- **d:** SLA/SLO describe service-level commitments and targets, not recovery design constraints.",
+    "correct": [
+      "a"
+    ],
     "difficulty": 1
   },
   {
     "id": "q-optimize-process-003",
     "type": "single",
     "domainId": "optimize-process",
-    "concepts": ["committed-use-discounts", "cost-resource-optimization"],
+    "concepts": [
+      "committed-use-discounts",
+      "cost-resource-optimization"
+    ],
+    "subObjective": "optimize-process.2",
+    "sourceUrl": "https://docs.cloud.google.com/compute/docs/instances/committed-use-discounts-overview",
+    "lastVerified": "2026-10-01",
     "prompt": "A company runs a stable baseline of 200 vCPUs of general-purpose Compute Engine workloads 24/7 across a region, plus bursty batch jobs. They want the deepest predictable discount on the steady baseline without locking to specific machine types. What should they purchase for the baseline?",
     "choices": [
-      { "id": "a", "text": "Spend-based committed use discounts (flexible CUDs) for Compute Engine" },
-      { "id": "b", "text": "Resource-based committed use discounts tied to a specific machine family and zone" },
-      { "id": "c", "text": "Spot VMs for the entire baseline" },
-      { "id": "d", "text": "Rely solely on sustained use discounts" }
+      {
+        "id": "a",
+        "text": "Compute flexible (spend-based) committed use discounts covering any machine series and region",
+        "rationale": "A flexible commitment is a minimum hourly spend that discounts eligible usage regardless of machine configuration or location, so the 24/7 baseline gets a deep 1- or 3-year rate without pinning a machine shape."
+      },
+      {
+        "id": "b",
+        "text": "Resource-based committed use discounts for fixed vCPU and memory amounts in one region and project",
+        "rationale": "Resource-based commitments can be deep but bind you to resource amounts in a region and project and cannot be cancelled, which contradicts the no lock-in requirement."
+      },
+      {
+        "id": "c",
+        "text": "Spot VMs for the whole baseline, relying on managed instance groups to recreate preempted instances",
+        "rationale": "Spot VMs can be preempted at any time and carry no SLA; they fit the fault-tolerant batch jobs, not an always-on baseline, and recreating instances does not remove the interruptions."
+      },
+      {
+        "id": "d",
+        "text": "Sustained use discounts alone, applied automatically as the instances run for most of the month",
+        "rationale": "Sustained use discounts need no commitment but top out around 20 to 30 percent and do not apply to every machine series, so they are not the deepest predictable discount."
+      }
     ],
-    "correct": ["a"],
-    "explanation": "**Correct: a.** **Spend-based (flexible) CUDs** commit to an hourly dollar amount of Compute Engine spend for 1 or 3 years and apply across machine families and regions, giving deep discounts while preserving flexibility to change machine types — ideal for a stable baseline when you don't want to lock a specific shape.\n\n**Why the others are wrong:**\n- **b:** Resource-based CUDs give slightly different commitments but lock you to a specific machine family/region; the requirement explicitly avoids machine-type lock-in.\n- **c:** Spot VMs can be preempted at any time and are unsuitable for an always-on baseline; they suit the bursty/fault-tolerant batch jobs instead.\n- **d:** Sustained use discounts apply automatically but are shallower than CUDs and require no commitment — they don't deliver the *deepest predictable* discount.",
+    "correct": [
+      "a"
+    ],
     "difficulty": 2
   },
   {
     "id": "q-optimize-process-004",
     "type": "single",
     "domainId": "optimize-process",
-    "concepts": ["rightsizing", "cost-resource-optimization"],
+    "concepts": [
+      "rightsizing",
+      "cost-resource-optimization"
+    ],
+    "subObjective": "optimize-process.2",
+    "sourceUrl": "https://docs.cloud.google.com/compute/docs/instances/apply-machine-type-recommendations-for-instances",
+    "lastVerified": "2026-10-01",
     "prompt": "Which Google Cloud capability proactively analyzes historical utilization and surfaces machine-type rightsizing suggestions (for example, downsizing an over-provisioned VM) along with idle-resource recommendations?",
     "choices": [
-      { "id": "a", "text": "Active Assist Recommender (machine-type and idle VM recommendations)" },
-      { "id": "b", "text": "Cloud Profiler" },
-      { "id": "c", "text": "Cloud Trace" },
-      { "id": "d", "text": "Cloud Deployment Manager" }
+      {
+        "id": "a",
+        "text": "Active Assist Recommender, with its machine type and idle VM recommendations",
+        "rationale": "The machine type recommender analyzes recent CPU and memory utilization (roughly the last 8 days) to suggest smaller or larger machine types, and idle VM recommendations are a separate recommender in the same service."
+      },
+      {
+        "id": "b",
+        "text": "Cloud Profiler, which samples CPU and heap use inside application code",
+        "rationale": "Profiler analyzes where application code spends CPU and memory, which helps tune code but does not recommend VM machine types."
+      },
+      {
+        "id": "c",
+        "text": "Cloud Trace, which records request latency as it crosses distributed services",
+        "rationale": "Trace shows where latency accrues along a request path; it says nothing about whether a VM is over-provisioned."
+      },
+      {
+        "id": "d",
+        "text": "Cloud Deployment Manager, which provisions resources from declarative templates",
+        "rationale": "Deployment Manager provisions infrastructure from templates, reached end of support on March 31, 2026, and offers no utilization analysis or recommendations."
+      }
     ],
-    "correct": ["a"],
-    "explanation": "**Correct: a.** **Active Assist Recommender** generates rightsizing recommendations (VM machine-type recommender), idle VM/disk/IP recommendations, idle GKE and Cloud SQL insights, and commitment recommendations based on observed utilization, enabling continuous cost optimization.\n\n**Why the others are wrong:**\n- **b:** Cloud Profiler analyzes application CPU/heap usage at the code level, not VM rightsizing.\n- **c:** Cloud Trace is for distributed-tracing latency analysis.\n- **d:** Deployment Manager is an (older) IaC provisioning tool, not an optimization advisor.",
+    "correct": [
+      "a"
+    ],
     "difficulty": 1
   },
   {
     "id": "q-optimize-process-005",
     "type": "multiple",
     "domainId": "optimize-process",
-    "concepts": ["disaster-recovery", "rto-rpo", "business-continuity"],
-    "prompt": "An architect is choosing a disaster recovery posture. Which statements correctly characterize the cost/recovery trade-offs of DR patterns on Google Cloud? Select all that apply.",
-    "choices": [
-      { "id": "a", "text": "Cold standby (backup and restore) has the lowest ongoing cost but the longest RTO" },
-      { "id": "b", "text": "Hot standby / multi-region active-active offers the smallest RTO and RPO but the highest cost" },
-      { "id": "c", "text": "Warm standby (pilot light) keeps a minimal scaled-down environment running, balancing cost and recovery time" },
-      { "id": "d", "text": "Cold standby always provides a near-zero RPO" },
-      { "id": "e", "text": "Hot standby is the cheapest option because resources are shared" }
+    "concepts": [
+      "disaster-recovery",
+      "rto-rpo",
+      "business-continuity"
     ],
-    "correct": ["a", "b", "c"],
-    "explanation": "**Correct: a, b, c.** DR patterns trade cost against recovery speed:\n- **a:** Backup-and-restore (cold) is cheapest to run but slowest to recover because infrastructure must be rebuilt and data restored.\n- **b:** Active-active across regions (hot) gives the smallest RTO/RPO (often near-zero) but you pay for full duplicate capacity.\n- **c:** Pilot light / warm standby keeps a minimal replica (e.g., a small standby DB and scaled-down compute) ready to scale up, balancing the two.\n\n**Why the others are wrong:**\n- **d:** Cold standby's RPO depends on backup frequency and is typically *not* near-zero; near-zero RPO requires continuous replication.\n- **e:** Hot standby is the *most* expensive, not the cheapest, due to duplicated always-on capacity.",
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://docs.cloud.google.com/architecture/dr-scenarios-for-applications",
+    "lastVerified": "2026-10-01",
+    "prompt": "An architect is choosing a disaster recovery posture. Which statements correctly characterize the cost and recovery trade-offs of DR patterns on Google Cloud? Choose three.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Cold standby has the lowest running cost because little exists until a disaster, but it has the highest RTO and RPO",
+        "rationale": "In a cold pattern the DR environment is built and loaded only after the disaster, which is cheapest to hold but slowest to recover."
+      },
+      {
+        "id": "b",
+        "text": "Hot standby runs both sites serving traffic, which gives the lowest RTO and RPO at the highest running cost",
+        "rationale": "With both environments live there is no failover step, but you pay for full duplicate capacity."
+      },
+      {
+        "id": "c",
+        "text": "Warm standby keeps a minimal recovery environment running, such as a small database, for mid-range cost and recovery time",
+        "rationale": "A warm pattern holds resources like a smallest-size database instance continuously, so recovery is faster than cold without the cost of a full second site."
+      },
+      {
+        "id": "d",
+        "text": "Cold standby gives near-zero RPO because the recovery environment is rebuilt from the latest backups after an outage",
+        "rationale": "Rebuilding from backups yields an RPO equal to the backup interval plus restore effort; near-zero RPO needs continuous replication, which is a warm or hot design."
+      },
+      {
+        "id": "e",
+        "text": "Hot standby is the cheapest pattern because the two sites share the load and each needs far less capacity",
+        "rationale": "Each site must still be able to absorb the full load after a failure, so hot standby has the highest cost of the three patterns."
+      }
+    ],
+    "correct": [
+      "a",
+      "b",
+      "c"
+    ],
     "difficulty": 2
   },
   {
     "id": "q-optimize-process-006",
     "type": "single",
     "domainId": "optimize-process",
-    "concepts": ["budgets-alerts", "cost-resource-optimization"],
+    "concepts": [
+      "budgets-alerts",
+      "cost-resource-optimization"
+    ],
+    "subObjective": "optimize-process.2",
+    "sourceUrl": "https://docs.cloud.google.com/billing/docs/how-to/budgets",
+    "lastVerified": "2026-10-01",
     "prompt": "A finance lead wants automated notifications when a project's monthly spend crosses 50%, 90%, and 100% of a defined threshold, and optionally wants to trigger a programmatic response. What is the correct Google Cloud approach?",
     "choices": [
-      { "id": "a", "text": "Create a Cloud Billing budget with threshold rules and connect its Pub/Sub notifications to automation" },
-      { "id": "b", "text": "Set a hard spending cap on the billing account that auto-disables billing at 100%" },
-      { "id": "c", "text": "Configure a Cloud Monitoring uptime check on the billing API" },
-      { "id": "d", "text": "Use IAM deny policies to block resource creation after a dollar amount" }
+      {
+        "id": "a",
+        "text": "Create a Cloud Billing budget with 50, 90, and 100 percent rules and route its Pub/Sub notifications to automation",
+        "rationale": "Budgets support percentage threshold rules on actual or forecasted cost, email alerts, and a Pub/Sub topic that automation such as a Cloud Run function can consume."
+      },
+      {
+        "id": "b",
+        "text": "Rely on an alert-only budget to cap usage automatically, so that all spending stops once the 100 percent threshold is crossed",
+        "rationale": "An alert-only budget does not cap usage or spending; stopping resources needs your own automation, and a separate spend cap budget type exists only in preview for eligible services."
+      },
+      {
+        "id": "c",
+        "text": "Configure a Cloud Monitoring uptime check against the billing API and alert when that endpoint stops responding",
+        "rationale": "Uptime checks measure endpoint availability and carry no information about spend."
+      },
+      {
+        "id": "d",
+        "text": "Apply an IAM deny policy that blocks resource creation once the monthly dollar total passes a set value",
+        "rationale": "IAM deny policies act on principals and permissions, not on cost, so they cannot react to a budget level."
+      }
     ],
-    "correct": ["a"],
-    "explanation": "**Correct: a.** **Cloud Billing budgets** support multiple percentage threshold rules (e.g., 50/90/100%) on actual or forecasted spend, send email alerts to billing admins, and can publish to a **Pub/Sub** topic so you can automate responses (e.g., a Cloud Function that disables billing or scales down resources).\n\n**Why the others are wrong:**\n- **b:** Budgets are *not* hard caps; Google Cloud has no native automatic billing shutoff, you must build that automation yourself via Pub/Sub.\n- **c:** Uptime checks monitor endpoint availability, not spend.\n- **d:** IAM deny policies restrict permissions, not spend thresholds, and don't react to budget levels.",
+    "correct": [
+      "a"
+    ],
+    "explanation": "Pub/Sub budget notifications arrive several times a day rather than in real time, so automation built on them is a guardrail, not a hard stop.",
     "difficulty": 2
   },
   {
     "id": "q-optimize-process-007",
     "type": "single",
     "domainId": "optimize-process",
-    "concepts": ["rca", "testing-validation"],
-    "prompt": "After a production incident, an SRE team conducts a blameless postmortem to identify why a deployment caused cascading failures. Which Google Cloud Operations capability most directly supports correlating logs, metrics, and traces to find the root cause?",
-    "choices": [
-      { "id": "a", "text": "Cloud Logging, Cloud Monitoring, and Cloud Trace within Cloud Operations" },
-      { "id": "b", "text": "Cloud Build triggers" },
-      { "id": "c", "text": "Artifact Registry vulnerability scanning" },
-      { "id": "d", "text": "Cloud Deploy approval gates" }
+    "concepts": [
+      "rca",
+      "testing-validation"
     ],
-    "correct": ["a"],
-    "explanation": "**Correct: a.** Root-cause analysis depends on observability. The **Cloud Operations** suite — **Cloud Logging** (centralized logs, Log Analytics), **Cloud Monitoring** (metrics, dashboards, alerting), and **Cloud Trace** (latency/distributed tracing), plus Error Reporting — lets the team correlate signals across the deployment window to pinpoint causation.\n\n**Why the others are wrong:**\n- **b:** Cloud Build triggers start pipelines; they don't analyze runtime failures.\n- **c:** Vulnerability scanning finds CVEs in images, not the cause of a runtime cascade.\n- **d:** Cloud Deploy approval gates control promotion; they help *prevent* bad releases but don't perform RCA.",
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://docs.cloud.google.com/stackdriver/docs",
+    "lastVerified": "2026-10-01",
+    "prompt": "After a production incident, an SRE team conducts a blameless postmortem to identify why a deployment caused cascading failures. Which Google Cloud capability most directly supports correlating logs, metrics, and traces to find the root cause?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Cloud Logging, Monitoring, and Trace in Google Cloud Observability, lined up on the deploy window",
+        "rationale": "Root-cause analysis depends on telemetry: logs give event detail, metrics show when behavior changed, and traces show which request path degraded, so lining them up against the deploy time isolates the cause."
+      },
+      {
+        "id": "b",
+        "text": "Cloud Build triggers, which start the pipeline automatically whenever a commit lands on the release branch",
+        "rationale": "Triggers start builds; they produce no runtime telemetry and cannot explain why a release failed in production."
+      },
+      {
+        "id": "c",
+        "text": "Artifact Registry vulnerability scanning, which reports known CVEs found in the deployed container images",
+        "rationale": "Scanning finds known vulnerabilities in image packages, which is unrelated to the cause of a runtime cascade."
+      },
+      {
+        "id": "d",
+        "text": "Cloud Deploy approval gates, which hold a release for sign-off before it reaches the production target",
+        "rationale": "Approval gates control promotion and can prevent a bad release, but they do not analyze a failure after it has happened."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "Google Cloud Observability is the current name for the suite formerly called Cloud Operations (and Stackdriver).",
     "difficulty": 1
   },
   {
     "id": "q-optimize-process-008",
     "type": "single",
     "domainId": "optimize-process",
-    "concepts": ["service-catalog"],
+    "concepts": [
+      "service-catalog"
+    ],
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://docs.cloud.google.com/service-catalog/docs/terraform-configuration",
+    "lastVerified": "2026-10-01",
     "prompt": "A central platform team wants to let application teams self-provision only pre-approved, compliant infrastructure templates (e.g., a hardened VM or an approved data pipeline) through a governed storefront. Which Google Cloud feature is designed for this?",
     "choices": [
-      { "id": "a", "text": "Service Catalog (part of Google Cloud), publishing curated Terraform/Deployment solutions" },
-      { "id": "b", "text": "Cloud Marketplace public listings only" },
-      { "id": "c", "text": "Personal gcloud aliases shared via a wiki" },
-      { "id": "d", "text": "Granting every developer Project Owner so they can build what they need" }
+      {
+        "id": "a",
+        "text": "Service Catalog, publishing curated Terraform configurations that are shared with chosen folders and projects",
+        "rationale": "Service Catalog lets admins publish approved solutions, including Terraform configurations deployed through Cloud Build, and share catalogs at folder and project level so users self-serve only governed resources."
+      },
+      {
+        "id": "b",
+        "text": "Public Cloud Marketplace listings, which let teams deploy vendor products but not the company's own templates",
+        "rationale": "Public listings expose third-party products; they are not a restricted storefront for your own hardened internal templates."
+      },
+      {
+        "id": "c",
+        "text": "A wiki page of gcloud commands and aliases that each engineer copies into a personal shell profile to provision resources",
+        "rationale": "Copied commands have no governance, versioning, or access control, so nothing enforces that the approved configuration is the one actually used."
+      },
+      {
+        "id": "d",
+        "text": "Project Owner granted to every developer, with a written policy asking them to follow the approved patterns",
+        "rationale": "Broad Owner access violates least privilege and replaces technical guardrails with a document that no one enforces."
+      }
     ],
-    "correct": ["a"],
-    "explanation": "**Correct: a.** **Service Catalog** lets administrators curate and publish approved solutions (Terraform configurations, Deployment Manager templates, or links) to specific folders/projects, so end users self-serve only governed, compliant resources — enforcing standards while enabling autonomy.\n\n**Why the others are wrong:**\n- **b:** Cloud Marketplace offers third-party/public products, not your own internal governed templates with restricted sharing.\n- **c:** Shared aliases provide no governance, versioning, or access control.\n- **d:** Granting Owner broadly violates least privilege and removes all guardrails.",
+    "correct": [
+      "a"
+    ],
+    "explanation": "Service Catalog also accepts Deployment Manager templates, but Deployment Manager reached end of support on March 31, 2026, so Terraform is the forward path.",
     "difficulty": 2
   },
   {
     "id": "q-optimize-process-009",
     "type": "single",
     "domainId": "optimize-process",
-    "concepts": ["change-management", "stakeholder-management"],
+    "concepts": [
+      "change-management",
+      "stakeholder-management"
+    ],
+    "subObjective": "optimize-process.2",
+    "sourceUrl": "https://docs.cloud.google.com/architecture/framework/operational-excellence",
+    "lastVerified": "2026-10-01",
     "prompt": "A company is migrating a critical legacy system to Google Cloud. Operations staff are anxious about new tooling and resistant to the change. From a business-process perspective, what is the architect's most effective first action?",
     "choices": [
-      { "id": "a", "text": "Engage stakeholders early with a change-management plan: communicate the why, provide training, and gather feedback" },
-      { "id": "b", "text": "Mandate the migration deadline and escalate any resistance to senior leadership immediately" },
-      { "id": "c", "text": "Migrate silently over a weekend to avoid disrupting the team's workflow" },
-      { "id": "d", "text": "Outsource all operations to a third party so existing staff are not involved" }
+      {
+        "id": "a",
+        "text": "Engage operations staff early with a change plan: explain the why, provide training, and gather feedback",
+        "rationale": "Change succeeds when affected people understand the reason, are trained to close skills gaps, and can feed back concerns, which builds ownership instead of resistance."
+      },
+      {
+        "id": "b",
+        "text": "Fix the migration deadline by decree and escalate any resistance to senior leadership as soon as it appears",
+        "rationale": "Mandates and escalation treat anxiety as insubordination, which erodes trust and drives concerns underground."
+      },
+      {
+        "id": "c",
+        "text": "Carry out the cutover quietly over a weekend so that the team's daily workflow is never disrupted",
+        "rationale": "A silent cutover skips communication and training, so the first time staff meet the new tooling is during an incident."
+      },
+      {
+        "id": "d",
+        "text": "Hand day-to-day operations to a third-party provider so that existing staff no longer need to learn the tooling",
+        "rationale": "Sidelining staff discards institutional knowledge and morale without closing the readiness gap the company will still own."
+      }
     ],
-    "correct": ["a"],
-    "explanation": "**Correct: a.** Effective change management addresses the human side: communicate the rationale and benefits, involve affected stakeholders early, provide training to close skills gaps, and create feedback loops. This reduces resistance and builds ownership.\n\n**Why the others are wrong:**\n- **b:** Pure mandates and escalation increase resistance and erode trust.\n- **c:** A silent cutover removes transparency and training, virtually guaranteeing operational failures and distrust.\n- **d:** Sidelining staff destroys morale, loses institutional knowledge, and doesn't address the readiness gap.",
+    "correct": [
+      "a"
+    ],
     "difficulty": 1
   },
   {
     "id": "q-optimize-process-010",
     "type": "single",
     "domainId": "optimize-process",
-    "concepts": ["capex-opex", "cost-resource-optimization"],
+    "concepts": [
+      "capex-opex",
+      "cost-resource-optimization"
+    ],
+    "subObjective": "optimize-process.2",
+    "sourceUrl": "https://docs.cloud.google.com/architecture/framework/cost-optimization",
+    "lastVerified": "2026-10-01",
     "prompt": "An executive asks how moving from on-premises data centers to Google Cloud changes the financial model. Which description is most accurate?",
     "choices": [
-      { "id": "a", "text": "It shifts large upfront capital expenditure (CapEx) toward consumption-based operating expenditure (OpEx)" },
-      { "id": "b", "text": "It converts all spending into CapEx because servers are still purchased" },
-      { "id": "c", "text": "It eliminates all costs after the first year" },
-      { "id": "d", "text": "It has no effect on the financial model, only on performance" }
+      {
+        "id": "a",
+        "text": "It shifts upfront capital spending toward pay-as-you-go operating expense, raising the need for cost governance",
+        "rationale": "On-premises assets are bought and depreciated, whereas most cloud resources are treated as OpEx incurred as they are consumed, which is why budgets, commitments, and rightsizing matter."
+      },
+      {
+        "id": "b",
+        "text": "It turns all spending into capital expense because customers must still buy the servers up front before use",
+        "rationale": "Customers do not purchase the underlying hardware; cloud resources are billed as they are consumed."
+      },
+      {
+        "id": "c",
+        "text": "It removes infrastructure costs entirely after the first year because migrated workloads no longer need hardware",
+        "rationale": "Consumption spend continues for as long as the workloads run; only the cost structure changes."
+      },
+      {
+        "id": "d",
+        "text": "It changes performance and availability only, while the accounting and budgeting model stays the same as before",
+        "rationale": "The CapEx-to-OpEx shift is one of the main business effects and changes how spend is planned and governed."
+      }
     ],
-    "correct": ["a"],
-    "explanation": "**Correct: a.** Cloud adoption typically converts **CapEx** (buying and depreciating hardware/data-center capacity upfront) into **OpEx** (pay-as-you-go consumption). This improves cash flow, removes over-provisioning for peak, and aligns cost with actual usage — though it requires disciplined cost governance (budgets, CUDs, rightsizing) to avoid waste.\n\n**Why the others are wrong:**\n- **b:** You no longer purchase the underlying servers; spend becomes operational.\n- **c:** Cloud is ongoing consumption spend; costs do not disappear.\n- **d:** The financial/accounting model change is one of the primary business drivers.",
+    "correct": [
+      "a"
+    ],
     "difficulty": 1
   },
   {
     "id": "q-optimize-process-011",
     "type": "multiple",
     "domainId": "optimize-process",
-    "concepts": ["testing-validation", "ci-cd"],
-    "prompt": "A team wants to validate both application code and infrastructure changes before they reach production. Which practices belong in a robust testing/validation strategy on Google Cloud? Select all that apply.",
-    "choices": [
-      { "id": "a", "text": "Run unit and integration tests as Cloud Build steps on every commit" },
-      { "id": "b", "text": "Use canary or progressive rollouts via Cloud Deploy with automated verification" },
-      { "id": "c", "text": "Validate Terraform plans and run policy checks (e.g., with Policy Validator / OPA) before apply" },
-      { "id": "d", "text": "Deploy directly to production and rely on users to report defects" },
-      { "id": "e", "text": "Skip staging environments to save cost when releases are urgent" }
+    "concepts": [
+      "testing-validation",
+      "ci-cd"
     ],
-    "correct": ["a", "b", "c"],
-    "explanation": "**Correct: a, b, c.** A strong validation strategy spans code and infra:\n- **a:** Automated unit/integration tests in **Cloud Build** catch regressions early on every commit (shift-left).\n- **b:** **Cloud Deploy** supports canary/progressive delivery with verification steps and automatic rollback, limiting blast radius.\n- **c:** Infrastructure-as-code is validated with `terraform plan` plus policy-as-code (Policy Validator/OPA/Sentinel-style checks) before `apply`.\n\n**Why the others are wrong:**\n- **d:** Relying on users to find defects is the opposite of validation and harms reliability and trust.\n- **e:** Removing staging to save cost trades a small saving for large production risk; pre-prod validation is essential.",
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://docs.cloud.google.com/deploy/docs/deployment-strategies/canary",
+    "lastVerified": "2026-10-01",
+    "prompt": "A team wants to validate both application code and infrastructure changes before they reach production. Which practices belong in a robust testing and validation strategy on Google Cloud? Choose three.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Run unit and integration tests as Cloud Build steps on every commit so regressions fail the build early",
+        "rationale": "Automated tests on every commit catch regressions at the cheapest point to fix them (shift-left)."
+      },
+      {
+        "id": "b",
+        "text": "Release through Cloud Deploy canary phases with verification tasks so a bad build reaches only part of the traffic",
+        "rationale": "Canary phases expose a new version to a subset of users first, and verification and analysis decide whether the rollout advances."
+      },
+      {
+        "id": "c",
+        "text": "Validate each Terraform plan against a policy library with gcloud beta terraform vet before running apply",
+        "rationale": "Checking the plan JSON against constraints blocks non-compliant infrastructure before it exists (the command is Pre-GA)."
+      },
+      {
+        "id": "d",
+        "text": "Deploy straight to production and rely on user bug reports to reveal defects in the new release",
+        "rationale": "Using customers as the test suite maximizes blast radius and gives no automated signal before release."
+      },
+      {
+        "id": "e",
+        "text": "Skip the staging environment when a release is urgent, since staging adds cost without catching real faults",
+        "rationale": "Urgent releases carry the most risk, and pre-production validation is cheap compared with a production incident."
+      }
+    ],
+    "correct": [
+      "a",
+      "b",
+      "c"
+    ],
     "difficulty": 2
   },
   {
     "id": "q-optimize-process-012",
     "type": "single",
     "domainId": "optimize-process",
-    "concepts": ["disaster-recovery", "rto-rpo"],
+    "concepts": [
+      "disaster-recovery",
+      "rto-rpo"
+    ],
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://docs.cloud.google.com/sql/docs/postgres/high-availability",
+    "lastVerified": "2026-10-01",
     "prompt": "A Cloud SQL (PostgreSQL) database backs a transactional system that must survive a zonal failure with minimal data loss and fast failover. Which configuration best meets a low RTO and low RPO at reasonable cost?",
     "choices": [
-      { "id": "a", "text": "Enable high availability (regional, synchronous standby) plus automated backups and point-in-time recovery" },
-      { "id": "b", "text": "Single-zone instance with weekly exports to Cloud Storage" },
-      { "id": "c", "text": "Single-zone instance with no backups but frequent manual snapshots when remembered" },
-      { "id": "d", "text": "Read replicas only, with no HA configuration" }
+      {
+        "id": "a",
+        "text": "Enable high availability (regional instance, synchronous standby zone) plus automated backups and PITR",
+        "rationale": "HA replicates writes synchronously to disks in two zones and fails over automatically in about a minute, while backups and point-in-time recovery cover logical corruption."
+      },
+      {
+        "id": "b",
+        "text": "Run a single-zone instance and take weekly exports to Cloud Storage, restoring from the latest export if the zone fails",
+        "rationale": "A weekly export means up to a week of data loss and a slow manual restore, so both RPO and RTO are poor."
+      },
+      {
+        "id": "c",
+        "text": "Run a single-zone instance with automated backups disabled, taking manual snapshots whenever an engineer remembers to",
+        "rationale": "Ad hoc snapshots give no defined RPO and no point-in-time recovery, so recovery depends on luck."
+      },
+      {
+        "id": "d",
+        "text": "Add read replicas in other zones but leave HA off, and promote one manually if the primary becomes unavailable",
+        "rationale": "Read replicas do not fail over automatically, promotion is a manual step, and asynchronous replication can lose recent transactions."
+      }
     ],
-    "correct": ["a"],
-    "explanation": "**Correct: a.** Cloud SQL **HA** provisions a synchronous standby in another zone within the region, giving automatic failover (low RTO) with no committed-transaction loss across a zonal outage (low RPO). Adding **automated backups + point-in-time recovery (PITR)** protects against logical corruption and accidental deletes.\n\n**Why the others are wrong:**\n- **b:** Weekly exports yield an RPO of up to a week and a slow manual restore (high RTO).\n- **c:** No backups plus ad-hoc manual snapshots is unreliable and high-risk.\n- **d:** Read replicas are asynchronous and meant for read scaling/cross-region DR; alone they don't provide automatic in-region failover or guaranteed zero-loss promotion.",
+    "correct": [
+      "a"
+    ],
     "difficulty": 2
   },
   {
     "id": "q-optimize-process-013",
     "type": "single",
     "domainId": "optimize-process",
-    "concepts": ["team-readiness", "decision-making"],
+    "concepts": [
+      "team-readiness",
+      "decision-making"
+    ],
+    "subObjective": "optimize-process.2",
+    "sourceUrl": "https://docs.cloud.google.com/kubernetes-engine/docs/concepts/autopilot-overview",
+    "lastVerified": "2026-10-01",
     "prompt": "Before committing to a Kubernetes-based platform, an architect assesses that the operations team has limited container experience. Which approach best aligns the technology decision with team readiness?",
     "choices": [
-      { "id": "a", "text": "Assess the skills gap, then either invest in training or favor a more managed option (e.g., Cloud Run / GKE Autopilot) to reduce operational burden" },
-      { "id": "b", "text": "Choose the most complex self-managed option to force the team to learn quickly" },
-      { "id": "c", "text": "Ignore team skills since the technology choice is purely technical" },
-      { "id": "d", "text": "Hire entirely new staff and dismiss the existing team" }
+      {
+        "id": "a",
+        "text": "Assess the skills gap, then invest in training or favor a managed option like Cloud Run or GKE Autopilot to cut ops load",
+        "rationale": "Team skills are a real constraint: close the gap with training or choose a platform where Google manages nodes, upgrades, and scaling, as Autopilot and Cloud Run do."
+      },
+      {
+        "id": "b",
+        "text": "Pick the most complex self-managed option, since being forced to operate it is the fastest way for the team to learn",
+        "rationale": "Maximum complexity with minimum experience raises outage risk and burnout rather than accelerating learning."
+      },
+      {
+        "id": "c",
+        "text": "Treat team skills as irrelevant because the platform decision is a purely technical one made by architects alone",
+        "rationale": "A platform the operators cannot run well fails in production regardless of its technical merits."
+      },
+      {
+        "id": "d",
+        "text": "Replace the existing operations staff with newly hired container specialists before any platform work begins",
+        "rationale": "Wholesale replacement loses institutional knowledge and is rarely needed when training or a managed service closes the gap."
+      }
     ],
-    "correct": ["a"],
-    "explanation": "**Correct: a.** Good decision-making weighs team readiness as a real constraint. With limited container expertise, you either close the gap through training/enablement or reduce operational complexity by choosing a more managed platform such as **Cloud Run** or **GKE Autopilot** (which removes node management). Matching technology to capability lowers risk.\n\n**Why the others are wrong:**\n- **b:** Forcing maximal complexity raises operational risk and burnout.\n- **c:** Technology choices that ignore the people running them frequently fail in operation.\n- **d:** Wholesale replacement destroys institutional knowledge and morale, and is rarely necessary.",
+    "correct": [
+      "a"
+    ],
     "difficulty": 1
   },
   {
     "id": "q-optimize-process-014",
     "type": "single",
     "domainId": "optimize-process",
-    "concepts": ["disaster-recovery", "business-continuity", "rto-rpo"],
+    "concepts": [
+      "disaster-recovery",
+      "business-continuity",
+      "rto-rpo"
+    ],
     "caseStudyId": "ehr-healthcare",
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://docs.cloud.google.com/architecture/dr-scenarios-for-applications",
+    "lastVerified": "2026-10-01",
     "prompt": "EHR Healthcare runs clinical applications where extended downtime can affect patient care, so leadership mandates that core services keep running through the loss of an entire region with near-zero data loss. Which Google Cloud architecture best satisfies this business-continuity requirement?",
     "choices": [
-      { "id": "a", "text": "Multi-region active-active deployment with synchronous or near-synchronous data replication and global load balancing" },
-      { "id": "b", "text": "Single-region deployment with nightly backups copied to another region" },
-      { "id": "c", "text": "A cold standby in a second region that is provisioned only after an outage is declared" },
-      { "id": "d", "text": "Multi-zone deployment within one region only" }
+      {
+        "id": "a",
+        "text": "Active-active deployment across two or more regions with synchronous data replication and global load balancing",
+        "rationale": "A hot pattern runs both sites serving traffic, so there is no failover step; synchronous replication keeps data loss near zero and a global load balancer routes around the failed region."
+      },
+      {
+        "id": "b",
+        "text": "A single-region deployment whose nightly backups are copied to a storage bucket located in a second region",
+        "rationale": "Nightly copies mean up to 24 hours of data loss and a long rebuild, which is unacceptable for clinical systems."
+      },
+      {
+        "id": "c",
+        "text": "A cold standby stack in a second region that is provisioned and loaded with data only after an outage is declared",
+        "rationale": "Cold patterns have the highest RTO and RPO because everything is built after the declaration."
+      },
+      {
+        "id": "d",
+        "text": "A multi-zone deployment spread across all three zones of one region with automatic zonal failover",
+        "rationale": "Multi-zone designs survive zonal failures but a regional outage takes every zone down together."
+      }
     ],
-    "correct": ["a"],
-    "explanation": "**Correct: a.** Surviving the loss of an entire region with near-zero RPO and minimal RTO requires a **multi-region active-active** design: redundant stacks in two or more regions, data replicated synchronously/near-synchronously (e.g., Spanner multi-region, or carefully designed replication), and a **global external load balancer** routing traffic away from the failed region automatically.\n\n**Why the others are wrong:**\n- **b:** Nightly backups give an RPO of up to 24 hours and a slow restore — unacceptable for life-critical clinical systems.\n- **c:** A cold standby has a long RTO because resources must be built after declaration.\n- **d:** Multi-zone protects only against zonal failures, not the loss of an entire region.",
+    "correct": [
+      "a"
+    ],
     "difficulty": 2
   },
   {
     "id": "q-optimize-process-015",
     "type": "single",
     "domainId": "optimize-process",
-    "concepts": ["cost-resource-optimization", "rightsizing"],
+    "concepts": [
+      "cost-resource-optimization",
+      "rightsizing"
+    ],
     "caseStudyId": "cymbal-retail",
+    "subObjective": "optimize-process.2",
+    "sourceUrl": "https://docs.cloud.google.com/compute/docs/instances/schedule-instance-start-stop",
+    "lastVerified": "2026-10-01",
     "prompt": "Cymbal Retail discovers that several development-environment GKE clusters and Compute Engine VMs run 24/7 but are only used during business hours, and many nodes sit at under 10% CPU. Which set of actions provides the most immediate, low-risk cost optimization?",
     "choices": [
-      { "id": "a", "text": "Schedule non-production resources to shut down off-hours and apply Recommender rightsizing suggestions to over-provisioned nodes" },
-      { "id": "b", "text": "Buy 3-year resource-based committed use discounts for all dev resources" },
-      { "id": "c", "text": "Migrate every workload to the largest available machine types for headroom" },
-      { "id": "d", "text": "Move all dev workloads to Spot VMs with no other changes" }
+      {
+        "id": "a",
+        "text": "Schedule dev VMs and clusters to stop off-hours, and apply rightsizing recommendations to the idle nodes",
+        "rationale": "Stopping non-production compute outside working hours and downsizing under-used nodes removes idle spend without architectural change; stopped VMs still bill for disks and static IPs, so the saving is on compute only."
+      },
+      {
+        "id": "b",
+        "text": "Buy three-year resource-based committed use discounts covering all of the development VMs and node pools",
+        "rationale": "A three-year commitment on capacity that is idle most of the time locks in payment for resources the team does not need."
+      },
+      {
+        "id": "c",
+        "text": "Move every workload to the largest available machine types so that each environment has plenty of headroom",
+        "rationale": "Upsizing raises cost and deepens the existing under-utilization."
+      },
+      {
+        "id": "d",
+        "text": "Move all of the development workloads to Spot VMs and leave the sizing and schedules as they are today",
+        "rationale": "Spot can suit fault-tolerant work, but preemptions would disrupt developers and the idle, oversized nodes would still be paid for."
+      }
     ],
-    "correct": ["a"],
-    "explanation": "**Correct: a.** The fastest, lowest-risk wins are eliminating idle spend: use **instance schedules / automation** to stop dev resources outside business hours, and act on **Active Assist Recommender** rightsizing recommendations to downsize the under-utilized nodes. Together these cut waste without architectural risk.\n\n**Why the others are wrong:**\n- **b:** Committing 3-year CUDs to *dev* resources that are idle most of the time locks in spend for capacity you mostly don't need.\n- **c:** Upsizing increases cost and worsens the under-utilization.\n- **d:** Spot VMs can help for fault-tolerant dev workloads, but moving everything blindly risks preemption disrupting developers; scheduling and rightsizing are the immediate, safe wins.",
-    "difficulty": 2
+    "correct": [
+      "a"
+    ],
+    "difficulty": 2,
+    "examOnly": true
   },
   {
     "id": "q-optimize-process-016",
     "type": "multiple",
     "domainId": "optimize-process",
-    "concepts": ["ci-cd", "sdlc", "change-management"],
-    "caseStudyId": "altostrat-media",
-    "prompt": "Altostrat Media wants to mature its software delivery from manual, error-prone releases toward reliable, frequent deployments. Which practices align with a healthy SDLC and safe change management on Google Cloud? Select all that apply.",
-    "choices": [
-      { "id": "a", "text": "Automate build, test, and deploy with Cloud Build and Cloud Deploy, including approval gates for production" },
-      { "id": "b", "text": "Use progressive delivery (canary) with automated rollback to limit the blast radius of changes" },
-      { "id": "c", "text": "Maintain audit trails and require code review/merge approvals before release" },
-      { "id": "d", "text": "Allow any engineer to push manual hotfixes straight to production without review during business hours" },
-      { "id": "e", "text": "Disable monitoring during releases to reduce alert noise" }
+    "concepts": [
+      "ci-cd",
+      "sdlc",
+      "change-management"
     ],
-    "correct": ["a", "b", "c"],
-    "explanation": "**Correct: a, b, c.** Mature delivery combines automation with governance:\n- **a:** **Cloud Build** + **Cloud Deploy** automate the pipeline; production approval gates add controlled change management.\n- **b:** Canary/progressive rollouts with automatic rollback reduce risk and shorten MTTR.\n- **c:** Code review, merge approvals, and audit trails provide accountability and traceability.\n\n**Why the others are wrong:**\n- **d:** Unreviewed manual production pushes are exactly the error-prone behavior they want to eliminate.\n- **e:** Disabling monitoring during releases blinds you precisely when risk is highest — the opposite of safe change management.",
+    "caseStudyId": "altostrat-media",
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://docs.cloud.google.com/deploy/docs/automation",
+    "lastVerified": "2026-10-01",
+    "prompt": "Altostrat Media wants to mature its software delivery from manual, error-prone releases toward reliable, frequent deployments. Which practices align with a healthy SDLC and safe change management on Google Cloud? Choose three.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Automate build, test, and deploy with Cloud Build and Cloud Deploy, adding approval gates on the production target",
+        "rationale": "Automation removes manual error, and a required approval on the production target adds controlled change management."
+      },
+      {
+        "id": "b",
+        "text": "Use canary rollouts with automated rollback so that a bad change reaches only a small share of users",
+        "rationale": "Cloud Deploy canary phases limit exposure, and a repair automation rule can retry and then roll back to the last successful release."
+      },
+      {
+        "id": "c",
+        "text": "Keep an audit trail and require code review and merge approval before anything can be released",
+        "rationale": "Reviews and approvals give accountability and traceability for every change."
+      },
+      {
+        "id": "d",
+        "text": "Let any engineer push hotfixes directly to production without review during business hours to move faster",
+        "rationale": "Unreviewed manual pushes are the error-prone behavior the company is trying to eliminate."
+      },
+      {
+        "id": "e",
+        "text": "Turn monitoring off while releases run so that expected error spikes do not generate alert noise",
+        "rationale": "Release windows are when risk is highest, so disabling monitoring removes the signal needed to detect and roll back a bad change."
+      }
+    ],
+    "correct": [
+      "a",
+      "b",
+      "c"
+    ],
     "difficulty": 2
   },
   {
     "id": "q-optimize-process-017",
     "type": "single",
     "domainId": "optimize-process",
-    "concepts": ["customer-success", "stakeholder-management"],
+    "concepts": [
+      "customer-success",
+      "stakeholder-management"
+    ],
+    "subObjective": "optimize-process.2",
+    "sourceUrl": "https://docs.cloud.google.com/architecture/framework/operational-excellence",
+    "lastVerified": "2026-10-01",
     "prompt": "After delivering a cloud platform, an architecture team wants to ensure the business actually realizes value and adoption grows over time. Which practice best reflects customer success management?",
     "choices": [
-      { "id": "a", "text": "Define success metrics with stakeholders, track adoption/value KPIs, and run regular reviews to drive continuous improvement" },
-      { "id": "b", "text": "Consider the engagement finished the moment the platform is deployed" },
-      { "id": "c", "text": "Measure only infrastructure uptime and ignore business outcomes" },
-      { "id": "d", "text": "Avoid contact with stakeholders to prevent scope creep" }
+      {
+        "id": "a",
+        "text": "Define success metrics with stakeholders, track adoption and value KPIs, and hold regular reviews to improve",
+        "rationale": "Customer success is outcome-driven: agree measurable targets, watch adoption and realized value, and review periodically so improvement continues after go-live."
+      },
+      {
+        "id": "b",
+        "text": "Treat the engagement as finished once the platform is deployed and handed over to the operations team",
+        "rationale": "Go-live is where adoption starts; stopping there leaves value realization to chance."
+      },
+      {
+        "id": "c",
+        "text": "Report only infrastructure uptime, since availability is the clearest measure that the platform works",
+        "rationale": "Uptime shows the platform is running, not that anyone uses it or that it delivers business outcomes."
+      },
+      {
+        "id": "d",
+        "text": "Limit stakeholder contact after go-live so that new requests cannot expand the scope of the platform",
+        "rationale": "Cutting off stakeholders removes the feedback and alignment that customer success depends on."
+      }
     ],
-    "correct": ["a"],
-    "explanation": "**Correct: a.** Customer success is outcome-focused: agree on measurable success criteria and value KPIs with stakeholders, monitor adoption and realized business value, and hold periodic reviews (e.g., quarterly business reviews) to iterate and remove blockers. This sustains value beyond go-live.\n\n**Why the others are wrong:**\n- **b:** Treating deployment as the end ignores adoption, the phase where value is actually realized.\n- **c:** Uptime alone doesn't prove the platform delivers business outcomes.\n- **d:** Avoiding stakeholders forfeits the feedback and alignment that customer success depends on.",
+    "correct": [
+      "a"
+    ],
     "difficulty": 1
   },
   {
     "id": "q-optimize-process-018",
     "type": "single",
     "domainId": "optimize-process",
-    "concepts": ["committed-use-discounts", "capex-opex", "cost-resource-optimization"],
+    "concepts": [
+      "committed-use-discounts",
+      "capex-opex",
+      "cost-resource-optimization"
+    ],
+    "subObjective": "optimize-process.2",
+    "sourceUrl": "https://docs.cloud.google.com/compute/docs/instances/committed-use-discounts-overview",
+    "lastVerified": "2026-10-01",
     "prompt": "A team has run a workload on-demand for six months with very stable, predictable usage and now wants to reduce cost without changing the architecture. Which optimization is the best next step, and what is the main trade-off?",
     "choices": [
-      { "id": "a", "text": "Purchase 1-year or 3-year committed use discounts; the trade-off is a usage/spend commitment in exchange for a lower rate" },
-      { "id": "b", "text": "Switch entirely to Spot VMs; the trade-off is none, performance is identical" },
-      { "id": "c", "text": "Do nothing, since sustained use discounts already provide the deepest possible savings" },
-      { "id": "d", "text": "Delete monitoring to cut operational costs" }
+      {
+        "id": "a",
+        "text": "Buy 1- or 3-year committed use discounts, accepting a spend or resource commitment in return for a lower rate",
+        "rationale": "Committed use discounts give deep discounts on steady usage; the cost is a non-cancellable commitment billed monthly whether or not the capacity is used."
+      },
+      {
+        "id": "b",
+        "text": "Switch the whole workload to Spot VMs, accepting no downside because the performance is the same as on-demand",
+        "rationale": "Spot VMs are far cheaper but can be preempted at any time and have no SLA, so interruption risk is a major trade-off for steady production use."
+      },
+      {
+        "id": "c",
+        "text": "Do nothing, since sustained use discounts already deliver the deepest savings available for steady usage",
+        "rationale": "Sustained use discounts are automatic but shallower than commitments, and some machine series such as E2 do not receive them at all."
+      },
+      {
+        "id": "d",
+        "text": "Delete monitoring and logging to cut operating spend while leaving the pricing model of the workload unchanged",
+        "rationale": "Telemetry is a small share of spend, and removing it blinds the team without touching the compute rate."
+      }
     ],
-    "correct": ["a"],
-    "explanation": "**Correct: a.** For stable, predictable usage, **committed use discounts (CUDs)** for 1 or 3 years deliver substantially lower rates than on-demand. The trade-off is the **commitment**: you agree to a level of spend (flexible CUDs) or resources (resource-based CUDs) for the term whether or not you fully use it.\n\n**Why the others are wrong:**\n- **b:** Spot VMs are far cheaper but can be preempted with little notice; that is a major trade-off, not 'none', and unsuitable for steady production.\n- **c:** Sustained use discounts apply automatically but are shallower than CUDs, so meaningful savings are being left on the table.\n- **d:** Removing monitoring saves little and dangerously reduces operational visibility.",
-    "difficulty": 2
+    "correct": [
+      "a"
+    ],
+    "difficulty": 2,
+    "examOnly": true
   },
   {
     "id": "q-optimize-process-019",
     "type": "multiple",
     "domainId": "optimize-process",
-    "concepts": ["disaster-recovery", "rto-rpo", "rca"],
-    "caseStudyId": "knightmotives-automotive",
-    "prompt": "KnightMotives Automotive runs a connected-vehicle telemetry platform on Google Cloud. Leadership sets an RPO of seconds and an RTO of a few minutes for the ingestion and serving tiers, and wants the architecture to also accelerate root-cause analysis when failovers occur. Which combination of design choices best satisfies these objectives? Select all that apply.",
-    "choices": [
-      { "id": "a", "text": "Use a multi-region, synchronously replicated database (e.g., Spanner multi-region) for the serving tier so committed writes survive a region loss with near-zero RPO" },
-      { "id": "b", "text": "Front the ingestion and serving tiers with a global external load balancer that automatically reroutes traffic away from an unhealthy region" },
-      { "id": "c", "text": "Centralize telemetry in Cloud Logging, Monitoring, and Trace with SLO-based alerting so failover events are detected and diagnosed quickly" },
-      { "id": "d", "text": "Rely on a single-region deployment with hourly database exports to a second region" },
-      { "id": "e", "text": "Trigger DR only manually after an on-call engineer confirms the outage by phone, to avoid false positives" }
+    "concepts": [
+      "disaster-recovery",
+      "rto-rpo",
+      "rca"
     ],
-    "correct": ["a", "b", "c"],
-    "explanation": "**Correct: a, b, c.** Seconds-level RPO with minutes-level RTO across a region loss requires synchronous multi-region data (a, e.g., **Spanner multi-region** keeps strongly consistent committed writes), automatic traffic steering (b, a **global external Application Load Balancer** with health checks reroutes around the failed region without manual DNS changes), and strong observability (c, **Cloud Operations** with SLO burn-rate alerts) so failovers are detected and root-caused fast.\n\n**Why the others are wrong:**\n- **d:** Hourly exports give an RPO of up to an hour and a slow restore - far outside the stated seconds/minutes objectives.\n- **e:** A mandatory manual, phone-confirmed trigger adds human latency that blows the few-minutes RTO; automated, health-check-driven failover is required (manual confirmation can remain for declaring a full disaster, not for fast traffic rerouting).",
+    "caseStudyId": "knightmotives-automotive",
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://docs.cloud.google.com/spanner/docs/instance-configurations",
+    "lastVerified": "2026-10-01",
+    "prompt": "KnightMotives Automotive runs a connected-vehicle telemetry platform on Google Cloud. Leadership sets an RPO of seconds and an RTO of a few minutes for the ingestion and serving tiers, and wants the architecture to also accelerate root-cause analysis when failovers occur. Which combination of design choices best satisfies these objectives? Choose three.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Use a synchronously replicated multi-region Spanner configuration so committed writes survive the loss of a region",
+        "rationale": "Multi-region Spanner replicates synchronously across regions with a witness region, so a regional outage does not lose committed data and availability stays high."
+      },
+      {
+        "id": "b",
+        "text": "Front ingestion and serving with a global external load balancer whose health checks steer traffic away from a failed region",
+        "rationale": "The global external Application Load Balancer health-checks multi-region backends and sends traffic to the closest healthy backend with capacity, with no manual DNS change."
+      },
+      {
+        "id": "c",
+        "text": "Centralize logs, metrics, and traces in Google Cloud Observability with SLO alerts to speed detection and diagnosis",
+        "rationale": "Fast detection and correlated telemetry shorten both the effective RTO and the root-cause analysis that follows a failover."
+      },
+      {
+        "id": "d",
+        "text": "Run a single-region deployment and copy hourly database exports to a bucket in a second region for restores",
+        "rationale": "Hourly exports mean up to an hour of data loss and a slow restore, far outside an RPO of seconds and an RTO of minutes."
+      },
+      {
+        "id": "e",
+        "text": "Start disaster recovery only after an on-call engineer has confirmed the outage by phone, to avoid false positives",
+        "rationale": "A mandatory manual confirmation adds human latency that blows a few-minute RTO; traffic rerouting must be automated, with human judgment reserved for declaring a full disaster."
+      }
+    ],
+    "correct": [
+      "a",
+      "b",
+      "c"
+    ],
     "difficulty": 3
   },
   {
     "id": "q-optimize-process-020",
     "type": "single",
     "domainId": "optimize-process",
-    "concepts": ["committed-use-discounts", "rightsizing", "cost-resource-optimization"],
+    "concepts": [
+      "committed-use-discounts",
+      "rightsizing",
+      "cost-resource-optimization"
+    ],
+    "subObjective": "optimize-process.2",
+    "sourceUrl": "https://docs.cloud.google.com/compute/docs/sustained-use-discounts",
+    "lastVerified": "2026-10-01",
     "prompt": "A FinOps review finds: (1) a 24/7 production baseline on E2 VMs, (2) a fluctuating tier that scales between 0 and many instances daily, and (3) nightly fault-tolerant batch jobs. The team wants the lowest sustainable cost without harming reliability. What is the best pricing strategy per tier?",
     "choices": [
-      { "id": "a", "text": "Cover the steady baseline with committed use discounts, let the fluctuating tier run on-demand with autoscaling (sustained use discounts apply automatically), and run the nightly batch on Spot VMs" },
-      { "id": "b", "text": "Put all three tiers on 3-year resource-based CUDs sized to peak demand" },
-      { "id": "c", "text": "Run everything on Spot VMs to maximize the discount" },
-      { "id": "d", "text": "Run everything on-demand and rely only on sustained use discounts" }
+      {
+        "id": "a",
+        "text": "Commit to the steady baseline with CUDs, keep the fluctuating tier on-demand with autoscaling, and put the batch on Spot VMs",
+        "rationale": "Each lever fits its pattern: commitments for always-on usage, autoscaled on-demand for demand that often drops to zero, and Spot for interruption-tolerant batch."
+      },
+      {
+        "id": "b",
+        "text": "Put all three tiers on three-year resource-based CUDs sized to the peak demand that each tier reaches",
+        "rationale": "Peak-sized commitments on the bursty and batch tiers pay for idle capacity most of the day."
+      },
+      {
+        "id": "c",
+        "text": "Run all three tiers on Spot VMs to take the largest available discount on every tier of the workload",
+        "rationale": "Spot has no SLA and can be preempted at any time, which puts production serving and the always-on baseline at risk."
+      },
+      {
+        "id": "d",
+        "text": "Run all three tiers on-demand with autoscaling, leaving sustained use discounts as the only price reduction applied",
+        "rationale": "Sustained use discounts do not apply to E2 or Spot VMs at all, so this leaves the commitment and Spot savings unused."
+      }
     ],
-    "correct": ["a"],
-    "explanation": "**Correct: a.** Optimal cost matches each usage pattern to the right lever. The predictable **24/7 baseline** is ideal for **CUDs** (deepest discount for committed, steady use). The **fluctuating tier** that often scales to zero should stay **on-demand with autoscaling** - committing to it would pay for capacity you frequently don't use, and **sustained use discounts** apply automatically to whatever runs most of the month. The **fault-tolerant nightly batch** is the textbook fit for **Spot VMs** (very deep discount, preemption tolerated).\n\n**Why the others are wrong:**\n- **b:** Committing all tiers to peak-sized 3-year CUDs massively over-commits for the bursty and batch tiers, wasting money on idle commitment.\n- **c:** Spot for the always-on baseline and the user-facing fluctuating tier risks preemption and harms reliability.\n- **d:** On-demand only leaves the substantial CUD and Spot savings unused for the predictable and interruptible tiers.",
+    "correct": [
+      "a"
+    ],
     "difficulty": 3
+  },
+  {
+    "id": "q-optimize-process-021",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "rca",
+      "sdlc"
+    ],
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://sre.google/sre-book/postmortem-culture/",
+    "lastVerified": "2026-10-01",
+    "prompt": "An SRE team at a logistics company has no written policy for when an incident needs a postmortem, so some outages get a thorough review and others are forgotten once service is restored. Which policy best matches Google SRE guidance?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Write a postmortem only when an outage breaches the customer SLA and service credits become payable to customers",
+        "rationale": "SLA breaches are a narrow slice of what is worth learning from; data loss, near misses, and on-call interventions would all go unreviewed."
+      },
+      {
+        "id": "b",
+        "text": "Let the engineering director decide after each incident whether the event deserves a written postmortem",
+        "rationale": "Case-by-case judgment is how the inconsistency arose; the criteria should be agreed in advance so the outcome does not depend on who happens to be asking."
+      },
+      {
+        "id": "c",
+        "text": "Agree objective triggers in advance, such as data loss, downtime past a threshold, or a manual rollback, and let anyone request one",
+        "rationale": "Google SRE practice sets triggers beforehand (user-visible downtime beyond a threshold, any data loss, on-call intervention such as a rollback, long resolution time) and lets any stakeholder request a postmortem."
+      },
+      {
+        "id": "d",
+        "text": "Hold a review only when the incident was caused by a deployment, since other causes cannot be prevented by process",
+        "rationale": "Triggers should follow impact and learning value, not one cause category; capacity, configuration, and dependency failures are also fixed through process."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "difficulty": 1,
+    "examOnly": true
+  },
+  {
+    "id": "q-optimize-process-022",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "ci-cd",
+      "sdlc"
+    ],
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://docs.cloud.google.com/deploy/docs/overview",
+    "lastVerified": "2026-10-01",
+    "prompt": "A team rebuilds its container image separately for dev, staging, and production, and has twice shipped to production an image that differed from the one tested in staging. They want the exact artifact that passed staging to reach production. What should they change?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Keep one long-lived Git branch per environment and run a separate image build each time a change is merged into that branch",
+        "rationale": "Separate builds per environment recreate the problem: each build can pull different dependencies or base layers, so artifacts drift even from the same code."
+      },
+      {
+        "id": "b",
+        "text": "Build once with Cloud Build, keep the image in Artifact Registry, and let Cloud Deploy promote that release onward",
+        "rationale": "A Cloud Deploy release carries specific image references and each promotion deploys that same release to the next target, so what was tested is what ships."
+      },
+      {
+        "id": "c",
+        "text": "Tag the image as latest in each environment's registry so that every environment pulls whatever was pushed most recently",
+        "rationale": "A mutable latest tag makes what runs depend on push timing, so staging and production can silently run different content."
+      },
+      {
+        "id": "d",
+        "text": "Have each environment's deploy script rebuild the image from the same commit hash so that the results should be identical",
+        "rationale": "The same commit does not guarantee an identical build when base images or dependencies float, and rebuilding discards the artifact that was actually tested."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "difficulty": 1,
+    "examOnly": true
+  },
+  {
+    "id": "q-optimize-process-023",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "software-supply-chain",
+      "ci-cd"
+    ],
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://docs.cloud.google.com/artifact-analysis/docs/container-scanning-overview",
+    "lastVerified": "2026-10-01",
+    "prompt": "A security-conscious team wants every container image pushed to their Artifact Registry repository checked for known OS and language package vulnerabilities, without adding a scanner step to each build. Which approach fits best?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Run a nightly Cloud Scheduler job that pulls every image onto a VM and scans it with an open-source scanner",
+        "rationale": "Operating your own scheduled scanner reimplements a managed capability and checks images on a delay instead of when they are pushed."
+      },
+      {
+        "id": "b",
+        "text": "Use Cloud Profiler on the running containers, since it reports vulnerable library versions loaded at runtime",
+        "rationale": "Profiler samples CPU and memory use of application code; it is not a vulnerability scanner."
+      },
+      {
+        "id": "c",
+        "text": "Read the Cloud Build logs, which list known CVEs for any base image that the Dockerfile references by name",
+        "rationale": "Build logs record build steps and output, not vulnerability findings for the packages inside an image."
+      },
+      {
+        "id": "d",
+        "text": "Rely on Artifact Analysis, which scans each image on push and keeps watching for new vulnerabilities",
+        "rationale": "Artifact Analysis scans new images when they are uploaded to Artifact Registry (OS and language packages) and keeps monitoring scanned images for new vulnerabilities, as long as they were pulled within the last 30 days."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "difficulty": 1,
+    "examOnly": true
+  },
+  {
+    "id": "q-optimize-process-024",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "ci-cd",
+      "serverless"
+    ],
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://docs.cloud.google.com/run/docs/rollouts-rollbacks-traffic-migration",
+    "lastVerified": "2026-10-01",
+    "prompt": "A new revision of a Cloud Run service is serving all traffic and returning elevated 5xx errors, while the previous revision was stable. What is the fastest, lowest-risk mitigation?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Route all traffic back to the previous revision, then investigate the faulty revision at leisure",
+        "rationale": "Moving traffic to a prior revision is a quick traffic update that lets in-flight requests finish; mitigate first, then root-cause."
+      },
+      {
+        "id": "b",
+        "text": "Delete the service and redeploy the earlier container image so that a fresh service starts from a clean state",
+        "rationale": "Deleting the service discards its revisions and configuration, and is slower and riskier than changing where traffic goes."
+      },
+      {
+        "id": "c",
+        "text": "Raise the maximum instances on the new revision first, in case the errors come from a lack of serving capacity",
+        "rationale": "Nothing in the symptoms points to capacity; the stable previous revision points at the new code, so scaling up adds cost without removing errors."
+      },
+      {
+        "id": "d",
+        "text": "Leave traffic as it is and ship a corrected build in the next release window, since rolling back hides the fault",
+        "rationale": "Waiting leaves users failing for a whole release cycle; a rollback restores service and the defect can still be fixed forward."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 1,
+    "examOnly": true
+  },
+  {
+    "id": "q-optimize-process-025",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "ci-cd",
+      "testing-validation"
+    ],
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://docs.cloud.google.com/build/docs/overview",
+    "lastVerified": "2026-10-01",
+    "prompt": "A fintech's Cloud Build pipeline must run integration tests against a Cloud SQL instance that has only a private IP, and security forbids giving the instance a public address. Which approach fits best?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Add the default worker pool's public egress addresses to the instance's authorized networks and enable a public IP",
+        "rationale": "Enabling a public IP breaks the stated security rule and widens the attack surface; the default pool is not built for private network access."
+      },
+      {
+        "id": "b",
+        "text": "Run the tests by hand from an engineer's laptop over VPN after each merge, removing them from the pipeline",
+        "rationale": "Moving tests out of the pipeline makes validation manual, slow, and easy to skip, which defeats the point of CI."
+      },
+      {
+        "id": "c",
+        "text": "Run the build in a Cloud Build private pool connected to the VPC so that test steps can reach the private IP",
+        "rationale": "Private pools are fully managed by Google Cloud but allow builds to access resources in a private network, so tests stay in the pipeline and the instance stays private."
+      },
+      {
+        "id": "d",
+        "text": "Replace integration tests with mock-based unit tests, since a managed build environment can never reach private resources",
+        "rationale": "Private pools exist to give builds private network access; dropping integration tests lowers coverage to work around a limitation that does not apply."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "id": "q-optimize-process-026",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "dr-patterns",
+      "rto-rpo"
+    ],
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://docs.cloud.google.com/architecture/dr-scenarios-for-applications",
+    "lastVerified": "2026-10-01",
+    "prompt": "A subscription billing system (a stateful web tier on managed instance groups and a PostgreSQL database) must meet an RTO of 45 minutes and an RPO of 5 minutes after a regional outage. Finance does not want to pay for a full second production site. Which DR pattern fits best?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Hot standby with full-size stacks serving traffic in two regions, so that no failover step is ever needed",
+        "rationale": "This meets the objectives but pays for a full second site, which finance has ruled out; the targets do not require zero downtime."
+      },
+      {
+        "id": "b",
+        "text": "Warm standby with a cross-region database replica and a scaled-down web tier that is scaled out on failover",
+        "rationale": "A warm pattern keeps a minimal recovery environment running, such as a small database instance, for medium RTO and RPO at medium cost; replica lag must be monitored against the 5-minute RPO."
+      },
+      {
+        "id": "c",
+        "text": "Cold standby with nightly backups copied to a second region and infrastructure created after the outage is declared",
+        "rationale": "Nightly backups imply up to 24 hours of data loss, far beyond a 5-minute RPO."
+      },
+      {
+        "id": "d",
+        "text": "Multi-zone deployment in the primary region, with the database standby and instances spread across all of its zones",
+        "rationale": "Zonal redundancy does not survive the loss of the whole region, which is exactly the scenario in the requirement."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "id": "q-optimize-process-027",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "disaster-recovery",
+      "rto-rpo"
+    ],
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://docs.cloud.google.com/storage/docs/availability-durability",
+    "lastVerified": "2026-10-01",
+    "prompt": "An asset-management service writes objects to Cloud Storage. After a regional outage, every object written up to 15 minutes earlier must be readable from the surviving region. What should the architect choose?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "A regional bucket in the primary region, plus a nightly Storage Transfer Service job copying objects to a second region",
+        "rationale": "A nightly copy leaves up to a day of objects unreplicated, far beyond a 15-minute window."
+      },
+      {
+        "id": "b",
+        "text": "A dual-region bucket with turbo replication enabled, which targets replicating all new objects within 15 minutes",
+        "rationale": "Turbo replication on a dual-region bucket replicates 100 percent of newly written objects to both regions within a 15-minute RPO."
+      },
+      {
+        "id": "c",
+        "text": "A dual-region bucket with default replication, which replicates every new object to both regions within 15 minutes",
+        "rationale": "Default replication copies 99.9 percent of new objects within an hour and all of them within 12 hours, so its RPO is 12 hours."
+      },
+      {
+        "id": "d",
+        "text": "A multi-region bucket with object versioning turned on, since versioning copies each new object to another region",
+        "rationale": "Versioning keeps earlier generations inside the same bucket and does not speed replication; a multi-region bucket also uses the default 12-hour RPO."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "id": "q-optimize-process-028",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "ci-cd",
+      "testing-validation"
+    ],
+    "caseStudyId": "ehr-healthcare",
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://docs.cloud.google.com/deploy/docs/deployment-strategies/canary",
+    "lastVerified": "2026-10-01",
+    "prompt": "EHR Healthcare is adopting continuous deployment for its containerized web apps on GKE while committing to at least 99.9% availability. A recent release exhausted database connections for every customer at once, so leadership wants new versions exposed gradually and judged by automated tests before reaching everyone. Which delivery design fits best?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Deploy to every GKE cluster at once in the overnight window, when the fewest clinicians are using the system",
+        "rationale": "An all-at-once release has the largest blast radius, and a quiet period does not make a faulty release safe for the clinicians who are still working."
+      },
+      {
+        "id": "b",
+        "text": "Run the full regression suite once a quarter in staging, then release all of the approved changes together",
+        "rationale": "Quarterly batching makes each release larger and riskier and delays feedback, the opposite of continuous deployment."
+      },
+      {
+        "id": "c",
+        "text": "Keep two identical production environments and flip all traffic at once after the release manager's manual check",
+        "rationale": "A single traffic flip exposes every customer to a defect at the same moment and relies on a manual check instead of automated verification."
+      },
+      {
+        "id": "d",
+        "text": "Use Cloud Deploy canary phases with verification tasks, plus an automation rule that rolls back to the last good release",
+        "rationale": "Canary phases send a growing share of traffic to the new version, verification tasks run tests whose failure fails the rollout, and a repair automation can retry and then roll back to the most recent successful release."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "id": "q-optimize-process-029",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "ci-cd",
+      "sdlc"
+    ],
+    "caseStudyId": "altostrat-media",
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://docs.cloud.google.com/deploy/docs/overview",
+    "lastVerified": "2026-10-01",
+    "prompt": "Altostrat Media runs its content platform on GKE and also runs Kubernetes on-premises for ingestion and archival workflows. Release engineers use different scripts for each environment, and leadership wants one centrally managed delivery flow for containers. Which design fits best?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "One Cloud Deploy pipeline, fed by Cloud Build and Artifact Registry, with GKE and attached on-premises targets",
+        "rationale": "Cloud Deploy defines a promotion sequence across targets and can deploy to GKE, Cloud Run, and GKE attached clusters for on-premises environments, giving one auditable path with approvals and rollback."
+      },
+      {
+        "id": "b",
+        "text": "Keep per-environment scripts but store them in a shared repository, with a wiki page describing the order to run them",
+        "rationale": "Centralizing the scripts does not centralize delivery: runs stay manual and divergent, with no shared approvals or release history."
+      },
+      {
+        "id": "c",
+        "text": "Move all on-premises workloads to Cloud Run first, because Cloud Deploy cannot deploy to clusters outside Google Cloud",
+        "rationale": "Cloud Deploy supports attached clusters for on-premises targets, so no migration is needed first, and the requirement is to keep Kubernetes in both places."
+      },
+      {
+        "id": "d",
+        "text": "Create a separate Cloud Build trigger with its own kubectl steps for each cluster, owned by the team running that cluster",
+        "rationale": "Per-cluster triggers preserve the fragmentation: there is no shared promotion sequence, approval gate, or release record across environments."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "id": "q-optimize-process-030",
+    "type": "multiple",
+    "domainId": "optimize-process",
+    "concepts": [
+      "iac-terraform",
+      "ci-cd"
+    ],
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://docs.cloud.google.com/docs/terraform/policy-validation/validate-policies",
+    "lastVerified": "2026-10-01",
+    "prompt": "A platform team manages shared networking with Terraform. Engineers run apply from their laptops, and a recent change opened a firewall rule to 0.0.0.0/0 that nobody noticed until an audit. Which two changes most reduce this class of error while keeping delivery fast? Choose two.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Run plan on every pull request and check the plan JSON against a policy library before any merge is allowed",
+        "rationale": "The plan can be exported as JSON and checked with gcloud beta terraform vet against policy constraints; a violation returns a non-zero exit code that can fail the pipeline (the command is Pre-GA)."
+      },
+      {
+        "id": "b",
+        "text": "Keep laptop applies but ask engineers to paste the plan output into the ticket before they run apply",
+        "rationale": "A pasted plan is a manual, unenforced step, and nothing ensures that what is applied matches what was pasted."
+      },
+      {
+        "id": "c",
+        "text": "Apply only from a Cloud Build pipeline on the main branch, after the reviewed change has been merged",
+        "rationale": "A single automated apply path removes unreviewed laptop applies, so every change passes code review and the policy check before it runs."
+      },
+      {
+        "id": "d",
+        "text": "Move the Terraform state file into the repository so that every engineer sees the same current state",
+        "rationale": "Committing state is risky and validates nothing; it does not stop a non-compliant rule from being planned and applied."
+      },
+      {
+        "id": "e",
+        "text": "Give a single senior engineer exclusive rights to run apply from a laptop after reading each plan",
+        "rationale": "One human gatekeeper is slow, a single point of failure, and still produces no automated, auditable check."
+      }
+    ],
+    "correct": [
+      "a",
+      "c"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-optimize-process-031",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "error-budget",
+      "slo-sli"
+    ],
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://sre.google/workbook/error-budget-policy/",
+    "lastVerified": "2026-10-01",
+    "prompt": "A payments API has a 99.9% monthly availability SLO. Three weeks in, a bad release and a misconfigured autoscaler have used up the entire error budget, and product wants to ship two feature releases this week. What should the agreed error budget policy say?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Ship the features as planned, because error budgets apply only to unplanned outages and not to releases",
+        "rationale": "Releases are a major source of budget burn; the budget exists precisely to trade reliability against release velocity."
+      },
+      {
+        "id": "b",
+        "text": "Pause feature releases, allowing only critical and security fixes, until the service is back within its SLO",
+        "rationale": "The example SRE policy halts changes other than P0 issues and security fixes when the budget is exceeded, giving teams permission to focus on reliability, especially when internal causes burned the budget."
+      },
+      {
+        "id": "c",
+        "text": "Lower the SLO target to 99.5% for this month so that the error budget is replenished and releases can continue",
+        "rationale": "Moving the target after the fact defeats the purpose of an SLO and hides the reliability problem."
+      },
+      {
+        "id": "d",
+        "text": "Halve the size of each release and keep shipping, since smaller changes cannot consume the remaining budget",
+        "rationale": "With no budget left, even small changes add risk; the policy responds to the overspend by halting changes, not by shrinking them."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-optimize-process-032",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "disaster-recovery",
+      "rto-rpo"
+    ],
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://docs.cloud.google.com/sql/docs/postgres/replication/cross-region-replicas",
+    "lastVerified": "2026-10-01",
+    "prompt": "A claims platform runs Cloud SQL for PostgreSQL with high availability enabled in a single region. A new requirement says the database must be recoverable in another region within 30 minutes after a full regional outage, accepting a few seconds of data loss. What should be added?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Nothing further, since HA already keeps a synchronous standby that takes over if the whole region is lost",
+        "rationale": "HA places the primary and standby in two zones of the same region, so it covers zonal failures and not the loss of the region."
+      },
+      {
+        "id": "b",
+        "text": "Daily on-demand backups copied to a bucket in another region, restored into a new instance after the outage is declared",
+        "rationale": "Restoring from daily backups means up to a day of data loss and a slow rebuild, missing both the RPO and the RTO."
+      },
+      {
+        "id": "c",
+        "text": "A cross-region read replica, with replication lag monitored, that operators promote during a regional failover",
+        "rationale": "Cross-region replicas are the Cloud SQL DR mechanism for regional outages; replication is asynchronous, so lag must be watched against the RPO, and promotion is a manual step."
+      },
+      {
+        "id": "d",
+        "text": "A second read replica in a different zone of the same region, ready to be promoted if the regional outage occurs",
+        "rationale": "A replica in the same region fails together with the region, so it adds nothing for this scenario."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "Cloud SQL Enterprise Plus advanced DR adds designated DR replicas with failover and switchover that preserve data, which is the upgrade path if asynchronous loss is not acceptable.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-optimize-process-033",
+    "type": "multiple",
+    "domainId": "optimize-process",
+    "concepts": [
+      "testing-validation",
+      "serverless"
+    ],
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://docs.cloud.google.com/run/docs/rollouts-rollbacks-traffic-migration",
+    "lastVerified": "2026-10-01",
+    "prompt": "A team deploys a Cloud Run service and wants to validate each release candidate under production conditions before every customer is exposed to it. Which two practices achieve this? Choose two.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Deploy the candidate as a tagged revision with no traffic and run integration tests against its tag URL",
+        "rationale": "A revision deployed with no traffic and a tag gets its own URL, so tests can exercise it before any customer traffic reaches it."
+      },
+      {
+        "id": "b",
+        "text": "Send all traffic to the new revision at once and use the revision history to roll back after customers complain",
+        "rationale": "This uses customers as the test suite; rollback is possible but only after everyone has been exposed."
+      },
+      {
+        "id": "c",
+        "text": "Split a small share of live traffic to the new revision and watch error rates before raising the percentage",
+        "rationale": "Traffic splitting between revisions allows a gradual rollout, with the percentage raised only as the new revision proves healthy."
+      },
+      {
+        "id": "d",
+        "text": "Treat a successful build and deploy as proof of health, because a revision that starts must be working",
+        "rationale": "A revision can start and still return wrong results or errors, so successful deployment says nothing about behavior under real requests."
+      },
+      {
+        "id": "e",
+        "text": "Set minimum instances on the service and rely on tags to allocate them to the tagged revision for the tests",
+        "rationale": "Traffic tags do not allocate minimum instances for tagged revisions, so tests against the tag URL can still hit cold starts."
+      }
+    ],
+    "correct": [
+      "a",
+      "c"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-optimize-process-034",
+    "type": "multiple",
+    "domainId": "optimize-process",
+    "concepts": [
+      "disaster-recovery",
+      "rto-rpo"
+    ],
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://docs.cloud.google.com/architecture/dr-scenarios-for-applications",
+    "lastVerified": "2026-10-01",
+    "prompt": "A team has documented a warm-standby DR plan but has never run it. Which two actions best establish that the plan will meet its RTO and RPO? Choose two.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Run a timed failover exercise in a non-production copy and compare each step's duration with the RTO",
+        "rationale": "Recovery steps, such as creating instances from snapshots, only reveal their real duration when they are executed, which is what the RTO has to be compared against."
+      },
+      {
+        "id": "b",
+        "text": "Review the runbook in an annual meeting and have the owners sign it off without executing any of its steps",
+        "rationale": "A paper review cannot reveal missing permissions, slow restores, or stale steps, so it proves nothing about recovery time."
+      },
+      {
+        "id": "c",
+        "text": "Measure replica lag and restore the latest backup into a scratch environment to compare the loss with the RPO",
+        "rationale": "Replica lag and restore point show how much data would actually be lost, which is the quantity the RPO limits."
+      },
+      {
+        "id": "d",
+        "text": "Rely on the availability SLAs published for the managed services involved, since they cover recovery too",
+        "rationale": "Service SLAs describe availability of the product, not whether your own failover procedure meets your objectives."
+      },
+      {
+        "id": "e",
+        "text": "Test only the database restore, because the compute tier can always be recreated from templates in minutes",
+        "rationale": "Recovery time is the sum of every step, and untested compute, networking, and cutover steps are common sources of missed RTOs."
+      }
+    ],
+    "correct": [
+      "a",
+      "c"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-optimize-process-035",
+    "type": "multiple",
+    "domainId": "optimize-process",
+    "concepts": [
+      "rca"
+    ],
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://sre.google/sre-book/postmortem-culture/",
+    "lastVerified": "2026-10-01",
+    "prompt": "A draft postmortem for a failed Cloud Deploy rollout states \"Root cause: engineer error. Action item: be more careful.\" Which three changes make it consistent with blameless postmortem practice? Choose three.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Add a timeline of detection, mitigation, and resolution times together with the measured user impact",
+        "rationale": "A postmortem records the incident, its impact, and the actions taken to mitigate or resolve it, so the timeline and impact must be documented."
+      },
+      {
+        "id": "b",
+        "text": "Name the engineer who approved the release so that the follow-up can focus on retraining that individual",
+        "rationale": "Blameless practice looks at systemic causes and assumes people acted with good intentions; naming individuals makes others hide problems."
+      },
+      {
+        "id": "c",
+        "text": "Examine why the system allowed the change, such as a missing verification stage or no automated rollback",
+        "rationale": "Root causes should be analyzed deeply enough to find the missing safeguards, rather than stopping at who clicked the button."
+      },
+      {
+        "id": "d",
+        "text": "Keep the document within the team so that other groups are not discouraged from reporting incidents",
+        "rationale": "Google SRE practice is to share postmortems widely, so other teams can learn from them and the practice is reinforced."
+      },
+      {
+        "id": "e",
+        "text": "Turn the action items into prioritized, tracked tasks with named owners, such as adding a verify stage",
+        "rationale": "\"Be more careful\" cannot be verified or completed; effective postmortems have appropriate action plans with prioritized fixes."
+      }
+    ],
+    "correct": [
+      "a",
+      "c",
+      "e"
+    ],
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "id": "q-optimize-process-036",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "disaster-recovery",
+      "rto-rpo"
+    ],
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://docs.cloud.google.com/architecture/dr-scenarios-planning-guide",
+    "lastVerified": "2026-10-01",
+    "exhibit": {
+      "label": "DR exercise results, full-region failover",
+      "format": "table",
+      "content": "| Tier | Pattern | Target RTO | Target RPO | Measured RTO | Measured RPO |\n|---|---|---|---|---|---|\n| Checkout API | Hot (active-active) | 15 min | 1 min | 12 min | 40 s |\n| Orders DB | Warm (cross-region replica) | 30 min | 5 min | 55 min | 3 min |\n| Reporting | Cold (backup restore) | 8 h | 24 h | 6 h | 20 h |"
+    },
+    "prompt": "A team ran its first full-region DR exercise and recorded the results in the exhibit. Which conclusion should drive the next round of work?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Orders DB meets its RPO but misses its RTO, so rehearse and automate the promotion and cutover steps for the replica",
+        "rationale": "The 3-minute loss is inside the 5-minute RPO, while the 55-minute recovery overshoots the 30-minute RTO by 25 minutes; the gap is in the recovery procedure, so practice and automation address it."
+      },
+      {
+        "id": "b",
+        "text": "Orders DB loses too much data, so switch its replica to synchronous replication to shorten the recovery time",
+        "rationale": "The RPO is already met (3 minutes against 5), and replication mode affects data loss, not the time taken to promote and cut over."
+      },
+      {
+        "id": "c",
+        "text": "Checkout API is close to its RPO limit, so replace its hot pattern with a warm standby to save running cost",
+        "rationale": "A 40-second loss is within the 1-minute target, and the hot pattern is what delivers it; a warm standby would put both of its targets at risk."
+      },
+      {
+        "id": "d",
+        "text": "Reporting has failed its RTO, so move it to a hot pattern to make it recover faster in the next exercise",
+        "rationale": "Six hours is inside the 8-hour target and 20 hours is inside the 24-hour RPO; a hot pattern would add large cost for no required gain."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "id": "q-optimize-process-037",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "rca",
+      "alerting"
+    ],
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://docs.cloud.google.com/architecture/framework/operational-excellence/manage-incidents-and-problems",
+    "lastVerified": "2026-10-01",
+    "exhibit": {
+      "label": "Incident timeline and alert policy",
+      "format": "log",
+      "content": "14:02  cloud-deploy  rollout prod/checkout-v2.31 SUCCEEDED (100% of pods)\n14:05  monitoring    checkout p99 latency 480ms -> 3.9s\n14:09  monitoring    checkout 5xx rate 0.4% -> 7.1%\n14:09  monitoring    gke node cpu avg 38%\n14:51  support       customer escalation reaches on-call (first page)\n14:58  on-call       rollback to checkout-v2.30 started\n15:03  monitoring    checkout 5xx rate 0.4%, p99 latency 450ms\n\nalert policies: node cpu > 85% for 10m; node disk > 90%"
+    },
+    "prompt": "The exhibit is the timeline from an incident review of a checkout slowdown. Which finding and follow-up best fit a blameless postmortem?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Mitigation was the slow step, so remove the production approval gate in Cloud Deploy to speed up rollbacks",
+        "rationale": "The rollback began 7 minutes after the page (14:51 to 14:58), whereas 46 minutes passed between the latency spike and that first page; mitigation was not the bottleneck."
+      },
+      {
+        "id": "b",
+        "text": "Capacity caused the slowdown, so raise the node pool maximum size ahead of the next release as a precaution",
+        "rationale": "Average node CPU was 38 percent, so nothing shows a capacity shortage; the regression began right after the release."
+      },
+      {
+        "id": "c",
+        "text": "Detection was the failure: alerts watch resource saturation, so add alerts on user-facing latency and error rate",
+        "rationale": "Impact started around 14:05 but a human was first paged at 14:51; the existing alerts measured CPU and disk rather than the user experience, and symptom-based alerts would have fired within minutes."
+      },
+      {
+        "id": "d",
+        "text": "Lower the CPU alert threshold to 60 percent for ten minutes, so that the same event would page much earlier",
+        "rationale": "CPU averaged 38 percent throughout, so even a 60 percent threshold would never have fired for this failure."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "id": "q-optimize-process-038",
+    "type": "multiple",
+    "domainId": "optimize-process",
+    "concepts": [
+      "disaster-recovery",
+      "business-continuity"
+    ],
+    "caseStudyId": "ehr-healthcare",
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://docs.cloud.google.com/architecture/dr-scenarios-planning-guide",
+    "lastVerified": "2026-10-01",
+    "prompt": "EHR Healthcare is reworking its DR plan as it leaves a colocation facility. Customer-facing apps will run on GKE and Cloud SQL, while the on-premises insurance-provider integrations will stay in place for several years. Leadership wants 99.9% availability and a recovery objective for each tier instead of one blanket target. Which three elements belong in the plan? Choose three.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Set RTO and RPO for each tier from its business impact, rather than a single target for the whole estate",
+        "rationale": "Objectives should reflect how much downtime and data loss each tier's business function can tolerate, because tighter targets cost more to meet."
+      },
+      {
+        "id": "b",
+        "text": "Use one hot multi-region pattern for every tier, internal reporting included, so no tier can miss a target",
+        "rationale": "Smaller RTO and RPO cost more to run, so applying the most expensive pattern everywhere overspends on tiers that tolerate hours of downtime."
+      },
+      {
+        "id": "c",
+        "text": "Match a cold, warm, or hot pattern to each tier's objectives, accepting that tighter targets cost more",
+        "rationale": "Cold, warm, and hot patterns trade cost against RTO and RPO, so each tier should get the cheapest pattern that still meets its own objectives."
+      },
+      {
+        "id": "d",
+        "text": "Plan DR only for the GKE and Cloud SQL tiers, since the on-premises integrations are slated for replacement",
+        "rationale": "The integrations stay in service for years and the cloud tiers depend on them, so leaving them out leaves a gap in the recovery plan."
+      },
+      {
+        "id": "e",
+        "text": "Include the on-premises integration paths in failover tests, since the cloud tiers depend on them",
+        "rationale": "A failover that restores the cloud tiers but not their connectivity to insurance providers does not restore the service, so those paths must be exercised."
+      }
+    ],
+    "correct": [
+      "a",
+      "c",
+      "e"
+    ],
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "id": "q-optimize-process-039",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "rca",
+      "observability"
+    ],
+    "caseStudyId": "cymbal-retail",
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://docs.cloud.google.com/stackdriver/docs",
+    "lastVerified": "2026-10-01",
+    "prompt": "Cymbal Retail ships about 20 releases a day across roughly 30 microservices on Kubernetes, and checkout slows down intermittently. Engineers check Nagios host alerts, Grafana dashboards, and Elastic logs in separate tools, and comparing timestamps with release times often points at the wrong change. What best speeds up root-cause analysis?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Trace requests through the services and view logs, metrics, and traces together in Google Cloud Observability",
+        "rationale": "Traces show which service in a request path is slow regardless of how many releases overlap, and having logs and metrics beside them removes the tool-hopping."
+      },
+      {
+        "id": "b",
+        "text": "Add more Nagios host checks with lower thresholds, so that every infrastructure anomaly pages the on-call engineer",
+        "rationale": "Host checks measure machines, not request paths; lower thresholds add noise and still cannot attribute latency to a service."
+      },
+      {
+        "id": "c",
+        "text": "Add nodes before each release, because slowdowns that follow releases indicate a shortage of cluster capacity",
+        "rationale": "Overlapping releases make timing ambiguous, and nothing in the symptoms shows a capacity shortage, so extra nodes add cost without a diagnosis."
+      },
+      {
+        "id": "d",
+        "text": "Limit releases to one a week so that fewer changes have to be compared against each slowdown in the tools",
+        "rationale": "Throttling releases treats the symptom, slows the business, and leaves the attribution problem unsolved."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "id": "q-optimize-process-040",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "backup-recovery",
+      "disaster-recovery"
+    ],
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://docs.cloud.google.com/backup-disaster-recovery/docs/concepts/backup-dr",
+    "lastVerified": "2026-10-01",
+    "prompt": "A healthcare analytics firm runs Compute Engine VMs and Cloud SQL databases. After a ransomware scare, the CISO requires that backups cannot be altered or deleted for 35 days, enforced by the backup system itself rather than by access policy, with a recovery point at least every 4 hours. Which design is best?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Persistent Disk snapshots every four hours in the same project, with IAM limiting delete rights to the security team",
+        "rationale": "Snapshot protection depends on IAM alone, so anyone granted the permission can delete them and no retention period is enforced."
+      },
+      {
+        "id": "b",
+        "text": "Backup and DR backup plans with a four-hour rule, stored in a backup vault whose enforced retention is 35 days",
+        "rationale": "Backup and DR supports Compute Engine and Cloud SQL, backup plans set the frequency, and backup vaults provide immutable storage with enforced retention that protects against modification and deletion."
+      },
+      {
+        "id": "c",
+        "text": "Cloud SQL automated backups plus daily VM exports to a same-project bucket, protected by object versioning",
+        "rationale": "Daily exports miss the four-hour recovery point, and versioning does not stop a permitted principal from deleting the stored data."
+      },
+      {
+        "id": "d",
+        "text": "A warm standby in a second region replicating continuously, so that a clean copy survives any corruption",
+        "rationale": "Replication copies corruption and encrypted data to the standby almost immediately, so it is availability protection, not a backup."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "id": "q-optimize-process-041",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "cost-resource-optimization",
+      "committed-use-discounts",
+      "rightsizing"
+    ],
+    "subObjective": "optimize-process.2",
+    "sourceUrl": "https://docs.cloud.google.com/billing/docs/how-to/finops-hub",
+    "lastVerified": "2026-10-01",
+    "examOnly": true,
+    "prompt": "A FinOps lead wants one place in the Google Cloud console that shows how much eligible usage is covered by committed use discounts, which idle or oversized resources are wasting money, and the estimated monthly savings from acting on recommendations. Which tool fits?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "The Cloud Billing pricing export in BigQuery, which lists the savings available for each SKU the company consumes",
+        "rationale": "Pricing export holds list-price and tier data for SKUs, not your own utilization or recommendations, so it cannot quantify waste in your estate."
+      },
+      {
+        "id": "b",
+        "text": "A Cloud Billing budget with threshold alerts on the billing account, tuned to report coverage and savings opportunities",
+        "rationale": "Budgets compare spend with an amount and send notifications; they do not report commitment coverage or estimate savings from recommendations."
+      },
+      {
+        "id": "c",
+        "text": "FinOps hub in Cloud Billing, which surfaces CUD coverage, utilization waste, and recommended savings actions together",
+        "rationale": "FinOps hub aggregates the CUD optimization rate, resources with wasted provisioned cost, and recommendations such as removing idle resources, rightsizing, and buying commitments."
+      },
+      {
+        "id": "d",
+        "text": "Cloud Monitoring dashboards charting Compute Engine CPU utilization for every project across the whole organization",
+        "rationale": "Utilization charts show load but not cost, commitment coverage, or the dollar value of a recommendation, so they cannot answer the FinOps questions alone."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "FinOps hub combines commitment coverage, utilization insight, and ranked recommendations in one view; budgets, monitoring charts, and pricing data each cover only a slice.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-optimize-process-042",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "cost-resource-optimization",
+      "cost-optimization"
+    ],
+    "subObjective": "optimize-process.2",
+    "sourceUrl": "https://docs.cloud.google.com/billing/docs/how-to/export-data-bigquery",
+    "lastVerified": "2026-10-01",
+    "prompt": "Finance at Brightwave Logistics wants a monthly chargeback report that breaks each of 12 product teams' Compute Engine, BigQuery, and Cloud Storage cost down to SKU, queryable with SQL and joinable to an internal cost-center table. Resources are spread across 40 shared projects. Which approach meets this?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Label each of the 40 projects with its team, because project labels propagate to every resource inside and appear on its SKU-level cost rows",
+        "rationale": "Labels attached to a project do not automatically propagate to child resources, so resources in shared projects would still be unattributed to a team."
+      },
+      {
+        "id": "b",
+        "text": "Create one Cloud Billing budget per team scoped by service, and treat each month's last threshold notification as that team's chargeback amount",
+        "rationale": "Budgets are alerting tools measured against a planned amount; they are not a queryable, SKU-level accounting record and cannot be joined to other tables."
+      },
+      {
+        "id": "c",
+        "text": "Download each monthly invoice as a PDF and split the shared-project costs among the teams in proportion to each team's headcount",
+        "rationale": "Headcount allocation is not usage-based, hides which team drives each SKU, and cannot be queried with SQL, defeating the goal of accountability."
+      },
+      {
+        "id": "d",
+        "text": "Enable Cloud Billing export to BigQuery, enforce a mandatory team label through Terraform, and group exported cost rows by that label",
+        "rationale": "Standard usage cost export carries services, SKUs, projects, and labels in BigQuery, so label-based grouping and joins to a cost-center table are plain SQL; enforcing labels in IaC keeps coverage high."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "explanation": "Billing export to BigQuery plus consistently applied resource labels is the standard way to turn shared-project spend into per-team, SKU-level showback or chargeback.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-optimize-process-043",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "rightsizing",
+      "cost-resource-optimization"
+    ],
+    "subObjective": "optimize-process.2",
+    "sourceUrl": "https://docs.cloud.google.com/compute/docs/instances/apply-machine-type-recommendations-for-instances",
+    "lastVerified": "2026-10-01",
+    "examOnly": true,
+    "prompt": "The platform team of Tallis Software is reviewing the Compute Engine machine-type and idle-VM recommendations below before a quarterly cost push. Which approach to acting on them is soundest?",
+    "exhibit": {
+      "label": "Recommender output, analysis date 12 Sep",
+      "format": "table",
+      "content": "| VM | Machine type | Avg CPU (8 days) | Peak CPU (8 days) | Recommendation | Est. saving / month | Notes |\n|---|---|---|---|---|---|---|\n| web-01 | n2-standard-16 | 9% | 31% | Downsize to n2-standard-8 | $190 | Steady customer web tier |\n| batch-03 | n2-standard-32 | 6% | 12% | Downsize to n2-standard-16 | $380 | Month-end close job runs the 28th to the 2nd |\n| etl-07 | n2-standard-8 | 0% | 1% | Stop idle VM | $210 | No owner label; created by a departed engineer |"
+    },
+    "choices": [
+      {
+        "id": "a",
+        "text": "Apply all three recommendations immediately, since the recommender's estimates already account for periodic workloads such as month-end jobs on each VM",
+        "rationale": "The recommender looks at only the last 8 days of utilization, so it can miss a monthly peak and recommend a machine that cannot handle month-end close."
+      },
+      {
+        "id": "b",
+        "text": "Apply the web-01 downsize, contact the etl-07 owner and snapshot it before stopping, and hold batch-03 until its month-end peak is reviewed",
+        "rationale": "Recommendations rest on the previous 8 days of metrics, so a job that runs from the 28th to the 2nd is mostly outside the window; the idle VM is stopped safely only after ownership and a snapshot are secured."
+      },
+      {
+        "id": "c",
+        "text": "Apply the web-01 and batch-03 downsizes, and delete etl-07 now because 0% CPU proves it serves no business purpose and only costs money",
+        "rationale": "Low CPU does not prove a VM is unneeded, and deletion is hard to undo; the unlabeled owner must be found and a snapshot taken before removal."
+      },
+      {
+        "id": "d",
+        "text": "Reject all three until a full quarter of utilization data exists, because recommendations are unreliable for steady web workloads",
+        "rationale": "A steady web tier with 9% average and 31% peak CPU is exactly where an 8-day window is representative, so waiting a quarter forgoes savings for no benefit."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "Treat recommender output as evidence with a known lookback window: act where the window is representative, protect against irreversible actions, and re-check periodic workloads.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-optimize-process-044",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "spot-vms",
+      "cost-resource-optimization"
+    ],
+    "subObjective": "optimize-process.2",
+    "sourceUrl": "https://docs.cloud.google.com/compute/docs/instances/spot",
+    "lastVerified": "2026-10-01",
+    "prompt": "Lumen Genomics runs a nightly variant-calling pipeline of 400 independent shards, each taking 20 to 40 minutes. Each shard writes its result to Cloud Storage, and a coordinator re-queues any shard that does not report completion. The run needs about 2.5 hours inside a 6-hour window and currently uses on-demand VMs. What is the lowest-cost change that keeps results correct?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Keep on-demand VMs and run the fleet continuously through the whole day so that sustained use discounts reduce the average hourly rate",
+        "rationale": "Running idle VMs 24 hours to chase a discount raises total cost; the right move is paying less for the hours actually needed."
+      },
+      {
+        "id": "b",
+        "text": "Run the workers on Spot VMs and enable live migration so any shard on a reclaimed host moves to another machine intact",
+        "rationale": "Spot VMs cannot live migrate; when capacity is reclaimed the instance is preempted, so correctness must come from re-queuing, not migration."
+      },
+      {
+        "id": "c",
+        "text": "Move the workers to Spot VMs, keep shards idempotent with output in Cloud Storage, and let the coordinator re-queue preempted shards",
+        "rationale": "Spot VMs give deep discounts for fault-tolerant batch work; preemption just costs a re-run of one short shard, and the 3.5-hour slack absorbs retries."
+      },
+      {
+        "id": "d",
+        "text": "Buy a 3-year resource-based commitment sized for the full 400-worker fleet, since the pipeline runs every single night",
+        "rationale": "The fleet exists for only about 2.5 of 24 hours, so a commitment is billed around the clock and would pay for mostly idle capacity."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "Fault-tolerant, restartable batch work is the textbook Spot workload; design for preemption instead of paying to avoid it.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-optimize-process-045",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "committed-use-discounts",
+      "rightsizing",
+      "cost-resource-optimization"
+    ],
+    "subObjective": "optimize-process.2",
+    "sourceUrl": "https://docs.cloud.google.com/compute/docs/instances/committed-use-discounts-overview",
+    "lastVerified": "2026-10-01",
+    "prompt": "Nimbus Games runs 120 n2-standard-32 VMs that have been unchanged for two years. The Recommender reports 14% average CPU and suggests most could be n2-standard-8. Finance wants to buy a 3-year resource-based commitment for the current 3,840 vCPUs before quarter end to lock in the discount. What should the architect advise?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Buy the commitment now; it automatically shrinks as the VMs are downsized, so the discount always matches the running vCPU count",
+        "rationale": "A commitment is a fixed quantity of vCPU and memory; it does not shrink with usage, and any excess is billed whether or not VMs consume it."
+      },
+      {
+        "id": "b",
+        "text": "Rightsize first, observe the new steady state, then size the commitment to that baseline, because commitments cannot be canceled",
+        "rationale": "Resource-based commitments are for a fixed amount of resources over the term and cannot be canceled, so committing before rightsizing locks in payment for capacity you will soon stop using."
+      },
+      {
+        "id": "c",
+        "text": "Buy the commitment for the current shape now and rightsize afterward, since a resource-based commitment can be canceled once usage drops",
+        "rationale": "Resource-based commitments cannot be canceled after purchase, so shrinking the fleet later leaves unused committed vCPUs billed for the full term."
+      },
+      {
+        "id": "d",
+        "text": "Skip commitments and move all 120 VMs to Spot, since Spot discounts exceed committed use discounts for every kind of workload",
+        "rationale": "Spot VMs can be preempted at any time and carry no availability guarantee, so they suit fault-tolerant work, not an unspecified steady fleet."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "Optimize usage before committing: the order matters because resource-based commitments cannot be canceled.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-optimize-process-046",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "budgets-alerts",
+      "cost-resource-optimization"
+    ],
+    "subObjective": "optimize-process.2",
+    "sourceUrl": "https://docs.cloud.google.com/billing/docs/how-to/manage-anomalies",
+    "lastVerified": "2026-10-01",
+    "prompt": "Orbit Retail has a $60,000 monthly budget with actual-spend alerts at 50%, 90%, and 100%. A misconfigured BigQuery job added an unexpected $9,000 in one day, but no alert fired for 11 days. Finance wants to hear about unusual deviations from normal spend within a day, with enough detail to find the responsible service, without hand-tuning thresholds per project. What should they do?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Create a BigQuery-scoped budget over a custom time range and rely on its forecasted-cost alert to predict the overspend early",
+        "rationale": "Budgets with a custom time range cannot trigger alerts on forecasted costs, so the proposed early warning would never fire."
+      },
+      {
+        "id": "b",
+        "text": "Export billing data to BigQuery and have an analyst review the per-service totals manually at the close of every month",
+        "rationale": "A month-end review finds the spike after the money is spent, which is the delay Finance is trying to eliminate."
+      },
+      {
+        "id": "c",
+        "text": "Turn on cost anomaly detection in Cloud Billing, alert by email or Pub/Sub, and use the top services, regions, and SKUs for root cause",
+        "rationale": "Anomaly detection compares current cost with historical patterns, alerts on deviation, and its panel names the top contributing services, regions, and SKUs."
+      },
+      {
+        "id": "d",
+        "text": "Add budget thresholds at 5%, 10%, and 15% of the monthly amount so that smaller deviations trigger an alert sooner than they do today",
+        "rationale": "Budget thresholds are static percentages of a plan; they fire on cumulative spend rather than on a deviation from normal and give no root-cause breakdown."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "Budgets track spend against a plan; anomaly detection flags deviations from a learned baseline and points at the cause.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-optimize-process-047",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "business-continuity",
+      "rto-rpo",
+      "disaster-recovery"
+    ],
+    "subObjective": "optimize-process.2",
+    "sourceUrl": "https://docs.cloud.google.com/architecture/dr-scenarios-planning-guide",
+    "lastVerified": "2026-10-01",
+    "examOnly": true,
+    "prompt": "A bank's architecture team must decide which of its 30 applications deserve an expensive hot standby and which can rely on backup and restore. What should come first?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "A single DR pattern chosen for all 30 applications so the recovery process stays uniform and easy to rehearse",
+        "rationale": "One pattern overspends on low-criticality systems or underprotects critical ones; objectives should vary with business impact."
+      },
+      {
+        "id": "b",
+        "text": "Google Cloud regional service SLAs adopted as every application's RTO and RPO, with designs built backward from those figures",
+        "rationale": "SLAs describe provider availability, not what each business process can tolerate in downtime or data loss."
+      },
+      {
+        "id": "c",
+        "text": "A DR pattern assigned by compute footprint, giving the largest deployments the hottest standby environments",
+        "rationale": "Size is not criticality; a small payments service may need faster recovery than a large reporting cluster."
+      },
+      {
+        "id": "d",
+        "text": "A business impact analysis that sets an RTO and an RPO for each application from the cost of downtime and data loss",
+        "rationale": "The DR planning process starts with a business impact analysis; recovery objectives per application then drive which cold, warm, or hot pattern is justified."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "explanation": "Recovery objectives come from business impact, not from technology preferences; patterns follow the objectives.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-optimize-process-048",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "team-readiness",
+      "change-management",
+      "stakeholder-management"
+    ],
+    "caseStudyId": "knightmotives-automotive",
+    "subObjective": "optimize-process.2",
+    "sourceUrl": "https://docs.cloud.google.com/architecture/framework/operational-excellence/continuously-improve-and-innovate",
+    "lastVerified": "2026-10-01",
+    "prompt": "KnightMotives lists employee upskilling and better communication between business and technical teams among its priorities as it moves the dealer build-to-order system to Google Cloud. The platform engineers know the mainframe and on-premises stack but have no cloud-native experience, and business owners say engineering speaks a different language. Which plan best serves both priorities?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Have business owners write detailed requirements up front and hand them to engineering, with later changes reviewed in a quarterly board",
+        "rationale": "A one-way handoff with slow change review widens the gap between business and technical teams and cannot adapt as the dealer needs evolve."
+      },
+      {
+        "id": "b",
+        "text": "Train engineers on the real migration work with Google Cloud learning paths, and hold regular retrospectives with business owners",
+        "rationale": "Learning on the actual migration builds skills where they are needed, and recurring retrospectives and stakeholder feedback close the communication gap."
+      },
+      {
+        "id": "c",
+        "text": "Send all engineers to a one-time cloud certification course and postpone every migration task until the whole team has passed",
+        "rationale": "Delaying all work until certification postpones value and skips hands-on practice; the communication gap with business owners is not addressed either."
+      },
+      {
+        "id": "d",
+        "text": "Hire an experienced contractor team to build and run the new platform while the existing engineers stay on the mainframe until it is retired",
+        "rationale": "Outsourcing the whole platform leaves in-house staff without cloud skills, so upskilling stalls and knowledge leaves with the contractors."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "Skills and alignment improve together when learning happens on real work and stakeholders review progress on a regular cadence.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-optimize-process-049",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "change-management",
+      "ci-cd",
+      "stakeholder-management"
+    ],
+    "caseStudyId": "ehr-healthcare",
+    "subObjective": "optimize-process.2",
+    "sourceUrl": "https://docs.cloud.google.com/architecture/framework/operational-excellence/automate-and-manage-change",
+    "lastVerified": "2026-10-01",
+    "prompt": "EHR Healthcare's compliance office requires a weekly change advisory board (CAB) to approve every production release, which caps releases at one per week. Leadership wants continuous deployment, and compliance still needs evidence that each change was reviewed, tested, and approved. Which redesign of change management satisfies both?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Remove the CAB entirely and let developers deploy straight to production, using post-release monitoring to demonstrate compliance after the fact",
+        "rationale": "Removing governance outright leaves no pre-release evidence of review or approval, which the compliance office explicitly requires."
+      },
+      {
+        "id": "b",
+        "text": "Keep the CAB for every release but convene it daily, so each change is still approved in person by the same group of reviewers on the board",
+        "rationale": "A daily meeting is still a manual gate per change; it adds toil, depends on attendance, and scales poorly as release frequency grows."
+      },
+      {
+        "id": "c",
+        "text": "Encode review rules in the pipeline: code review, automated tests and policy checks, risk-based approval gates, and a versioned audit trail",
+        "rationale": "Automated, repeatable controls with version-controlled records give compliance per-release evidence while removing the weekly batch bottleneck."
+      },
+      {
+        "id": "d",
+        "text": "Bundle changes into larger monthly releases that each receive a more thorough CAB review, reducing how often approval is needed",
+        "rationale": "Larger batches raise change risk and make failures harder to diagnose and roll back, moving away from the goal of frequent, small deployments."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "Change governance, testing, and controlled rollout can be automated in CI/CD so approval evidence is produced per release instead of in a periodic meeting.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-optimize-process-050",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "storage-classes",
+      "data-lifecycle",
+      "cost-resource-optimization"
+    ],
+    "caseStudyId": "altostrat-media",
+    "subObjective": "optimize-process.2",
+    "sourceUrl": "https://docs.cloud.google.com/storage/docs/autoclass",
+    "lastVerified": "2026-10-01",
+    "prompt": "Altostrat wants to cut Cloud Storage cost for its media library while keeping content highly available. Access is unpredictable: an archive documentary can surge when a news event revives interest, while some new content is rarely viewed. Age-based lifecycle rules moved items to Coldline after 90 days, and surges now cause retrieval charges. Which change fits best?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Tighten the lifecycle rules to move objects to Archive after 30 days, since a colder class always lowers the total storage bill for the library",
+        "rationale": "Colder classes cost more to read and carry minimum storage durations, so aggressive age rules make surge-driven retrieval charges worse."
+      },
+      {
+        "id": "b",
+        "text": "Run a weekly job that reads access logs and rewrites each object into the storage class that its recent read activity suggests",
+        "rationale": "A custom rewriting job re-implements Autoclass with operational burden, and class changes by rewrite can trigger early-deletion and retrieval charges."
+      },
+      {
+        "id": "c",
+        "text": "Keep every object in Standard and add Cloud CDN, because a CDN removes the need for any storage-class management on the buckets",
+        "rationale": "A CDN offloads delivery of hot content but does nothing for the at-rest cost of the large cold portion of the library."
+      },
+      {
+        "id": "d",
+        "text": "Enable Autoclass on the media buckets so idle objects move to colder classes and return to Standard when read, without retrieval fees",
+        "rationale": "Autoclass tracks each object's access, moves idle objects to colder classes, and moves them back to Standard on access; retrieval and early-deletion fees are not charged beyond enablement charges."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "explanation": "Use Autoclass when access patterns are unpredictable; age-based lifecycle rules suit data whose access decay is known.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-optimize-process-051",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "cost-resource-optimization",
+      "resource-hierarchy"
+    ],
+    "subObjective": "optimize-process.2",
+    "sourceUrl": "https://docs.cloud.google.com/recommender/docs/unattended-project-recommender",
+    "lastVerified": "2026-10-01",
+    "examOnly": true,
+    "prompt": "An organization has 600 projects, many created for experiments. The cloud team wants Google Cloud to identify projects that look abandoned and to flag active projects whose owners have left. Which capability should they use?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "A Cloud Billing budget on each project that closes the project if it never reaches its first alert threshold",
+        "rationale": "Budgets send notifications about spend; they cannot judge activity or close projects."
+      },
+      {
+        "id": "b",
+        "text": "The unattended project recommender, which analyzes usage signals to suggest cleaning up or reclaiming projects",
+        "rationale": "It examines 30 days of API, networking, service, billing, and owner activity, then recommends deleting low-use projects or assigning new owners to active ownerless ones."
+      },
+      {
+        "id": "c",
+        "text": "A Cloud Asset Inventory export to BigQuery, which tags each project as abandoned after a configurable idle period",
+        "rationale": "Asset Inventory records resources and metadata but does not score project activity or label projects as abandoned."
+      },
+      {
+        "id": "d",
+        "text": "An organization policy constraint that automatically deletes any project showing no activity for 90 consecutive days",
+        "rationale": "Org policies restrict configuration; they do not delete idle projects, and automatic deletion would risk irreversible data loss."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "The unattended project recommender surfaces candidates; humans still review before deleting, since project deletion can lose data.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-optimize-process-052",
+    "type": "multiple",
+    "domainId": "optimize-process",
+    "concepts": [
+      "cost-optimization",
+      "cost-resource-optimization"
+    ],
+    "subObjective": "optimize-process.2",
+    "sourceUrl": "https://docs.cloud.google.com/bigquery/docs/best-practices-costs",
+    "lastVerified": "2026-10-01",
+    "prompt": "Nebula Analytics lets analysts run ad hoc on-demand BigQuery queries. One SELECT over a 90 TB unpartitioned table ended with LIMIT 10 yet still scanned the entire table and produced a large charge. Which two controls most directly reduce the risk of runaway on-demand query charges? Choose two.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Run a dry run before each query and treat its byte estimate as a hard cap on the eventual charge",
+        "rationale": "A dry run only estimates; it enforces nothing, so a user can still run the full query afterward."
+      },
+      {
+        "id": "b",
+        "text": "Configure custom quotas that cap the bytes processed per day for each project or user",
+        "rationale": "Custom quotas bound daily on-demand processing per project or user, limiting the blast radius of any single analyst or job."
+      },
+      {
+        "id": "c",
+        "text": "Require a LIMIT clause on every query so only the rows requested are read from storage",
+        "rationale": "For non-clustered tables a LIMIT clause does not change how much data is read, so it does not reduce the charge."
+      },
+      {
+        "id": "d",
+        "text": "Set a maximum bytes billed limit so a query estimated to read more than the limit fails without being charged",
+        "rationale": "Maximum bytes billed estimates bytes before running and fails the query without charge when the estimate exceeds the limit."
+      },
+      {
+        "id": "e",
+        "text": "Apply a default table expiration on the dataset so query results are deleted automatically after a set period of time",
+        "rationale": "Expiration trims storage of old tables; it has no effect on how many bytes future queries scan."
+      }
+    ],
+    "correct": [
+      "b",
+      "d"
+    ],
+    "explanation": "Hard limits (maximum bytes billed, custom quotas) enforce cost control; LIMIT and dry runs do not.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-optimize-process-053",
+    "type": "multiple",
+    "domainId": "optimize-process",
+    "concepts": [
+      "cost-optimization",
+      "budgets-alerts",
+      "stakeholder-management"
+    ],
+    "subObjective": "optimize-process.2",
+    "sourceUrl": "https://docs.cloud.google.com/architecture/framework/cost-optimization/foster-culture-cost-awareness",
+    "lastVerified": "2026-10-01",
+    "prompt": "Pioneer Health wants engineering teams to take ownership of their cloud spend rather than leaving it to finance. Which three practices support that goal? Choose three.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Make the finance team the sole owner of cost decisions, with engineers learning of spend from the monthly invoice",
+        "rationale": "Separating decision-makers from cost data removes accountability and delays feedback until the money is already spent."
+      },
+      {
+        "id": "b",
+        "text": "Discuss cost implications during design reviews, in a psychologically safe setting where concerns can be raised",
+        "rationale": "Individual design decisions affect cost, so cost awareness works best when it is part of how every role designs and reviews."
+      },
+      {
+        "id": "c",
+        "text": "Define a labeling policy and enforce it in Terraform, so costs map to teams and cost centers",
+        "rationale": "Labels let cost be allocated to departments and cost centers, and automation keeps the labeling consistent."
+      },
+      {
+        "id": "d",
+        "text": "Give each team periodic cost reports and budget or anomaly alerts, built from billing dashboards and BigQuery",
+        "rationale": "Audience-specific reports and automated notifications give teams the visibility they need to act on their own spend."
+      },
+      {
+        "id": "e",
+        "text": "Restrict billing data to Billing Account Administrators so that the figures people quote stay consistent",
+        "rationale": "Teams need access to the financial data relevant to their decisions; hiding it prevents ownership."
+      }
+    ],
+    "correct": [
+      "b",
+      "c",
+      "d"
+    ],
+    "explanation": "FinOps ownership needs allocation (labels), visibility (reports and alerts), and culture (cost in design discussions).",
+    "difficulty": 2
+  },
+  {
+    "id": "q-optimize-process-054",
+    "type": "multiple",
+    "domainId": "optimize-process",
+    "concepts": [
+      "change-management",
+      "stakeholder-management",
+      "team-readiness"
+    ],
+    "caseStudyId": "cymbal-retail",
+    "subObjective": "optimize-process.2",
+    "sourceUrl": "https://docs.cloud.google.com/architecture/framework/operational-excellence/continuously-improve-and-innovate",
+    "lastVerified": "2026-10-01",
+    "prompt": "Cymbal is rolling out a gen AI workflow in which catalog associates approve, reject, or edit generated product attributes. Their current work is manual data entry, and they have heard the program is meant to reduce operating costs, so adoption risk is high. Which two change-management actions best reduce resistance? Choose two.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Train associates for the new review and editing tasks, and track adoption KPIs such as review turnaround time and edit rate",
+        "rationale": "Skills training plus measurable KPIs show progress and identify teams needing help, replacing guesswork about adoption."
+      },
+      {
+        "id": "b",
+        "text": "Keep the cost-reduction rationale confidential and announce the program only after the manual process has been switched off for good",
+        "rationale": "Withholding the reason until the old process ends erodes trust and gives associates no time to prepare."
+      },
+      {
+        "id": "c",
+        "text": "Make the approval step optional so generated content flows straight to the catalog until associates request review",
+        "rationale": "Cymbal's requirements call for human review before generated content updates the catalog, so skipping it is not an option."
+      },
+      {
+        "id": "d",
+        "text": "Pilot the review interface with some associates and gather structured feedback from surveys and interviews before the wider rollout",
+        "rationale": "Early involvement and active feedback let associates shape the tool and surface usability problems before launch."
+      },
+      {
+        "id": "e",
+        "text": "Roll the interface out to every associate on the same day and judge success by comparing headcount before and after",
+        "rationale": "A big-bang rollout offers no learning loop, and a headcount metric turns a quality program into a threat."
+      }
+    ],
+    "correct": [
+      "a",
+      "d"
+    ],
+    "explanation": "People-side change needs early involvement, feedback, training, and measurable adoption goals.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-optimize-process-055",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "sdlc",
+      "ci-cd",
+      "dora-metrics"
+    ],
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://dora.dev/guides/dora-metrics/",
+    "lastVerified": "2026-10-01",
+    "prompt": "A VP asks for a research-backed way to compare software delivery performance across teams. Which set of metrics does DORA define?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Lines of code, commits per developer, story points per sprint, open bug count, and unit test coverage percentage",
+        "rationale": "These are activity or output measures that are easy to game and are not DORA's delivery performance metrics."
+      },
+      {
+        "id": "b",
+        "text": "Mean time between failures, ticket backlog size, server uptime, patch compliance rate, and the volume of change requests received",
+        "rationale": "These are traditional operations measures; none captures lead time or deployment frequency, and MTBF is not a DORA metric."
+      },
+      {
+        "id": "c",
+        "text": "CPU utilization, request latency, error rate, saturation, and availability measured per service in production",
+        "rationale": "These are runtime health signals for a service; they do not measure how effectively a team ships changes."
+      },
+      {
+        "id": "d",
+        "text": "Change lead time, deployment frequency, failed deployment recovery time, change fail rate, and deployment rework rate",
+        "rationale": "These five metrics cover throughput and stability of software delivery and are DORA's published set."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "explanation": "DORA's metrics measure delivery throughput and stability together, and the research finds speed and stability go together.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-optimize-process-056",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "sdlc",
+      "ci-cd",
+      "dora-metrics"
+    ],
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://dora.dev/guides/dora-metrics/",
+    "lastVerified": "2026-10-01",
+    "prompt": "A director reviews last quarter's delivery data for two teams and asks how to improve both. Which interpretation and action is best supported by the data?",
+    "exhibit": {
+      "label": "Delivery metrics, last quarter",
+      "format": "table",
+      "content": "| Team | Deploys per week | Change lead time (commit to production) | Change fail rate | Failed deployment recovery time |\n|---|---|---|---|---|\n| Atlas | 18 | 2 days | 31% | 6 hours |\n| Borealis | 1 | 19 days | 4% | 40 minutes |"
+    },
+    "choices": [
+      {
+        "id": "a",
+        "text": "Atlas ships fast but unstably, so add automated testing and progressive delivery; Borealis is stable but slow, so shrink batch size",
+        "rationale": "Atlas's 31% change fail rate shows a stability gap, and Borealis's 19-day lead time and weekly-or-less releases show a throughput gap; high performers do well on both."
+      },
+      {
+        "id": "b",
+        "text": "Atlas is the high performer because it deploys most often, so Borealis should copy Atlas's cadence and Atlas needs no change at all",
+        "rationale": "High deployment frequency with a 31% change fail rate and 6-hour recovery is not high performance; stability counts equally."
+      },
+      {
+        "id": "c",
+        "text": "Borealis is the high performer because its fail rate is lowest, so Atlas should deploy less often to bring its own failures down",
+        "rationale": "Reducing frequency enlarges batches and risk; DORA research shows speed and stability are not trade-offs, and Borealis's 19-day lead time is poor."
+      },
+      {
+        "id": "d",
+        "text": "Neither team can be assessed until CPU and latency metrics are collected for the services that both teams operate in production",
+        "rationale": "Delivery performance is measured with lead time, frequency, fail rate, and recovery time, which the table already provides."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "Read DORA metrics as a set: throughput and stability both matter, and the fix for each gap differs.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-optimize-process-057",
+    "type": "multiple",
+    "domainId": "optimize-process",
+    "concepts": [
+      "disaster-recovery",
+      "testing-validation",
+      "rto-rpo"
+    ],
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://docs.cloud.google.com/architecture/framework/reliability/perform-testing-for-recovery-from-failures",
+    "lastVerified": "2026-10-01",
+    "prompt": "Meridian Insurance last exercised its failover 14 months ago. Since then it moved its databases to a new engine and changed its network layout. Which two practices follow Google Cloud guidance on testing recovery? Choose two.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Schedule periodic tests, such as quarterly, of failover, rollback, and restore, and repeat them after major infrastructure or software changes",
+        "rationale": "Guidance calls for periodic testing under changing conditions such as infrastructure changes and software updates, covering failover, rollback, and restore."
+      },
+      {
+        "id": "b",
+        "text": "Check during each test that measured recovery time and data loss meet RTO and RPO, then present a postmortem to stakeholders",
+        "rationale": "Tests should validate RTO and RPO and data integrity, and share outcomes and lessons learned with stakeholders."
+      },
+      {
+        "id": "c",
+        "text": "Treat a successful backup job as proof that restores work, and exercise restores only after a real incident has occurred",
+        "rationale": "Completion of a backup job does not prove data can be restored within RTO; restores need to be tested regularly."
+      },
+      {
+        "id": "d",
+        "text": "Run recovery tests without telling operations or application owners, so that the response reflects real conditions on the day itself",
+        "rationale": "Operations, DevOps, and application owners should be informed of schedule, scope, and potential impact before tests."
+      },
+      {
+        "id": "e",
+        "text": "Test once when the architecture is designed, and retest only if the primary or recovery region is replaced by another one",
+        "rationale": "Infrastructure and software changes can silently break recovery; a one-time test grows stale as the system evolves."
+      }
+    ],
+    "correct": [
+      "a",
+      "b"
+    ],
+    "explanation": "Recovery plans decay; test on a cadence, after changes, against measured RTO and RPO, with stakeholders informed.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-optimize-process-058",
+    "type": "multiple",
+    "domainId": "optimize-process",
+    "concepts": [
+      "disaster-recovery",
+      "business-continuity",
+      "hybrid-networking"
+    ],
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://docs.cloud.google.com/architecture/dr-scenarios-planning-guide",
+    "lastVerified": "2026-10-01",
+    "prompt": "A manufacturer replicates on-premises ERP data to Google Cloud and plans a warm recovery environment for the loss of its data center. Which three actions belong in the DR plan? Choose three.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Provide an alternative way to reach Google Cloud in case the primary Interconnect or VPN path to the data center fails",
+        "rationale": "Disaster scenarios may take out the normal access path, so plans need an alternate route to Google Cloud."
+      },
+      {
+        "id": "b",
+        "text": "Rely on the daily VPN or Interconnect connection as the only access path, since the plan assumes the on-premises network survives",
+        "rationale": "The scenario being planned for is loss of the data center, so a path that depends on it cannot be the only way in."
+      },
+      {
+        "id": "c",
+        "text": "Map on-premises functional roles to IAM policies in the recovery environment, and confirm responders can reach what they need",
+        "rationale": "Permissions that exist only on-premises will block recovery unless equivalent IAM policies are set up and tested."
+      },
+      {
+        "id": "d",
+        "text": "Grant every responder the Owner role on the recovery project so that permissions can never delay a failover",
+        "rationale": "Blanket Owner access violates least privilege; the plan should map the roles people actually need."
+      },
+      {
+        "id": "e",
+        "text": "Confirm that the Compute Engine resources needed for recovery will be available in the chosen region, including quota",
+        "rationale": "A recovery environment is only usable if the needed machine types and quota are actually available when it is activated."
+      }
+    ],
+    "correct": [
+      "a",
+      "c",
+      "e"
+    ],
+    "explanation": "Hybrid DR plans must cover access, permissions, and capacity in the recovery environment, not only data replication.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-optimize-process-059",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "disaster-recovery",
+      "backup-recovery",
+      "rto-rpo"
+    ],
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://docs.cloud.google.com/architecture/dr-scenarios-for-data",
+    "lastVerified": "2026-10-01",
+    "prompt": "Harbor Payments runs its ledger on Cloud SQL for MySQL with a cross-region read replica for DR and a replication lag of a few seconds. A faulty release ran an UPDATE at 14:02 that corrupted about 2% of rows, and it was noticed at 14:40. The replica holds the same corrupted rows. Which addition best addresses this class of failure?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Add a second cross-region replica so that one of the two replicas can be promoted once the corruption has been detected",
+        "rationale": "Every replica receives the same bad UPDATE, so another copy only multiplies the corrupted data."
+      },
+      {
+        "id": "b",
+        "text": "Tighten replication lag alerts to one second so that corruption is caught before it can reach the replica at all",
+        "rationale": "Lag alerts measure delivery delay, not data correctness, and cannot identify a logically bad but valid statement."
+      },
+      {
+        "id": "c",
+        "text": "Automated backups with point-in-time recovery, so the ledger can be restored to just before 14:02 as well as the replica",
+        "rationale": "Replication copies logical corruption as faithfully as good data; point-in-time recovery from backups and binary logs rewinds to a state before the bad change."
+      },
+      {
+        "id": "d",
+        "text": "Switch the replica to synchronous replication so that the DR copy always matches the primary exactly at every moment",
+        "rationale": "Matching the primary exactly means copying the corruption even faster, which does not give a clean recovery point."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "Replication addresses infrastructure loss; recovering from logical corruption needs backups and point-in-time recovery.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-optimize-process-060",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "infrastructure-as-code",
+      "iac-terraform",
+      "change-management"
+    ],
+    "caseStudyId": "ehr-healthcare",
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://docs.cloud.google.com/architecture/framework/operational-excellence/automate-and-manage-change",
+    "lastVerified": "2026-10-01",
+    "prompt": "EHR Healthcare's leadership cites outages caused by misconfiguration and the burden of managing similar-but-separate environments. As the company stands up dev, staging, and production environments on Google Cloud, which process change best addresses this?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Define each environment in Terraform under version control, apply it through CI/CD, and reuse modules with per-environment variables",
+        "rationale": "Infrastructure as code with version control and automated pipelines gives consistent, repeatable, reviewable environments and an easy rollback path."
+      },
+      {
+        "id": "b",
+        "text": "Clone the production project's settings through the console and tweak each copy until its application works as expected",
+        "rationale": "Console cloning and ad hoc tweaks leave no reviewable record, so environments drift and differences are untraceable."
+      },
+      {
+        "id": "c",
+        "text": "Document the build as a detailed runbook and have the on-call engineer follow it by hand each time an environment is created for a team",
+        "rationale": "Manual runbooks reintroduce human error and drift between environments, which is the source of the misconfiguration outages."
+      },
+      {
+        "id": "d",
+        "text": "Give each regional team its own tooling and templates so that environments can evolve independently to suit local needs",
+        "rationale": "Separate templates multiply the number of similar-but-different environments instead of consolidating them."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "Version-controlled infrastructure as code applied by pipelines is how consistency and safe change are enforced.",
+    "difficulty": 2
   }
 ]

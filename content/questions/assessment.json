@@ -3,296 +3,755 @@
     "id": "q-assessment-001",
     "type": "single",
     "domainId": "design-plan",
-    "concepts": ["spanner-vs-bigtable", "relational-vs-nosql", "global-consistency"],
+    "concepts": [
+      "spanner-vs-bigtable",
+      "relational-vs-nosql",
+      "global-consistency"
+    ],
+    "subObjective": "design-plan.3",
+    "sourceUrl": "https://docs.cloud.google.com/spanner/docs/instance-configurations",
+    "lastVerified": "2026-10-01",
     "prompt": "A global ticketing platform needs a database for inventory and transactions. Requirements: strong external consistency, horizontal scalability across regions, SQL support, and 99.999% availability for a multi-region deployment. Which managed service best fits?",
     "choices": [
-      {"id": "a", "text": "Cloud Bigtable"},
-      {"id": "b", "text": "Cloud Spanner (multi-region configuration)"},
-      {"id": "c", "text": "Cloud SQL for PostgreSQL with a cross-region read replica"},
-      {"id": "d", "text": "Firestore in Datastore mode"}
+      {
+        "id": "a",
+        "text": "Cloud Bigtable with replicated clusters in several regions",
+        "rationale": "Bigtable is a wide-column NoSQL store. Multi-cluster instances are eventually consistent by default, and although GoogleSQL queries are available, the data model is not the relational, strongly consistent transactional one an inventory ledger needs."
+      },
+      {
+        "id": "b",
+        "text": "Cloud Spanner using a multi-region instance configuration",
+        "rationale": "Spanner is relational with SQL, scales horizontally, provides external consistency (stronger than plain strong consistency), and multi-region configurations carry a 99.999% availability target. It is the only option that meets all four requirements."
+      },
+      {
+        "id": "c",
+        "text": "Cloud SQL for PostgreSQL with a cross-region read replica",
+        "rationale": "Read replicas replicate asynchronously and are read-only, so reads from the remote replica are eventually consistent, writes still funnel through one primary, and replicas provide no failover. It cannot deliver strong consistency across regions at five-nines."
+      },
+      {
+        "id": "d",
+        "text": "Firestore in Datastore mode with a multi-region location",
+        "rationale": "Datastore mode is a NoSQL entity store, not a relational SQL database. It can be strongly consistent, but it does not give the SQL relational model the platform requires."
+      }
     ],
-    "correct": ["b"],
-    "explanation": "**Correct: Cloud Spanner.** It is the only Google service that combines a relational/SQL model, horizontal scale, strong external (TrueTime-backed) consistency, and a 99.999% SLA in multi-region configurations. **Bigtable** is a wide-column NoSQL store with no SQL transactions or strong cross-row consistency for this access pattern. **Cloud SQL** read replicas are eventually consistent and the primary is a single-region, single-instance failure domain; it caps well below 99.999% multi-region. **Firestore in Datastore mode** is NoSQL and does not provide the relational/SQL transactional model required.",
+    "correct": [
+      "b"
+    ],
     "difficulty": 2
   },
   {
     "id": "q-assessment-002",
     "type": "single",
     "domainId": "design-plan",
-    "concepts": ["rto-rpo", "disaster-recovery", "dr-patterns"],
-    "caseStudyId": "altostrat-media",
-    "prompt": "Altostrat Media streams video globally. After an outage, leadership mandates an RTO of minutes and an RPO near zero for the catalog and entitlements data, but the budget cannot justify fully duplicating all compute continuously. Which disaster-recovery pattern matches these constraints most cost-effectively?",
-    "choices": [
-      {"id": "a", "text": "Backup and restore from Cloud Storage"},
-      {"id": "b", "text": "Cold standby in a second region, spun up only after disaster declaration"},
-      {"id": "c", "text": "Warm standby (pilot light / scaled-down replica) with continuous data replication, scaled up on failover"},
-      {"id": "d", "text": "Single-region hot active-active with synchronous replication"}
+    "concepts": [
+      "rto-rpo",
+      "disaster-recovery",
+      "dr-patterns"
     ],
-    "correct": ["c"],
-    "explanation": "**Correct: Warm standby.** Continuous data replication delivers a near-zero RPO, while a scaled-down (pilot-light) footprint that scales up on failover delivers an RTO of minutes without paying for a full duplicate fleet at all times. **Backup/restore** gives an RPO bounded by backup frequency and an RTO of hours-to-days. **Cold standby** must build infrastructure after declaration, blowing the minutes RTO. **Single-region active-active** does not protect against a regional outage at all and is the most expensive option.",
+    "caseStudyId": "altostrat-media",
+    "subObjective": "design-plan.2",
+    "sourceUrl": "https://docs.cloud.google.com/architecture/dr-scenarios-planning-guide",
+    "lastVerified": "2026-10-01",
+    "prompt": "Altostrat Media streams video globally. After a regional outage, leadership mandates an RTO of minutes and an RPO near zero for the catalog and entitlements data, but the budget cannot justify fully duplicating all compute continuously. Which disaster-recovery pattern matches these constraints most cost-effectively?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Scheduled backups to Cloud Storage, restored into a rebuilt environment after the outage",
+        "rationale": "The RPO is bounded by the backup interval and the RTO includes rebuilding and restoring, which typically takes hours. This is the cheapest pattern but misses both targets."
+      },
+      {
+        "id": "b",
+        "text": "Cold standby in a second region, with infrastructure provisioned only after disaster declaration",
+        "rationale": "A cold pattern has the longest recovery time and no continuous replication, so provisioning after declaration cannot achieve an RTO of minutes or a near-zero RPO."
+      },
+      {
+        "id": "c",
+        "text": "Warm standby in a second region: a scaled-down replica fed by continuous replication, scaled up on failover",
+        "rationale": "Continuous replication keeps the RPO near zero, and a scaled-down footprint that scales up on failover reaches an RTO of minutes without paying for a full duplicate fleet at all times. It sits between the cold and hot patterns on cost."
+      },
+      {
+        "id": "d",
+        "text": "Hot active-active serving from a single region, with synchronous replication between its zones",
+        "rationale": "A hot pattern is the most expensive, and keeping everything in one region means a regional outage takes down both copies, so it does not address the scenario at all."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "Match the pattern to the RTO/RPO targets: smaller objectives cost more, so pay for only as much standby capacity as the targets require.",
     "difficulty": 2
   },
   {
     "id": "q-assessment-003",
     "type": "multiple",
     "domainId": "design-plan",
-    "concepts": ["network-design", "hybrid-connectivity", "private-google-access"],
-    "prompt": "You are designing private connectivity between an on-premises data center and Google Cloud for a workload that must reach Google APIs (Cloud Storage, BigQuery) without traversing the public internet, with predictable bandwidth and a high SLA. Which TWO choices belong in this design?",
-    "choices": [
-      {"id": "a", "text": "Dedicated Interconnect (or Partner Interconnect) for the on-prem-to-Google link"},
-      {"id": "b", "text": "Cloud VPN over the public internet as the sole connectivity path"},
-      {"id": "c", "text": "Private Google Access for on-premises hosts (restricted/private googleapis routes)"},
-      {"id": "d", "text": "Assigning external IP addresses to all VMs that call the APIs"},
-      {"id": "e", "text": "Cloud NAT to give the on-prem hosts outbound internet for the APIs"}
+    "concepts": [
+      "network-design",
+      "hybrid-connectivity",
+      "private-google-access"
     ],
-    "correct": ["a", "c"],
-    "explanation": "**Correct: Interconnect + Private Google Access for on-prem.** Dedicated/Partner Interconnect provides private, high-bandwidth, SLA-backed connectivity that bypasses the public internet, and Private Google Access for on-premises hosts (advertising the restricted.googleapis.com / private.googleapis.com ranges over the Interconnect) lets on-prem clients reach Google APIs over private addressing. **Cloud VPN alone** rides the public internet and offers neither the bandwidth predictability nor the SLA required. **External IPs** and **Cloud NAT** route traffic over the public internet, the opposite of the requirement.",
+    "subObjective": "design-plan.3",
+    "sourceUrl": "https://docs.cloud.google.com/vpc/docs/private-google-access-hybrid",
+    "lastVerified": "2026-10-01",
+    "prompt": "You are designing private connectivity between an on-premises data center and Google Cloud for a workload that must reach Google APIs (Cloud Storage, BigQuery) without traversing the public internet, with predictable bandwidth and a high SLA. Which two choices belong in this design? Choose two.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Dedicated or Partner Interconnect for the private link between the data center and Google",
+        "rationale": "Interconnect provides a private connection that bypasses the public internet, with dedicated or provisioned capacity and an end-to-end SLA, which meets the predictable-bandwidth requirement."
+      },
+      {
+        "id": "b",
+        "text": "Cloud VPN tunnels over the public internet as the only connectivity path to Google Cloud",
+        "rationale": "Cloud VPN is encrypted but runs over the public internet and suits lower bandwidth needs. It does carry an availability SLA, so the real gap is that it contradicts the no-public-internet, predictable-bandwidth requirement."
+      },
+      {
+        "id": "c",
+        "text": "Private Google Access for on-premises hosts, using the restricted or private googleapis VIPs over that link",
+        "rationale": "On-premises hosts resolve Google API names to the private.googleapis.com or restricted.googleapis.com VIPs and send the traffic over the VPN or Interconnect link, so API calls stay on private addressing and Google's network."
+      },
+      {
+        "id": "d",
+        "text": "External IP addresses on every VM that calls the APIs, with default internet routes to reach them",
+        "rationale": "External IPs and default internet routes send the traffic out through the public internet path, the opposite of what the requirement asks for."
+      },
+      {
+        "id": "e",
+        "text": "Cloud NAT to give the on-premises hosts outbound internet access to reach the APIs",
+        "rationale": "Cloud NAT provides outbound internet access, so it adds a public-internet path rather than removing it, and it is not a mechanism for private API reachability."
+      }
+    ],
+    "correct": [
+      "a",
+      "c"
+    ],
     "difficulty": 3
   },
   {
     "id": "q-assessment-004",
     "type": "single",
     "domainId": "design-plan",
-    "concepts": ["gke-vs-cloudrun", "compute-selection", "serverless"],
-    "prompt": "A team wants to run stateless HTTP microservices. They want to minimize operational overhead, scale to zero when idle, pay per request, and avoid managing nodes or a control plane. They do not need DaemonSets, custom schedulers, or sidecar service meshes. Which compute option is the best fit?",
-    "choices": [
-      {"id": "a", "text": "Compute Engine managed instance groups"},
-      {"id": "b", "text": "Cloud Run"},
-      {"id": "c", "text": "GKE Standard"},
-      {"id": "d", "text": "App Engine flexible environment"}
+    "concepts": [
+      "gke-vs-cloudrun",
+      "compute-selection",
+      "serverless"
     ],
-    "correct": ["b"],
-    "explanation": "**Correct: Cloud Run.** It runs stateless containers, scales to zero, bills per request/CPU time, and removes node and control-plane management. **GKE Standard** requires managing nodes and a cluster and does not scale to zero by default. **Compute Engine MIGs** keep at least the configured minimum VMs running and carry the most operational overhead. **App Engine flexible** runs on always-on VMs and does not scale to zero, so it neither minimizes cost at idle nor matches the per-request model.",
+    "subObjective": "design-plan.3",
+    "sourceUrl": "https://docs.cloud.google.com/run/docs/about-instance-autoscaling",
+    "lastVerified": "2026-10-01",
+    "prompt": "A team is deploying stateless HTTP microservices and wants minimal operational overhead: scale to zero when idle, billing tied to requests, and no nodes or control plane to manage. They have no need for DaemonSets, custom schedulers or sidecar service meshes. Which compute option is the best fit?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Compute Engine managed instance groups with autoscaling behind a load balancer",
+        "rationale": "MIGs give you VMs to size, patch and scale. They can only scale to zero under limited autoscaling signals and bill for VM time, not requests, so they carry the most operational overhead."
+      },
+      {
+        "id": "b",
+        "text": "Cloud Run services with request-based billing and a minimum of zero instances",
+        "rationale": "Cloud Run runs stateless containers, scales to zero by default when a revision gets no traffic, bills per request by default, and has no nodes or cluster to manage."
+      },
+      {
+        "id": "c",
+        "text": "GKE Standard clusters with cluster autoscaler and horizontal pod autoscaling",
+        "rationale": "On Standard clusters the autoscaler never automatically scales the cluster to zero nodes because system Pods need at least one node, and you still manage node pools and upgrades."
+      },
+      {
+        "id": "d",
+        "text": "App Engine flexible environment services using automatic scaling and Docker containers",
+        "rationale": "Flexible keeps a minimum of one instance running and starts instances in minutes, so you pay for idle capacity. App Engine standard can scale to zero, flexible cannot."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
     "difficulty": 1
   },
   {
     "id": "q-assessment-005",
     "type": "single",
     "domainId": "design-plan",
-    "concepts": ["resource-hierarchy", "org-policy", "landing-zone"],
+    "concepts": [
+      "resource-hierarchy",
+      "org-policy",
+      "landing-zone"
+    ],
+    "subObjective": "design-plan.2",
+    "sourceUrl": "https://docs.cloud.google.com/resource-manager/docs/organization-policy/overview",
+    "lastVerified": "2026-10-01",
     "prompt": "An enterprise is building its Google Cloud landing zone. They want centrally enforced guardrails (e.g., restrict resource locations, disable external IPs, enforce uniform bucket-level access) that apply to every current and future project, inherited automatically. Which mechanism should they use?",
     "choices": [
-      {"id": "a", "text": "IAM allow policies attached to each project"},
-      {"id": "b", "text": "Organization Policy constraints applied at the organization (or folder) node"},
-      {"id": "c", "text": "VPC firewall rules in a shared VPC"},
-      {"id": "d", "text": "Per-project budgets and billing alerts"}
+      {
+        "id": "a",
+        "text": "IAM allow policies granted on every project through a deployment pipeline",
+        "rationale": "IAM answers who can do what. It does not restrict how resources are configured, so it cannot block external IPs or force locations."
+      },
+      {
+        "id": "b",
+        "text": "Organization Policy constraints set on the organization or a top-level folder",
+        "rationale": "Constraints such as gcp.resourceLocations, compute.vmExternalIpAccess and storage.uniformBucketLevelAccess are inherited by all descendants, including projects created later, which is exactly the central guardrail model."
+      },
+      {
+        "id": "c",
+        "text": "VPC firewall rules maintained centrally in a Shared VPC host project for all service projects",
+        "rationale": "Firewall rules filter network traffic. They have no effect on resource configuration such as bucket access mode or allowed locations."
+      },
+      {
+        "id": "d",
+        "text": "Per-project budgets with billing alerts sent to the platform team each month",
+        "rationale": "Budgets and alerts give cost visibility after the fact. They do not prevent a resource from being created with a disallowed configuration."
+      }
     ],
-    "correct": ["b"],
-    "explanation": "**Correct: Organization Policy constraints.** Org policies (e.g., constraints/gcp.resourceLocations, compute.vmExternalIpAccess, storage.uniformBucketLevelAccess) are set on the org or folder node and are inherited by all descendant resources, including projects created later, providing exactly these guardrails. **IAM allow policies** grant access; they do not restrict configuration like locations or external IPs. **Firewall rules** govern network traffic, not resource configuration guardrails. **Budgets** control cost visibility, not configuration policy.",
+    "correct": [
+      "b"
+    ],
     "difficulty": 2
   },
   {
     "id": "q-assessment-006",
     "type": "single",
     "domainId": "provision",
-    "concepts": ["infrastructure-as-code", "terraform", "declarative-provisioning"],
+    "concepts": [
+      "infrastructure-as-code",
+      "terraform",
+      "declarative-provisioning"
+    ],
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/infrastructure-manager/docs/overview",
+    "lastVerified": "2026-10-01",
     "prompt": "Your organization wants repeatable, version-controlled, declarative provisioning of cloud infrastructure with a managed state and the ability to preview changes before applying them, using Google's recommended IaC approach. Which option should you standardize on?",
     "choices": [
-      {"id": "a", "text": "gcloud shell scripts checked into Git"},
-      {"id": "b", "text": "Terraform (optionally via Infrastructure Manager) with remote state in Cloud Storage"},
-      {"id": "c", "text": "Manually clicking through the Cloud Console and exporting screenshots"},
-      {"id": "d", "text": "Cloud Functions that call the REST APIs imperatively on a schedule"}
+      {
+        "id": "a",
+        "text": "gcloud shell scripts checked into Git and executed by a CI pipeline on each merge",
+        "rationale": "Scripts are imperative: there is no managed state, no reconciliation against what exists, and no plan or preview, so drift and partial failures go unnoticed."
+      },
+      {
+        "id": "b",
+        "text": "Terraform configurations in Git, applied through Infrastructure Manager or with remote state in Cloud Storage",
+        "rationale": "Terraform is declarative and version-controlled. Infrastructure Manager is Google's managed Terraform service and stores state per deployment and can preview changes before applying; a Cloud Storage backend gives self-run Terraform shared state."
+      },
+      {
+        "id": "c",
+        "text": "Console changes recorded in a spreadsheet and exported as screenshots for audit",
+        "rationale": "Console work is manual, not repeatable, and leaves no code that can be reviewed, versioned or replayed."
+      },
+      {
+        "id": "d",
+        "text": "Scheduled Cloud Functions calling the REST APIs imperatively to create missing resources",
+        "rationale": "Hand-rolled API calls reimplement what an IaC tool does, without a plan step or state tracking, and are brittle to change."
+      }
     ],
-    "correct": ["b"],
-    "explanation": "**Correct: Terraform (optionally via Infrastructure Manager).** Terraform is Google's recommended declarative IaC tool; with remote state in a Cloud Storage backend you get version control, state management, and a `plan` preview before `apply`. Infrastructure Manager is Google's managed Terraform service. **gcloud scripts** and **Cloud Functions calling REST** are imperative, lack state reconciliation and plan/preview, and drift easily. **Console clicks** are not repeatable, versioned, or auditable as code.",
+    "correct": [
+      "b"
+    ],
     "difficulty": 1
   },
   {
     "id": "q-assessment-007",
     "type": "multiple",
     "domainId": "provision",
-    "concepts": ["shared-vpc", "network-provisioning", "iam-roles"],
-    "prompt": "You are provisioning a Shared VPC so multiple service projects can use centrally managed subnets. Which TWO statements are correct about the setup?",
-    "choices": [
-      {"id": "a", "text": "Network resources (VPC, subnets, firewall rules) live in the host project"},
-      {"id": "b", "text": "Each service project must create its own VPC and peer it to the host project"},
-      {"id": "c", "text": "Service project principals are granted the Compute Network User role on specific subnets to deploy resources into them"},
-      {"id": "d", "text": "Shared VPC requires the host and service projects to be in different organizations"},
-      {"id": "e", "text": "Firewall rules must be duplicated in every service project for traffic to flow"}
+    "concepts": [
+      "shared-vpc",
+      "network-provisioning",
+      "iam-roles"
     ],
-    "correct": ["a", "c"],
-    "explanation": "**Correct: network lives in the host project; service-project principals get Network User on subnets.** In Shared VPC, the host project owns the VPC, subnets, and firewall rules, and service-project principals are granted the Compute Network User role on the specific subnets they may deploy into. **Per-project VPC peering** describes VPC Peering, a different topology, not Shared VPC. **Different organizations** is false: Shared VPC operates within a single organization. **Duplicating firewall rules per service project** is wrong because firewall rules are defined once in the host project and apply to the shared network.",
+    "subObjective": "provision.1",
+    "sourceUrl": "https://docs.cloud.google.com/vpc/docs/shared-vpc",
+    "lastVerified": "2026-10-01",
+    "prompt": "You are provisioning a Shared VPC so multiple service projects can use centrally managed subnets. Which two statements are correct about the setup? Choose two.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "The VPC network, subnets and firewall rules are owned by the host project",
+        "rationale": "In Shared VPC the host project owns the network resources and service projects cannot create or manage them."
+      },
+      {
+        "id": "b",
+        "text": "Every service project builds its own VPC and peers it with the host project network",
+        "rationale": "That describes VPC Network Peering, a different topology. Shared VPC is a hub-and-spoke model in which service projects do not keep their own networks."
+      },
+      {
+        "id": "c",
+        "text": "Service project principals get Compute Network User on the host project or on specific subnets",
+        "rationale": "The compute.networkUser role is what lets service project principals create resources in the shared subnets; it can be granted project-wide or per subnet."
+      },
+      {
+        "id": "d",
+        "text": "The host and service projects must belong to different organizations for isolation",
+        "rationale": "They cannot belong to different organizations, apart from a temporary exception during organization migrations."
+      },
+      {
+        "id": "e",
+        "text": "Firewall rules must be recreated inside each service project so that traffic can flow",
+        "rationale": "Firewall rules are defined once in the host project and apply to the shared network, so duplicating them in service projects is neither needed nor possible."
+      }
+    ],
+    "correct": [
+      "a",
+      "c"
+    ],
     "difficulty": 3
   },
   {
     "id": "q-assessment-008",
     "type": "single",
     "domainId": "provision",
-    "concepts": ["instance-templates", "managed-instance-groups", "autoscaling"],
+    "concepts": [
+      "instance-templates",
+      "managed-instance-groups",
+      "autoscaling"
+    ],
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/compute/docs/instance-groups",
+    "lastVerified": "2026-10-01",
     "prompt": "You must provision a fleet of identical, self-healing, autoscaling Compute Engine VMs behind a load balancer, where instances are recreated automatically if they fail health checks. Which combination should you provision?",
     "choices": [
-      {"id": "a", "text": "Individual VMs created one by one with startup scripts"},
-      {"id": "b", "text": "An instance template plus a regional managed instance group (MIG) with autoscaling and autohealing"},
-      {"id": "c", "text": "An unmanaged instance group with a static instance count"},
-      {"id": "d", "text": "A single large VM vertically scaled as load grows"}
+      {
+        "id": "a",
+        "text": "Individually created VMs configured with startup scripts and registered behind the load balancer",
+        "rationale": "Standalone VMs have no autoscaling or autohealing, and every instance drifts as scripts or images change."
+      },
+      {
+        "id": "b",
+        "text": "An instance template plus a regional MIG with autoscaling and health-check autohealing",
+        "rationale": "The template guarantees identical VMs, the regional MIG spreads them across zones, autoscaling adds or removes capacity, and autohealing recreates instances that fail health checks."
+      },
+      {
+        "id": "c",
+        "text": "An unmanaged instance group with a fixed number of VMs registered as backends",
+        "rationale": "Unmanaged groups can be load balancer backends but do not support autoscaling, autohealing, rolling updates, multi-zone placement or instance templates."
+      },
+      {
+        "id": "d",
+        "text": "A single large VM resized vertically as load grows, fronted by the load balancer",
+        "rationale": "One VM is a single point of failure, resizing needs a restart, and nothing recreates it automatically if it fails."
+      }
     ],
-    "correct": ["b"],
-    "explanation": "**Correct: instance template + regional MIG with autoscaling and autohealing.** The template defines identical VM configuration; the regional MIG provides autoscaling, autohealing (recreating instances that fail health checks), and spreads instances across zones for resilience. **Individual VMs** are not self-healing or autoscaling. **Unmanaged instance groups** support load balancing but provide no autohealing, autoscaling, or template-driven uniformity. **A single vertically scaled VM** is a single point of failure and cannot self-heal.",
+    "correct": [
+      "b"
+    ],
     "difficulty": 1
   },
   {
     "id": "q-assessment-009",
     "type": "single",
     "domainId": "security",
-    "concepts": ["cmek", "encryption", "cloud-kms"],
+    "concepts": [
+      "cmek",
+      "encryption",
+      "cloud-kms"
+    ],
     "caseStudyId": "ehr-healthcare",
+    "subObjective": "security.1",
+    "sourceUrl": "https://docs.cloud.google.com/kms/docs/cmek",
+    "lastVerified": "2026-10-01",
     "prompt": "EHR Healthcare must retain control over the encryption keys protecting patient data stored in BigQuery and Cloud Storage, including the ability to rotate and revoke keys on their own schedule, while still using Google-managed storage services. Which approach meets this requirement?",
     "choices": [
-      {"id": "a", "text": "Rely on Google's default encryption at rest (Google-managed keys)"},
-      {"id": "b", "text": "Customer-Managed Encryption Keys (CMEK) using Cloud KMS"},
-      {"id": "c", "text": "Application-layer client-side encryption only, with keys in a spreadsheet"},
-      {"id": "d", "text": "Disable encryption to simplify key management"}
+      {
+        "id": "a",
+        "text": "Google-managed default encryption at rest, which already protects both services",
+        "rationale": "Default encryption protects the data, but the customer cannot manage rotation, disable the key or audit its use, so it does not meet the control requirement."
+      },
+      {
+        "id": "b",
+        "text": "Customer-managed encryption keys held in Cloud KMS and attached to the datasets and buckets",
+        "rationale": "CMEK lets the customer set the rotation period, trigger rotation, and disable or destroy keys to cut off access, while BigQuery and Cloud Storage keep doing the encryption."
+      },
+      {
+        "id": "c",
+        "text": "Application-layer client-side encryption only, with keys kept in an internal wiki page",
+        "rationale": "Keys kept outside a key management service lose rotation, access control and audit logging, and the managed services' own encryption stays outside the customer's control."
+      },
+      {
+        "id": "d",
+        "text": "Turning off encryption at rest on the datasets and buckets to simplify key management for the team",
+        "rationale": "Encryption at rest cannot be turned off on Google Cloud, and removing it would violate the healthcare compliance goal anyway."
+      }
     ],
-    "correct": ["b"],
-    "explanation": "**Correct: CMEK with Cloud KMS.** CMEK lets the customer own the key lifecycle (create, rotate, disable, revoke) in Cloud KMS while Google services like BigQuery and Cloud Storage use those keys to encrypt data at rest, satisfying control and compliance needs. **Default Google-managed keys** encrypt data but give the customer no control over rotation or revocation. **Keys in a spreadsheet** is not a secure key-management practice and forgoes KMS protections. **Disabling encryption** is not possible for these services and violates compliance.",
+    "correct": [
+      "b"
+    ],
     "difficulty": 1
   },
   {
     "id": "q-assessment-010",
     "type": "single",
     "domainId": "security",
-    "concepts": ["vpc-service-controls", "data-exfiltration", "service-perimeter"],
+    "concepts": [
+      "vpc-service-controls",
+      "data-exfiltration",
+      "service-perimeter"
+    ],
+    "subObjective": "security.1",
+    "sourceUrl": "https://docs.cloud.google.com/vpc-service-controls/docs/overview",
+    "lastVerified": "2026-10-01",
     "prompt": "A regulated company wants to prevent data in BigQuery and Cloud Storage from being exfiltrated to projects outside their trusted boundary, even if an insider has valid IAM credentials. They need a logical perimeter around these API-based services. Which control addresses this directly?",
     "choices": [
-      {"id": "a", "text": "VPC firewall rules denying egress"},
-      {"id": "b", "text": "VPC Service Controls service perimeters"},
-      {"id": "c", "text": "Organization Policy restricting resource locations"},
-      {"id": "d", "text": "IAM Conditions based on time of day"}
+      {
+        "id": "a",
+        "text": "VPC firewall rules that deny egress from the VMs that run the data pipelines",
+        "rationale": "Firewalls work at the network layer on VM traffic. They do not govern API calls to Google-managed services such as BigQuery or Cloud Storage."
+      },
+      {
+        "id": "b",
+        "text": "VPC Service Controls service perimeters around the BigQuery and Cloud Storage projects",
+        "rationale": "A perimeter blocks operations such as copying data to buckets or tables outside the boundary even when the caller holds valid IAM permissions or stolen credentials."
+      },
+      {
+        "id": "c",
+        "text": "Organization Policy constraints that restrict the locations where resources are created",
+        "rationale": "A location constraint governs where resources can be created. It does not stop data being copied to a project outside the trusted boundary."
+      },
+      {
+        "id": "d",
+        "text": "IAM Conditions that only allow access during defined business hours and weekdays",
+        "rationale": "A time condition narrows when access is allowed, but an insider with valid credentials can still exfiltrate data inside the permitted window."
+      }
     ],
-    "correct": ["b"],
-    "explanation": "**Correct: VPC Service Controls.** Service perimeters create a logical boundary around managed services (BigQuery, Cloud Storage, etc.) so that even principals with valid IAM cannot copy data to resources outside the perimeter, mitigating exfiltration. **Firewall rules** govern VM network traffic, not access to Google managed-service APIs. **Resource-location org policy** restricts where resources are created, not data movement between projects. **IAM time-of-day conditions** limit when access is allowed but do nothing to stop exfiltration during permitted windows.",
+    "correct": [
+      "b"
+    ],
     "difficulty": 2
   },
   {
     "id": "q-assessment-011",
     "type": "multiple",
     "domainId": "security",
-    "concepts": ["iam-least-privilege", "service-accounts", "workload-identity"],
-    "prompt": "You are hardening service-account usage for workloads running in GKE and for CI/CD pipelines deploying to Google Cloud. Which TWO practices follow Google's security best practices?",
-    "choices": [
-      {"id": "a", "text": "Use Workload Identity Federation so external CI/CD can impersonate a service account without long-lived exported keys"},
-      {"id": "b", "text": "Download a service-account JSON key and store it in the Git repository for convenience"},
-      {"id": "c", "text": "Grant predefined or custom roles scoped to the minimum needed, instead of basic roles like Owner/Editor"},
-      {"id": "d", "text": "Share one highly privileged service account across all workloads to simplify management"},
-      {"id": "e", "text": "Grant the Owner role to every service account to avoid permission errors"}
+    "concepts": [
+      "iam-least-privilege",
+      "service-accounts",
+      "workload-identity"
     ],
-    "correct": ["a", "c"],
-    "explanation": "**Correct: Workload Identity Federation + least-privilege roles.** Workload Identity Federation lets external systems (e.g., GitHub Actions) obtain short-lived credentials by impersonating a service account, eliminating exported long-lived keys. Granting narrowly scoped predefined/custom roles enforces least privilege. **Storing JSON keys in Git** exposes credentials and is a top cause of breaches. **Sharing one privileged account** and **granting Owner everywhere** both violate least privilege and expand blast radius.",
+    "subObjective": "security.1",
+    "sourceUrl": "https://docs.cloud.google.com/iam/docs/best-practices-for-using-and-managing-service-accounts",
+    "lastVerified": "2026-10-01",
+    "prompt": "You are hardening service-account usage for workloads running in GKE and for CI/CD pipelines deploying to Google Cloud. Which two practices follow Google's security best practices? Choose two.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Federate the CI/CD identity with Workload Identity Federation so it gets short-lived credentials",
+        "rationale": "Federation gives external workloads temporary credentials tied to their own identity provider, so no long-lived service account key is ever exported."
+      },
+      {
+        "id": "b",
+        "text": "Download a service-account JSON key and commit it to the pipeline repository for the convenience of developers",
+        "rationale": "Google recommends avoiding service account keys. A key committed to a repository is a long-lived credential that anyone with repository access can reuse."
+      },
+      {
+        "id": "c",
+        "text": "Grant narrowly scoped predefined or custom roles to each service account instead of Owner or Editor",
+        "rationale": "Granting only the permissions a workload needs limits the damage if its service account is compromised; broad basic roles should be avoided."
+      },
+      {
+        "id": "d",
+        "text": "Reuse one highly privileged service account across all workloads to simplify management",
+        "rationale": "Sharing one account across applications blurs audit trails and widens the blast radius. Best practice is a single-purpose service account per workload."
+      },
+      {
+        "id": "e",
+        "text": "Grant the Owner role to every service account to avoid permission errors during rollout",
+        "rationale": "Owner is a basic role with sweeping permissions. Handing it out to avoid errors is the opposite of least privilege."
+      }
+    ],
+    "correct": [
+      "a",
+      "c"
+    ],
     "difficulty": 2
   },
   {
     "id": "q-assessment-012",
     "type": "single",
     "domainId": "optimize-process",
-    "concepts": ["cost-optimization", "committed-use-discounts", "rightsizing"],
+    "concepts": [
+      "cost-optimization",
+      "committed-use-discounts",
+      "rightsizing"
+    ],
+    "subObjective": "optimize-process.2",
+    "sourceUrl": "https://docs.cloud.google.com/docs/cuds",
+    "lastVerified": "2026-10-01",
     "prompt": "A retailer runs a steady, predictable baseline of Compute Engine workloads 24/7, plus spiky batch jobs. They want to cut the cost of the always-on baseline without sacrificing availability. Which optimization is most appropriate for the steady baseline?",
     "choices": [
-      {"id": "a", "text": "Run the steady baseline entirely on Spot VMs"},
-      {"id": "b", "text": "Purchase committed use discounts (CUDs) sized to the steady baseline"},
-      {"id": "c", "text": "Move the baseline to on-demand pricing with no commitment"},
-      {"id": "d", "text": "Shut down the baseline nightly and restart each morning"}
+      {
+        "id": "a",
+        "text": "Move the entire steady baseline onto Spot VMs to get the deepest discount",
+        "rationale": "Spot VMs can be preempted at any time, which would break the always-on availability requirement. They suit the fault-tolerant batch jobs instead."
+      },
+      {
+        "id": "b",
+        "text": "Buy committed use discounts sized to the steady baseline, keeping spiky jobs uncommitted",
+        "rationale": "Commitments of one or three years suit predictable usage and discount it without changing availability. Sizing them to the baseline avoids paying for idle commitment on the spiky work."
+      },
+      {
+        "id": "c",
+        "text": "Keep the baseline on on-demand pricing so capacity can be changed at any time without commitment",
+        "rationale": "On-demand is the highest-priced option for usage that is known to be steady, so it forgoes savings the predictability makes available."
+      },
+      {
+        "id": "d",
+        "text": "Shut the baseline down every night and restart it each morning to cut billed hours",
+        "rationale": "The requirement says the baseline runs 24/7 without sacrificing availability, so a nightly shutdown breaks the requirement."
+      }
     ],
-    "correct": ["b"],
-    "explanation": "**Correct: committed use discounts.** CUDs give significant discounts for predictable, steady usage in exchange for a 1- or 3-year commitment, ideal for an always-on baseline, without affecting availability. **Spot VMs** can be preempted at any time, unacceptable for an always-on baseline (they suit the spiky/fault-tolerant batch jobs instead). **On-demand** is the most expensive for predictable usage. **Nightly shutdown** breaks the 24/7 availability requirement.",
+    "correct": [
+      "b"
+    ],
     "difficulty": 1
   },
   {
     "id": "q-assessment-013",
     "type": "single",
     "domainId": "optimize-process",
-    "concepts": ["data-lifecycle", "storage-classes", "object-lifecycle-management"],
+    "concepts": [
+      "data-lifecycle",
+      "storage-classes",
+      "object-lifecycle-management"
+    ],
+    "subObjective": "optimize-process.2",
+    "sourceUrl": "https://docs.cloud.google.com/storage/docs/lifecycle",
+    "lastVerified": "2026-10-01",
     "prompt": "Logs are written to Cloud Storage and accessed heavily for 30 days, rarely after 90 days, and must be retained for 7 years for audit. You want to minimize storage cost automatically without an external scheduler. What should you configure?",
     "choices": [
-      {"id": "a", "text": "Keep all objects in Standard storage for the full 7 years"},
-      {"id": "b", "text": "Object Lifecycle Management rules to transition objects Standard to Nearline to Coldline/Archive based on age"},
-      {"id": "c", "text": "A Cloud Function that manually copies objects between buckets each night"},
-      {"id": "d", "text": "Delete objects after 90 days to save money"}
+      {
+        "id": "a",
+        "text": "Keep every object in Standard storage for the whole seven-year retention period",
+        "rationale": "Standard has the highest at-rest cost, and most of these objects are rarely read after 90 days, so it overpays for years."
+      },
+      {
+        "id": "b",
+        "text": "Lifecycle rules moving objects from Standard to Nearline, then Coldline or Archive, as they age",
+        "rationale": "Cloud Storage evaluates lifecycle rules itself and supports Standard to Nearline, Coldline or Archive transitions, so no scheduler is needed and the data stays available for the seven years."
+      },
+      {
+        "id": "c",
+        "text": "A nightly Cloud Function that copies aging objects into buckets of a colder storage class",
+        "rationale": "This rebuilds a built-in feature as custom code to maintain, with copy operations and extra failure modes, when lifecycle rules do it natively."
+      },
+      {
+        "id": "d",
+        "text": "A lifecycle Delete rule that removes objects after 90 days to keep the bucket small and cheap",
+        "rationale": "Deleting at 90 days cuts cost but destroys data the audit requirement says must be kept for seven years."
+      }
     ],
-    "correct": ["b"],
-    "explanation": "**Correct: Object Lifecycle Management.** Lifecycle rules automatically transition objects to colder, cheaper storage classes (Nearline ~30 days, Coldline/Archive for long-term retention) based on age, with no external scheduler, minimizing cost while preserving the 7-year retention. **Standard for 7 years** is far more expensive than necessary. **A nightly Cloud Function** reinvents built-in lifecycle management and adds operational risk. **Deleting after 90 days** violates the 7-year audit requirement.",
+    "correct": [
+      "b"
+    ],
     "difficulty": 2
   },
   {
     "id": "q-assessment-014",
     "type": "multiple",
     "domainId": "optimize-process",
-    "concepts": ["performance-optimization", "caching", "global-load-balancing"],
-    "prompt": "A global web application serves mostly static assets plus some dynamic API calls and suffers high latency for users far from the origin region. Which TWO changes will most improve global performance?",
-    "choices": [
-      {"id": "a", "text": "Enable Cloud CDN in front of the external HTTP(S) load balancer to cache static content at the edge"},
-      {"id": "b", "text": "Use the global external Application Load Balancer with anycast so users connect to the nearest Google edge"},
-      {"id": "c", "text": "Move everything to a single zonal VM in one region"},
-      {"id": "d", "text": "Disable HTTP keep-alive to reduce connection reuse"},
-      {"id": "e", "text": "Serve all assets directly from the origin VM's local disk over the public internet"}
+    "concepts": [
+      "performance-optimization",
+      "caching",
+      "global-load-balancing"
     ],
-    "correct": ["a", "b"],
-    "explanation": "**Correct: Cloud CDN + global Application Load Balancer.** Cloud CDN caches static assets at Google's edge points of presence, cutting latency for distant users, and the global external Application Load Balancer uses a single anycast IP so clients enter Google's network at the nearest edge and ride the backbone to the origin. **A single zonal VM** worsens latency and removes redundancy. **Disabling keep-alive** increases handshake overhead and hurts performance. **Serving directly from origin over the public internet** is exactly the slow path being optimized away.",
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://docs.cloud.google.com/load-balancing/docs/application-load-balancer",
+    "lastVerified": "2026-10-01",
+    "prompt": "A global web application serves mostly static assets plus some dynamic API calls and suffers high latency for users far from the origin region. Which two changes will most improve global performance? Choose two.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Enable Cloud CDN on the external Application Load Balancer to cache static assets at the edge",
+        "rationale": "Cloud CDN serves cacheable responses from Google edge locations near users, so cache hits avoid the long trip to the origin region."
+      },
+      {
+        "id": "b",
+        "text": "Use a global external Application Load Balancer with one anycast IP, ending users at the nearest edge",
+        "rationale": "It terminates HTTP(S) as close to users as possible and routes over Google's network to the closest healthy backend, cutting latency for dynamic calls that cannot be cached."
+      },
+      {
+        "id": "c",
+        "text": "Consolidate every backend onto a single zonal VM in the origin region to simplify operations",
+        "rationale": "One zonal VM keeps all users far from the origin and also removes redundancy, which worsens both latency and availability."
+      },
+      {
+        "id": "d",
+        "text": "Disable HTTP keep-alive on the backends so each request negotiates a fresh connection",
+        "rationale": "Without connection reuse every request pays the extra handshake round trips, which raises latency instead of lowering it."
+      },
+      {
+        "id": "e",
+        "text": "Serve every asset directly from the origin VM's local disk across the public internet",
+        "rationale": "This is the slow path being optimized away: no caching, no edge termination, and every distant user pays full origin latency."
+      }
+    ],
+    "correct": [
+      "a",
+      "b"
+    ],
     "difficulty": 2
   },
   {
     "id": "q-assessment-015",
     "type": "single",
     "domainId": "manage-impl",
-    "concepts": ["migration", "database-migration-service", "minimal-downtime"],
+    "concepts": [
+      "migration",
+      "database-migration-service",
+      "minimal-downtime"
+    ],
     "caseStudyId": "knightmotives-automotive",
+    "subObjective": "manage-impl.1",
+    "sourceUrl": "https://docs.cloud.google.com/database-migration/docs/mysql/quickstart",
+    "lastVerified": "2026-10-01",
     "prompt": "KnightMotives Automotive must migrate a self-managed MySQL database to Cloud SQL for MySQL with minimal downtime, using continuous replication to keep the target in sync until cutover. Which Google tool is purpose-built for this?",
     "choices": [
-      {"id": "a", "text": "Database Migration Service (DMS) with continuous (CDC) replication"},
-      {"id": "b", "text": "A one-time mysqldump exported and imported during a long maintenance window"},
-      {"id": "c", "text": "Storage Transfer Service"},
-      {"id": "d", "text": "BigQuery Data Transfer Service"}
+      {
+        "id": "a",
+        "text": "Database Migration Service using a continuous job: initial load plus ongoing change replication",
+        "rationale": "A continuous job copies the data then streams changes into Cloud SQL, so you wait for replication lag to approach zero, stop writes and promote, keeping cutover downtime short."
+      },
+      {
+        "id": "b",
+        "text": "A one-time mysqldump export imported into Cloud SQL during an extended maintenance window",
+        "rationale": "A dump is a point-in-time copy, so writes made after the export are lost unless the source stays offline for the whole export and import."
+      },
+      {
+        "id": "c",
+        "text": "Storage Transfer Service jobs that copy the database files into a Cloud Storage bucket",
+        "rationale": "Storage Transfer Service moves objects between storage systems. It does not replicate a live database into a Cloud SQL instance."
+      },
+      {
+        "id": "d",
+        "text": "BigQuery Data Transfer Service scheduled loads from the MySQL server into BigQuery",
+        "rationale": "This service loads data into BigQuery on a schedule. The target here is Cloud SQL for MySQL, and scheduled loads are not continuous replication."
+      }
     ],
-    "correct": ["a"],
-    "explanation": "**Correct: Database Migration Service.** DMS performs an initial load plus continuous change-data-capture replication into Cloud SQL, keeping the target in sync so cutover downtime is minimal. **mysqldump** requires a long maintenance window and is not continuous. **Storage Transfer Service** moves objects between storage systems, not live databases. **BigQuery Data Transfer Service** loads data into BigQuery, not Cloud SQL.",
+    "correct": [
+      "a"
+    ],
     "difficulty": 2
   },
   {
     "id": "q-assessment-016",
     "type": "single",
     "domainId": "manage-impl",
-    "concepts": ["api-management", "apigee", "secure-apis"],
+    "concepts": [
+      "api-management",
+      "apigee",
+      "secure-apis"
+    ],
+    "subObjective": "manage-impl.1",
+    "sourceUrl": "https://docs.cloud.google.com/apigee/docs/api-platform/get-started/what-apigee",
+    "lastVerified": "2026-10-01",
     "prompt": "A company is exposing internal services as managed external APIs and needs developer onboarding, quota/rate limiting, OAuth-based security, analytics, and monetization. Which Google Cloud product is designed for full API lifecycle management?",
     "choices": [
-      {"id": "a", "text": "Cloud Endpoints with ESPv2 only"},
-      {"id": "b", "text": "Apigee API Management"},
-      {"id": "c", "text": "Cloud Load Balancing URL maps"},
-      {"id": "d", "text": "Cloud Armor"}
+      {
+        "id": "a",
+        "text": "Cloud Endpoints, using ESPv2 proxies that are deployed in front of every backend service",
+        "rationale": "Endpoints provides authentication, quota management, monitoring and logging through ESPv2, but its documented feature set has no integrated developer portal or monetization."
+      },
+      {
+        "id": "b",
+        "text": "Apigee API management, including its developer portal, analytics and monetization plans",
+        "rationale": "Apigee covers the full API lifecycle: developer portal, quotas and spike arrest, OAuth and API key security, built-in analytics, and monetization with rate plans."
+      },
+      {
+        "id": "c",
+        "text": "Cloud Load Balancing URL maps routing each API path to the backend service that owns it",
+        "rationale": "URL maps only route requests. They provide no developer onboarding, quotas, OAuth policy or monetization."
+      },
+      {
+        "id": "d",
+        "text": "Cloud Armor security policies attached to the load balancer in front of all the APIs",
+        "rationale": "Cloud Armor filters hostile traffic at the edge. It is not an API management platform and has no onboarding, analytics or monetization."
+      }
     ],
-    "correct": ["b"],
-    "explanation": "**Correct: Apigee.** Apigee is Google's full-lifecycle API management platform: developer portal/onboarding, quotas and rate limiting, OAuth/security policies, analytics, and monetization. **Cloud Endpoints** offers lighter-weight API management (auth, quotas, monitoring) but lacks the developer portal and monetization breadth. **URL maps** only route HTTP(S) traffic. **Cloud Armor** is a WAF/DDoS edge security service, not an API management platform.",
+    "correct": [
+      "b"
+    ],
     "difficulty": 2
   },
   {
     "id": "q-assessment-017",
     "type": "single",
     "domainId": "ops-excellence",
-    "concepts": ["slo-sli", "error-budget", "reliability"],
+    "concepts": [
+      "slo-sli",
+      "error-budget",
+      "reliability"
+    ],
+    "subObjective": "ops-excellence.4",
+    "sourceUrl": "https://docs.cloud.google.com/stackdriver/docs/solutions/slo-monitoring",
+    "lastVerified": "2026-10-01",
     "prompt": "An SRE team wants to quantify reliability and decide objectively when to slow feature releases versus invest in stability. They define availability targets and track the gap between target and actual to govern release pace. Which set of concepts are they applying?",
     "choices": [
-      {"id": "a", "text": "SLIs measure behavior, SLOs set the target, and the error budget (1 minus the SLO) governs release decisions"},
-      {"id": "b", "text": "Quotas, limits, and billing alerts"},
-      {"id": "c", "text": "RTO, RPO, and backup retention"},
-      {"id": "d", "text": "IAM roles, bindings, and conditions"}
+      {
+        "id": "a",
+        "text": "SLIs measure behavior, SLOs set targets, and the error budget (1 - SLO) governs release pace",
+        "rationale": "An SLI measures performance, an SLO is the target for it, and the error budget is the tolerated failure. When it is nearly depleted, risky changes are held back in favor of reliability."
+      },
+      {
+        "id": "b",
+        "text": "Service quotas, resource limits and billing alerts that cap capacity and spend per project",
+        "rationale": "Quotas and billing alerts control capacity and cost. They say nothing about whether users are getting reliable service."
+      },
+      {
+        "id": "c",
+        "text": "RTO, RPO and backup retention targets that define how fast and how completely services recover",
+        "rationale": "These are disaster-recovery objectives that apply after a major incident, not steady-state reliability targets for governing release pace."
+      },
+      {
+        "id": "d",
+        "text": "IAM roles, bindings and conditions that define who may deploy changes to production",
+        "rationale": "IAM controls who can act, not how reliable the service is or when to slow releases."
+      }
     ],
-    "correct": ["a"],
-    "explanation": "**Correct: SLI/SLO/error budget.** An SLI is the measured indicator (e.g., request success rate), an SLO is the target for that indicator, and the error budget (1 - SLO) is the allowable unreliability that, when consumed, signals the team to prioritize stability over new features. **Quotas/billing** govern capacity and cost, not reliability targets. **RTO/RPO** describe disaster-recovery objectives, not steady-state reliability governance. **IAM** concerns access control.",
+    "correct": [
+      "a"
+    ],
     "difficulty": 2
   },
   {
     "id": "q-assessment-018",
     "type": "multiple",
     "domainId": "ops-excellence",
-    "concepts": ["observability", "cloud-monitoring", "cloud-logging", "alerting"],
-    "prompt": "You are establishing observability for a production GKE platform and want proactive detection plus the ability to investigate incidents quickly. Which TWO actions reflect Google Cloud operations best practices?",
-    "choices": [
-      {"id": "a", "text": "Create alerting policies in Cloud Monitoring on SLO-based and symptom-based metrics with appropriate notification channels"},
-      {"id": "b", "text": "Centralize and retain logs in Cloud Logging with log-based metrics and export sinks for long-term analysis"},
-      {"id": "c", "text": "Disable logging in production to reduce noise and cost"},
-      {"id": "d", "text": "Rely solely on engineers manually checking dashboards a few times a day"},
-      {"id": "e", "text": "Only collect metrics after an incident is reported by users"}
+    "concepts": [
+      "observability",
+      "cloud-monitoring",
+      "cloud-logging",
+      "alerting"
     ],
-    "correct": ["a", "b"],
-    "explanation": "**Correct: alerting policies + centralized logging.** Cloud Monitoring alerting on SLO/symptom-based signals enables proactive detection and timely notification, while Cloud Logging with log-based metrics and export sinks supports fast incident investigation and long-term analysis. **Disabling logging** removes the data needed to diagnose incidents. **Manual dashboard checks** are reactive and miss off-hours issues. **Collecting metrics only after user reports** defeats the purpose of observability.",
+    "subObjective": "ops-excellence.2",
+    "sourceUrl": "https://docs.cloud.google.com/monitoring/alerts",
+    "lastVerified": "2026-10-01",
+    "prompt": "You are establishing observability for a production GKE platform and want proactive detection plus the ability to investigate incidents quickly. Which two actions reflect Google Cloud operations best practices? Choose two.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Alerting policies in Cloud Monitoring on SLO burn rate and user-facing symptoms, sent to notification channels",
+        "rationale": "Policies on metrics, logs or SLO burn rate notify the on-call team before users escalate, which is what proactive detection means."
+      },
+      {
+        "id": "b",
+        "text": "Centralized Cloud Logging with log-based metrics and sinks that route logs to long-term storage",
+        "rationale": "Aggregated sinks centralize logs across projects and can route them to Cloud Storage or BigQuery, and log-based metrics turn log patterns into alertable signals, supporting fast investigation."
+      },
+      {
+        "id": "c",
+        "text": "Turn off production logging to cut noise and cost, relying on dashboards and metrics alone for diagnosis",
+        "rationale": "Without logs there is no record of what happened, so incident investigation becomes guesswork."
+      },
+      {
+        "id": "d",
+        "text": "Depend on engineers opening the dashboards manually a few times each day to spot problems",
+        "rationale": "Manual checks are reactive and leave off-hours problems undetected until users report them."
+      },
+      {
+        "id": "e",
+        "text": "Begin collecting metrics only after users report an incident, to avoid ongoing overhead",
+        "rationale": "The data needed to see the problem build up is missing by then, which defeats the purpose of observability."
+      }
+    ],
+    "correct": [
+      "a",
+      "b"
+    ],
     "difficulty": 2
   }
 ]

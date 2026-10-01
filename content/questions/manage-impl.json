@@ -3,330 +3,2092 @@
     "id": "q-manage-impl-001",
     "type": "single",
     "domainId": "manage-impl",
-    "concepts": ["iac-terraform", "app-infra-deployment"],
+    "concepts": [
+      "iac-terraform",
+      "app-infra-deployment"
+    ],
+    "subObjective": "manage-impl.2",
+    "sourceUrl": "https://developer.hashicorp.com/terraform/language/backend/gcs",
+    "lastVerified": "2026-10-01",
     "prompt": "Your team manages production GCP infrastructure with Terraform. Two engineers run `terraform apply` against the same configuration at the same time from their laptops, and the resulting state file becomes corrupted. What is the recommended way to prevent this in the future?",
     "choices": [
-      {"id": "a", "text": "Commit the `terraform.tfstate` file to Git so both engineers always pull the latest version before applying."},
-      {"id": "b", "text": "Store state in a Cloud Storage backend bucket, which provides automatic state locking via the GCS backend."},
-      {"id": "c", "text": "Run `terraform apply -refresh-only` first to avoid write conflicts."},
-      {"id": "d", "text": "Have each engineer keep a separate local state file and merge them manually after each change."}
+      {
+        "id": "a",
+        "text": "Commit terraform.tfstate to the Git repository so that both engineers always pull the latest version before they run apply.",
+        "rationale": "Git has no lock: both engineers can pull the same version and apply at the same moment, and state files are not meant to be merged as text. This hides the race instead of removing it."
+      },
+      {
+        "id": "b",
+        "text": "Configure the gcs backend so state lives in a Cloud Storage bucket, where Terraform locks the state during operations.",
+        "rationale": "The Terraform gcs backend supports state locking, so a second apply waits or fails instead of writing concurrently. Enabling Object Versioning on the bucket is also recommended so state can be recovered after mistakes."
+      },
+      {
+        "id": "c",
+        "text": "Run terraform apply -refresh-only first so that each engineer's apply reconciles against current resources without conflicts.",
+        "rationale": "A refresh-only run reconciles state with real resources but does not serialize writers. Two runs that both write state can still collide, so it treats drift rather than concurrency."
+      },
+      {
+        "id": "d",
+        "text": "Give each engineer a separate local state file and merge the files by hand after every change is applied.",
+        "rationale": "Separate states each believe they own the same resources, which leads to duplicates and conflicts. Google's Terraform guidance says not to modify state manually, and hand-merging is exactly that."
+      }
     ],
-    "correct": ["b"],
-    "explanation": "**Correct: b.** The Terraform `gcs` backend stores state in a Cloud Storage bucket and acquires a lock object for the duration of state-mutating operations, so concurrent `apply` runs are serialized and cannot corrupt state. This is the recommended pattern for team/CI use.\n\n**Why the others are wrong:**\n- **a:** State files contain secrets in plaintext and are not designed for Git merge semantics; committing state to Git provides no locking and risks exposing credentials.\n- **c:** `-refresh-only` only reconciles drift; it does not coordinate concurrent writers or provide locking.\n- **d:** Manually merging state is error-prone and unsupported; Terraform state is not meant to be hand-merged.",
+    "correct": [
+      "b"
+    ],
+    "explanation": "Remote state with locking serializes mutating operations. Pair it with Object Versioning for recovery.",
     "difficulty": 2
   },
   {
     "id": "q-manage-impl-002",
     "type": "single",
     "domainId": "manage-impl",
-    "concepts": ["api-client-libraries", "service-accounts", "programmatic-access"],
+    "concepts": [
+      "api-client-libraries",
+      "service-accounts",
+      "programmatic-access"
+    ],
+    "subObjective": "manage-impl.2",
+    "sourceUrl": "https://docs.cloud.google.com/docs/authentication/application-default-credentials",
+    "lastVerified": "2026-10-01",
     "prompt": "A Python application running on a Compute Engine VM needs to call the Cloud Storage API using the Google Cloud client library. You want the most secure, least-maintenance way to authenticate. What should you do?",
     "choices": [
-      {"id": "a", "text": "Create a service account key JSON file, store it on the VM, and set GOOGLE_APPLICATION_CREDENTIALS to point at it."},
-      {"id": "b", "text": "Attach a service account to the VM and let the client library use Application Default Credentials (ADC) from the metadata server."},
-      {"id": "c", "text": "Embed an OAuth client ID and secret in the application source code and run an interactive consent flow at startup."},
-      {"id": "d", "text": "Use the gcloud CLI to print an access token and paste it into an environment variable read by the application."}
+      {
+        "id": "a",
+        "text": "Create a service account key JSON file, copy it onto the VM, and point GOOGLE_APPLICATION_CREDENTIALS at that file.",
+        "rationale": "A downloaded key is a long-lived secret that you must store, rotate, and protect. Google marks service account keys as a security risk and discourages them when an attached service account can be used."
+      },
+      {
+        "id": "b",
+        "text": "Attach a service account to the VM and let the client library find Application Default Credentials itself.",
+        "rationale": "ADC falls through to the attached service account via the metadata server, which is the preferred method for production on Google Cloud. There is no key file to rotate, leak, or distribute."
+      },
+      {
+        "id": "c",
+        "text": "Embed an OAuth client ID and secret in the source code and run an interactive consent flow when the app starts.",
+        "rationale": "Interactive consent is meant for end users granting access to their own data. An unattended VM cannot complete it, and a client secret in source code is itself a leak risk."
+      },
+      {
+        "id": "d",
+        "text": "Run gcloud auth print-access-token on a workstation and paste the token into an environment variable the app reads.",
+        "rationale": "Access tokens are short-lived, so the app would start failing as soon as the pasted token expires and someone would have to re-paste it by hand. It cannot sustain a running service."
+      }
     ],
-    "correct": ["b"],
-    "explanation": "**Correct: b.** Attaching a service account to the VM lets the client library obtain short-lived credentials automatically via Application Default Credentials and the instance metadata server. There are no key files to rotate, leak, or manage, which is Google's recommended approach for workloads on Google Cloud.\n\n**Why the others are wrong:**\n- **a:** Downloaded service account keys are long-lived secrets that must be rotated and protected; they are explicitly discouraged when ADC can be used.\n- **c:** OAuth user consent flows are for end-user data access, not for unattended server workloads.\n- **d:** Access tokens are short-lived (about one hour) and pasting them manually is not sustainable for a running service.",
+    "correct": [
+      "b"
+    ],
     "difficulty": 2
   },
   {
     "id": "q-manage-impl-003",
     "type": "single",
     "domainId": "manage-impl",
-    "concepts": ["apigee", "api-management"],
-    "prompt": "Cymbal Retail exposes a backend pricing API and wants to ensure no single partner can exceed 1,000 calls per minute, while also transforming the response from XML to JSON for mobile clients. Which Apigee capability addresses both requirements?",
-    "caseStudyId": "cymbal-retail",
-    "choices": [
-      {"id": "a", "text": "Deploy the backend directly behind a global external Application Load Balancer with Cloud Armor rate-limiting rules."},
-      {"id": "b", "text": "Build an Apigee API proxy that applies a Quota policy keyed per app and an XML-to-JSON mediation policy in the response flow."},
-      {"id": "c", "text": "Enable Cloud Endpoints with an OpenAPI spec and configure ESPv2 quotas."},
-      {"id": "d", "text": "Put the API behind API Gateway and use a Cloud Function to reformat responses."}
+    "concepts": [
+      "apigee",
+      "api-management"
     ],
-    "correct": ["b"],
-    "explanation": "**Correct: b.** Apigee is purpose-built for full lifecycle API management. A Quota policy can enforce per-app (per-partner) limits like 1,000 calls/minute, and the JSONToXML/XMLToJSON mediation policies transform payloads inside the proxy without changing the backend. Both are core Apigee policy features.\n\n**Why the others are wrong:**\n- **a:** Cloud Armor provides edge rate limiting and WAF but no per-app quotas keyed to developer apps and no payload mediation.\n- **c:** Cloud Endpoints/ESPv2 supports quotas but not rich content mediation/transformation policies.\n- **d:** API Gateway is lightweight (auth, basic routing) and lacks Apigee's quota-per-app and mediation policy model; bolting on a Cloud Function adds operational complexity Apigee solves natively.",
+    "caseStudyId": "cymbal-retail",
+    "subObjective": "manage-impl.1",
+    "sourceUrl": "https://cloud.google.com/apigee/docs/api-platform/reference/policies/quota-policy",
+    "lastVerified": "2026-10-01",
+    "prompt": "Cymbal Retail exposes a backend pricing API and wants to ensure no single partner can exceed 1,000 calls per minute, while also transforming the response from XML to JSON for mobile clients. Which Apigee capability addresses both requirements?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Put the backend behind a global external Application Load Balancer and add Cloud Armor rate-limiting rules for each partner.",
+        "rationale": "Cloud Armor throttles at the edge but has no notion of registered developer apps or partner entitlements, and neither it nor the load balancer converts response payloads from XML to JSON."
+      },
+      {
+        "id": "b",
+        "text": "Build an Apigee API proxy with a Quota policy keyed on the calling app and an XMLtoJSON policy on the response flow.",
+        "rationale": "The Quota policy counts requests per app (or developer or API product) over a time unit and rejects calls past the limit. XMLtoJSON attached to the response flow handles the format conversion, so the backend is unchanged."
+      },
+      {
+        "id": "c",
+        "text": "Publish the API through Cloud Endpoints with an OpenAPI spec and configure ESPv2 quota limits for each partner.",
+        "rationale": "Endpoints quotas are declared as OpenAPI extensions and are per-minute, per-project limits tied to the caller's API key. There is no policy layer for converting XML responses to JSON."
+      },
+      {
+        "id": "d",
+        "text": "Front the backend with API Gateway and route each response through a Cloud Run function that converts the XML to JSON.",
+        "rationale": "This bolts a custom transformation service onto the gateway and still leaves per-partner quota to be solved. Apigee provides both as built-in proxy policies without extra components."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "Use Quota for contractual per-client consumption limits; use SpikeArrest to smooth sudden bursts.",
     "difficulty": 2
   },
   {
     "id": "q-manage-impl-004",
     "type": "multiple",
     "domainId": "manage-impl",
-    "concepts": ["cloud-emulators", "testing-frameworks"],
-    "prompt": "A development team wants to run fast, free local integration tests against Pub/Sub and Firestore without touching production projects. Which TWO statements about the Google Cloud local emulators are correct?",
-    "choices": [
-      {"id": "a", "text": "The emulators are started via the gcloud CLI (for example `gcloud beta emulators pubsub start`) and expose a local endpoint."},
-      {"id": "b", "text": "Client libraries connect to an emulator when an environment variable such as PUBSUB_EMULATOR_HOST or FIRESTORE_EMULATOR_HOST is set."},
-      {"id": "c", "text": "Emulators replicate IAM policy enforcement exactly, so you can validate fine-grained permissions locally."},
-      {"id": "d", "text": "Emulators persist all data permanently to the cloud backend so tests share state across runs."},
-      {"id": "e", "text": "There are emulators available for services including Pub/Sub, Firestore, Bigtable, and Spanner."}
+    "concepts": [
+      "cloud-emulators",
+      "testing-frameworks"
     ],
-    "correct": ["a", "b", "e"],
-    "explanation": "This question expects the correct subset; the right answers are **a, b, e**.\n\n**Correct:**\n- **a:** Emulators are launched through the gcloud CLI (`gcloud beta emulators <service> start`) and listen on a local host:port.\n- **b:** Client libraries detect emulator endpoints via env vars like `PUBSUB_EMULATOR_HOST`, `FIRESTORE_EMULATOR_HOST`, `BIGTABLE_EMULATOR_HOST`, and `SPANNER_EMULATOR_HOST`.\n- **e:** Google ships local emulators for Pub/Sub, Firestore, Bigtable, and Spanner (among others).\n\n**Why the others are wrong:**\n- **c:** Emulators do **not** enforce IAM; they are for functional/local testing only, not permission validation.\n- **d:** Emulator data is in-memory/local and ephemeral by default and is never written to the real cloud backend.",
+    "subObjective": "manage-impl.2",
+    "sourceUrl": "https://cloud.google.com/pubsub/docs/emulator",
+    "lastVerified": "2026-10-01",
+    "prompt": "A development team wants to run fast, free local integration tests against Pub/Sub and Firestore without touching production projects. Which statements about the Google Cloud local emulators are correct? Choose three.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "The emulators start through the gcloud CLI, for example gcloud beta emulators pubsub start, and listen on a local host and port.",
+        "rationale": "The Pub/Sub emulator is installed and run through the Google Cloud CLI, and the Firestore emulator is started with gcloud emulators firestore start. Both listen on a local endpoint."
+      },
+      {
+        "id": "b",
+        "text": "Client libraries target an emulator when an environment variable such as PUBSUB_EMULATOR_HOST or FIRESTORE_EMULATOR_HOST is set.",
+        "rationale": "Pub/Sub and Firestore server client libraries detect the emulator through these variables, so application code needs no changes between local tests and production."
+      },
+      {
+        "id": "c",
+        "text": "Emulators replicate IAM policy enforcement, so you can validate fine-grained permissions for service accounts before deploying.",
+        "rationale": "Emulators exercise functional behavior only. The Spanner emulator, for example, documents that it does not support authentication, IAM, permissions, or roles, so permission problems appear only against the real service."
+      },
+      {
+        "id": "d",
+        "text": "Emulators write all data through to a cloud backend so that integration tests can share state across separate runs.",
+        "rationale": "Emulator data is local and short-lived: Pub/Sub keeps resources for the emulator session and Firestore stores data only in memory. Nothing is written to a cloud backend."
+      },
+      {
+        "id": "e",
+        "text": "Local emulators are available for several data services, including Pub/Sub, Firestore, Bigtable, and Spanner, through gcloud.",
+        "rationale": "The gcloud beta emulators group includes bigtable, datastore, firestore, pubsub, and spanner, so teams can test against several data services locally."
+      }
+    ],
+    "correct": [
+      "a",
+      "b",
+      "e"
+    ],
+    "explanation": "Emulators are for functional tests: no IAM enforcement and no persistence beyond the emulator session.",
     "difficulty": 2
   },
   {
     "id": "q-manage-impl-005",
     "type": "multiple",
     "domainId": "manage-impl",
-    "concepts": ["gsutil-bq", "gcloud-cli"],
-    "prompt": "You need to copy a multi-terabyte dataset of objects between two Cloud Storage buckets from a script, as quickly as possible. Which TWO commands are valid, performant ways to do this?",
-    "choices": [
-      {"id": "a", "text": "`gcloud storage cp -r gs://source-bucket gs://dest-bucket`, the modern recommended CLI for Cloud Storage, which parallelizes the transfer."},
-      {"id": "b", "text": "`gsutil -m cp -r gs://source-bucket gs://dest-bucket`, using the `-m` flag for multithreaded/parallel copying."},
-      {"id": "c", "text": "Download every object to a local VM with `bq extract` and re-upload them one at a time."},
-      {"id": "d", "text": "`gcloud compute scp` to stream the objects through a bastion host."},
-      {"id": "e", "text": "Use `bq cp` to copy the bucket as a BigQuery dataset."}
+    "concepts": [
+      "gsutil-bq",
+      "gcloud-cli"
     ],
-    "correct": ["a", "b"],
-    "explanation": "The valid, performant options are **a** and **b**.\n\n**Correct:**\n- **a:** `gcloud storage cp` is the modern, recommended CLI for Cloud Storage and performs highly parallelized, server-side-optimized copies between buckets.\n- **b:** `gsutil -m cp` uses the `-m` (multithreaded/parallel) flag for fast bulk copies; it remains valid although `gcloud storage` is now preferred.\n\n**Why the others are wrong:**\n- **c:** `bq extract` is for exporting BigQuery tables, not copying GCS objects; round-tripping through local disk is slow and pointless.\n- **d:** `gcloud compute scp` copies files to/from VMs over SSH, not between buckets.\n- **e:** `bq cp` copies BigQuery tables/datasets, which has nothing to do with Cloud Storage objects.",
-    "difficulty": 1
+    "subObjective": "manage-impl.2",
+    "sourceUrl": "https://cloud.google.com/storage/docs/gsutil",
+    "lastVerified": "2026-10-01",
+    "prompt": "You need to copy a multi-terabyte dataset of objects between two Cloud Storage buckets from a script, as quickly as possible. Which commands are valid, performant ways to do this? Choose two.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "gcloud storage cp -r gs://source-bucket gs://dest-bucket, the recommended Cloud Storage CLI, which needs less manual tuning for speed.",
+        "rationale": "gcloud storage commands are the recommended replacement for gsutil and require less manual optimization to reach the fastest transfer rates."
+      },
+      {
+        "id": "b",
+        "text": "gsutil -m cp -r gs://source-bucket gs://dest-bucket, where the -m flag turns on multithreaded, parallel copying.",
+        "rationale": "gsutil is a legacy, minimally maintained CLI but still works, and -m parallelizes the copy. It is valid here though gcloud storage is now preferred."
+      },
+      {
+        "id": "c",
+        "text": "Run bq extract on each object to download it to a local VM, then upload it again to the destination bucket one by one.",
+        "rationale": "bq extract exports BigQuery tables, not Cloud Storage objects, and round-tripping data through a VM is slow even if the tool were right."
+      },
+      {
+        "id": "d",
+        "text": "Use gcloud compute scp to stream the objects through a bastion host that has access to both buckets.",
+        "rationale": "gcloud compute scp copies files to and from VMs over SSH. It is not a bucket-to-bucket tool and adds a single-host bottleneck."
+      },
+      {
+        "id": "e",
+        "text": "Run bq cp to copy the source bucket into BigQuery as a dataset, then export it into the destination bucket.",
+        "rationale": "bq cp copies BigQuery tables. A bucket's objects are not BigQuery data, so this command has nothing to operate on."
+      }
+    ],
+    "correct": [
+      "a",
+      "b"
+    ],
+    "explanation": "Prefer gcloud storage for new scripts; gsutil -m remains valid but is legacy.",
+    "difficulty": 2
   },
   {
     "id": "q-manage-impl-006",
     "type": "single",
     "domainId": "manage-impl",
-    "concepts": ["app-infra-deployment"],
-    "prompt": "Altostrat Media wants progressive delivery for its containerized streaming service on GKE: automated promotion across dev, staging, and prod with one-click rollback and a canary phase. Which Google Cloud service is purpose-built for this continuous delivery workflow?",
-    "caseStudyId": "altostrat-media",
-    "choices": [
-      {"id": "a", "text": "Cloud Build triggers that run `kubectl apply` to every cluster on each commit."},
-      {"id": "b", "text": "Cloud Deploy, using a delivery pipeline with ordered targets and canary deployment strategies."},
-      {"id": "c", "text": "Artifact Registry remote repositories with vulnerability scanning."},
-      {"id": "d", "text": "Cloud Scheduler jobs that redeploy each environment nightly."}
+    "concepts": [
+      "app-infra-deployment"
     ],
-    "correct": ["b"],
-    "explanation": "**Correct: b.** Cloud Deploy is Google's managed continuous delivery service. It models a delivery pipeline with ordered targets (dev to staging to prod), supports canary and progressive rollout strategies, gives one-click promotion and rollback, and integrates with GKE, Cloud Run, and Anthos.\n\n**Why the others are wrong:**\n- **a:** Cloud Build is excellent for CI and can call kubectl, but it has no built-in promotion, approval, canary, or rollback model; you would have to script all of it.\n- **c:** Artifact Registry stores and scans images; it does not orchestrate deployments.\n- **d:** Cloud Scheduler triggers jobs on a cron; it provides no promotion or canary semantics.",
+    "caseStudyId": "altostrat-media",
+    "subObjective": "manage-impl.1",
+    "sourceUrl": "https://docs.cloud.google.com/deploy/docs/deployment-strategies",
+    "lastVerified": "2026-10-01",
+    "prompt": "Altostrat Media wants progressive delivery for its containerized streaming service on GKE: automated promotion across dev, staging, and prod with one-click rollback and a canary phase. Which Google Cloud service is purpose-built for this continuous delivery workflow?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Cloud Build triggers that run kubectl apply against every cluster after each commit lands on the main branch of the repository.",
+        "rationale": "Cloud Build is a CI and scripting engine. It has no built-in promotion sequence, approvals, canary phases, or rollback, so you would have to script and maintain all of that yourself."
+      },
+      {
+        "id": "b",
+        "text": "Cloud Deploy, with a delivery pipeline of ordered dev, staging, and prod targets and a canary deployment strategy.",
+        "rationale": "Cloud Deploy models a promotion sequence across targets, supports standard and canary strategies on GKE and Cloud Run, and offers rollback and approvals. Any CI tool can feed it container images."
+      },
+      {
+        "id": "c",
+        "text": "Artifact Registry remote repositories combined with vulnerability scanning on every container image that is pushed to them.",
+        "rationale": "Artifact Registry stores and scans artifacts. It does not decide where or when a workload is deployed, and it has no canary or promotion logic."
+      },
+      {
+        "id": "d",
+        "text": "Cloud Scheduler jobs that redeploy every environment each night from the latest tagged container image in the registry.",
+        "rationale": "A cron trigger redeploys on a clock, not on a validated promotion. It offers no staged traffic shift, approval gate, or targeted rollback."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
     "difficulty": 2
   },
   {
     "id": "q-manage-impl-007",
     "type": "single",
     "domainId": "manage-impl",
-    "concepts": ["load-testing", "testing-frameworks"],
-    "prompt": "Before a major product launch, EHR Healthcare wants to validate that its patient-portal API can sustain 10x expected traffic and identify the breaking point. Which testing approach best fits this goal?",
-    "caseStudyId": "ehr-healthcare",
-    "choices": [
-      {"id": "a", "text": "Unit testing each function with mocked dependencies."},
-      {"id": "b", "text": "Load and stress testing with a tool like Locust, k6, or JMeter generating concurrent virtual users against the API."},
-      {"id": "c", "text": "Static code analysis to find performance anti-patterns."},
-      {"id": "d", "text": "Integration testing a single request path end-to-end once."}
+    "concepts": [
+      "load-testing",
+      "testing-frameworks"
     ],
-    "correct": ["b"],
-    "explanation": "**Correct: b.** Validating sustained high throughput and finding the breaking point is exactly what load and stress testing do. Tools such as Locust, k6, and Apache JMeter simulate large numbers of concurrent virtual users and measure latency/error rates as load increases.\n\n**Why the others are wrong:**\n- **a:** Unit tests verify individual functions in isolation; they say nothing about system behavior under concurrent load.\n- **c:** Static analysis inspects source without executing it and cannot reveal real-world throughput limits.\n- **d:** A single integration run validates correctness of a path but not capacity at 10x scale.",
+    "caseStudyId": "ehr-healthcare",
+    "subObjective": "manage-impl.1",
+    "sourceUrl": "https://cloud.google.com/run/docs/about-load-testing",
+    "lastVerified": "2026-10-01",
+    "prompt": "Before a major product launch, EHR Healthcare wants to validate that its patient-portal API can sustain 10x expected traffic and identify the breaking point. Which testing approach best fits this goal?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Unit tests on each function that use mocked dependencies and run on every commit in the continuous integration pipeline.",
+        "rationale": "Unit tests check logic in isolation and say nothing about throughput, concurrency, or how the system degrades as traffic grows."
+      },
+      {
+        "id": "b",
+        "text": "Load and stress tests that use a harness such as Apache JMeter to drive rising concurrent traffic against the API.",
+        "rationale": "A harness with controlled rate and concurrency lets you ramp load past the expected peak and watch latency and errors to find scaling bottlenecks, which is the purpose of load testing."
+      },
+      {
+        "id": "c",
+        "text": "Static code analysis that scans the portal source for known performance anti-patterns before every release build.",
+        "rationale": "Static analysis never runs the system, so it cannot reveal real saturation points such as database connections or autoscaling lag."
+      },
+      {
+        "id": "d",
+        "text": "A single end-to-end integration test that exercises one request path through every service after each deploy.",
+        "rationale": "One request proves the path is correct, not that it holds at 10x volume. Capacity needs many concurrent clients."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
     "difficulty": 1
   },
   {
     "id": "q-manage-impl-008",
     "type": "single",
     "domainId": "manage-impl",
-    "concepts": ["cloud-shell", "cloud-code", "programmatic-access"],
-    "prompt": "A developer wants a zero-setup, browser-based environment that already has gcloud, kubectl, Terraform, and an IDE with Cloud Code installed, persistent home storage, and authenticated access to their GCP project. What should they use?",
-    "choices": [
-      {"id": "a", "text": "Cloud Shell, which provides an ephemeral VM with preinstalled tools, 5 GB persistent $HOME, and the Cloud Shell Editor with Cloud Code."},
-      {"id": "b", "text": "A local installation of the Cloud SDK on their workstation."},
-      {"id": "c", "text": "A Compute Engine VM they provision and configure manually."},
-      {"id": "d", "text": "Cloud Workstations configured from scratch with custom images."}
+    "concepts": [
+      "cloud-shell",
+      "cloud-code",
+      "programmatic-access"
     ],
-    "correct": ["a"],
-    "explanation": "**Correct: a.** Cloud Shell is a free, browser-accessible environment with a preconfigured set of tools (gcloud, kubectl, Terraform, Docker, language runtimes), 5 GB of persistent `$HOME` storage, and the Cloud Shell Editor (a VS Code-based IDE) with the Cloud Code extension. It is automatically authenticated to your account/project.\n\n**Why the others are wrong:**\n- **b:** A local SDK install requires manual setup, updates, and authentication, which is the opposite of zero-setup.\n- **c:** A self-managed Compute Engine VM requires provisioning, tool installation, and lifecycle management.\n- **d:** Cloud Workstations are powerful for customized, longer-lived dev environments but require configuration; the question asks for zero-setup, which Cloud Shell delivers out of the box.",
+    "subObjective": "manage-impl.2",
+    "sourceUrl": "https://cloud.google.com/shell/docs/how-cloud-shell-works",
+    "lastVerified": "2026-10-01",
+    "prompt": "A developer wants a zero-setup, browser-based environment that already has the gcloud CLI, Docker, and an editor with Cloud Code installed, persistent home storage, and authenticated access to their GCP project. What should they use?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Cloud Shell, which gives an ephemeral VM with pre-installed tools, 5 GB of persistent home storage, and a Cloud Code editor.",
+        "rationale": "Cloud Shell comes with the gcloud CLI and other utilities pre-installed and authenticated, 5 GB of free persistent $HOME, and a built-in editor with an integrated Cloud Code experience."
+      },
+      {
+        "id": "b",
+        "text": "A local installation of the Google Cloud CLI on the developer's own workstation, with Cloud Code added to the IDE they already use.",
+        "rationale": "A local install needs manual setup, updates, and sign-in on each machine, which is the opposite of zero-setup and browser-based."
+      },
+      {
+        "id": "c",
+        "text": "A Compute Engine VM that the developer provisions, then configures by hand with the SDK, an IDE, and credentials.",
+        "rationale": "A self-managed VM means provisioning, tool installation, patching, and credential setup, all of which the developer must own."
+      },
+      {
+        "id": "d",
+        "text": "Cloud Workstations, using a workstation configuration and a custom container image that the team builds from scratch.",
+        "rationale": "Cloud Workstations suits customized, larger-storage environments, but it needs a cluster, configuration, and an image. The question asks for zero setup, which Cloud Shell provides out of the box."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "Cloud Shell's $HOME is deleted after 120 days without use, and Cloud Workstations is the option when you need more control over storage persistence.",
     "difficulty": 2
   },
   {
     "id": "q-manage-impl-009",
     "type": "single",
     "domainId": "manage-impl",
-    "concepts": ["migration-tooling"],
-    "prompt": "KnightMotives Automotive must migrate a fleet of on-premises VMware virtual machines to Compute Engine with minimal downtime and automated validation. Which Google Cloud tool is designed for this lift-and-shift VM migration?",
-    "caseStudyId": "knightmotives-automotive",
-    "choices": [
-      {"id": "a", "text": "Database Migration Service (DMS)."},
-      {"id": "b", "text": "Migrate to Virtual Machines (Migrate to VMs / M2VM)."},
-      {"id": "c", "text": "Storage Transfer Service."},
-      {"id": "d", "text": "BigQuery Data Transfer Service."}
+    "concepts": [
+      "migration-tooling"
     ],
-    "correct": ["b"],
-    "explanation": "**Correct: b.** Migrate to Virtual Machines (formerly Migrate for Compute Engine) is purpose-built to migrate VMs from on-premises (VMware), AWS, or Azure to Compute Engine. It replicates disks in the background, supports test clones for validation, and performs a final cutover with minimal downtime.\n\n**Why the others are wrong:**\n- **a:** DMS migrates databases (for example MySQL/PostgreSQL to Cloud SQL or AlloyDB), not whole VMs.\n- **c:** Storage Transfer Service moves object/file data into Cloud Storage, not running VMs.\n- **d:** BigQuery Data Transfer Service schedules data loads into BigQuery, unrelated to VM migration.",
+    "caseStudyId": "knightmotives-automotive",
+    "subObjective": "manage-impl.1",
+    "sourceUrl": "https://cloud.google.com/migrate/virtual-machines/docs/5.0/concepts/lifecycle",
+    "lastVerified": "2026-10-01",
+    "prompt": "KnightMotives Automotive must migrate a fleet of on-premises VMware virtual machines to Compute Engine with minimal downtime, testing the migrated VMs before cut-over. Which Google Cloud tool is designed for this lift-and-shift VM migration?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Database Migration Service, which keeps a source database replicating into a managed Cloud SQL or AlloyDB for PostgreSQL target.",
+        "rationale": "Database Migration Service moves databases into Cloud SQL and AlloyDB. It does not move whole virtual machines or their disks."
+      },
+      {
+        "id": "b",
+        "text": "Migrate to Virtual Machines, which continuously replicates VM disks, supports test clones, and performs a planned cut-over.",
+        "rationale": "Migrate to Virtual Machines migrates VMs from vSphere, AWS, and Azure to Compute Engine. It replicates disks without downtime on the source, lets you clone and test, and then cuts over."
+      },
+      {
+        "id": "c",
+        "text": "Storage Transfer Service, which moves large sets of objects and files from on-premises storage into Cloud Storage.",
+        "rationale": "Storage Transfer Service moves object and file data into Cloud Storage. It cannot produce a bootable Compute Engine VM."
+      },
+      {
+        "id": "d",
+        "text": "BigQuery Data Transfer Service, which schedules recurring loads from SaaS applications and storage into BigQuery.",
+        "rationale": "This service automates data loads into BigQuery and has no role in migrating servers."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
     "difficulty": 1
   },
   {
     "id": "q-manage-impl-010",
     "type": "multiple",
     "domainId": "manage-impl",
-    "concepts": ["iac-terraform", "app-infra-deployment"],
-    "prompt": "You are structuring a Terraform codebase for reuse across multiple GCP environments. Which TWO practices align with Terraform and Google Cloud recommendations?",
-    "choices": [
-      {"id": "a", "text": "Encapsulate reusable resource groupings into modules and parameterize them with input variables."},
-      {"id": "b", "text": "Use separate state files (for example per environment) to limit blast radius."},
-      {"id": "c", "text": "Hardcode project IDs and credentials directly in `.tf` files for each environment."},
-      {"id": "d", "text": "Run `terraform apply` manually in production without a plan review step."},
-      {"id": "e", "text": "Store all environments in a single shared state file to keep things simple."}
+    "concepts": [
+      "iac-terraform",
+      "app-infra-deployment"
     ],
-    "correct": ["a", "b"],
-    "explanation": "The correct practices are **a** and **b**.\n\n**Correct:**\n- **a:** Modules with input variables promote reuse and consistency; Google's Cloud Foundation Fabric and module registry follow this pattern.\n- **b:** Separating state per environment (or per component) limits blast radius so a mistake in dev cannot corrupt prod state.\n\n**Why the others are wrong:**\n- **c:** Hardcoding project IDs and especially credentials is an anti-pattern; use variables, workspaces, and ADC/Workload Identity instead of embedded secrets.\n- **d:** Skipping `terraform plan` review removes a critical safety gate; production changes should go through plan review/approval (ideally in CI).\n- **e:** A single shared state for all environments maximizes blast radius and creates locking contention, the opposite of the recommended pattern.",
+    "subObjective": "manage-impl.2",
+    "sourceUrl": "https://cloud.google.com/docs/terraform/best-practices/root-modules",
+    "lastVerified": "2026-10-01",
+    "prompt": "You are structuring a Terraform codebase for reuse across multiple GCP environments. Which practices align with Terraform and Google Cloud recommendations? Choose two.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Encapsulate reusable resource groupings in modules and parameterize them with input variables for each environment.",
+        "rationale": "Google's guidance has each environment's root configuration instantiate a shared service module, passing only environment-specific values as variables."
+      },
+      {
+        "id": "b",
+        "text": "Keep a separate state per environment, for example one root configuration directory per environment, to limit the blast radius.",
+        "rationale": "Google recommends environment directories, each with its own backend.tf, and keeping any single state small. A bad change in dev then cannot touch prod state."
+      },
+      {
+        "id": "c",
+        "text": "Hardcode project IDs and service account credentials in the .tf files of each environment so runs need no extra inputs.",
+        "rationale": "Environment-specific values belong in variables, and credentials should come from ADC or workload identity. Embedding them in source commits secrets to version control."
+      },
+      {
+        "id": "d",
+        "text": "Run terraform apply directly in production without reviewing a saved plan, to keep the release process fast.",
+        "rationale": "Google's operations guidance is to always generate a plan first, save it, have an infrastructure owner approve it, and then apply that plan, ideally from an automated pipeline."
+      },
+      {
+        "id": "e",
+        "text": "Keep every environment in one shared state file so that all resources are tracked in a single place.",
+        "rationale": "One state for everything maximizes blast radius and slows every run, because all resources are refreshed each time. Google suggests staying well under about 100 resources per state."
+      }
+    ],
+    "correct": [
+      "a",
+      "b"
+    ],
+    "explanation": "Modules give reuse; separate states give isolation. Google also advises against multiple CLI workspaces for environment separation.",
     "difficulty": 3
   },
   {
     "id": "q-manage-impl-011",
     "type": "single",
     "domainId": "manage-impl",
-    "concepts": ["gemini-cloud-assist", "app-infra-deployment"],
-    "prompt": "An operations engineer is troubleshooting an elevated error rate on a Cloud Run service and wants AI assistance that is aware of their GCP resources, logs, and metrics directly within the Cloud Console. Which Google Cloud capability provides this?",
-    "choices": [
-      {"id": "a", "text": "Gemini Cloud Assist, which offers context-aware help, troubleshooting, and recommendations across Google Cloud."},
-      {"id": "b", "text": "A standalone Gemini chatbot with no access to cloud context."},
-      {"id": "c", "text": "Cloud Logging log-based metrics alone."},
-      {"id": "d", "text": "The gcloud `--help` flag."}
+    "concepts": [
+      "gemini-cloud-assist",
+      "app-infra-deployment"
     ],
-    "correct": ["a"],
-    "explanation": "**Correct: a.** Gemini Cloud Assist embeds generative AI throughout the Google Cloud Console and CLI, with awareness of your project's resources, configurations, logs, and metrics. It helps design, troubleshoot, and optimize, for example by explaining errors and suggesting fixes for a misbehaving Cloud Run service.\n\n**Why the others are wrong:**\n- **b:** A generic chatbot without cloud context cannot inspect your specific resources, logs, or metrics.\n- **c:** Log-based metrics are useful telemetry but do not provide AI-driven, context-aware troubleshooting guidance.\n- **d:** `gcloud --help` shows static command documentation, not contextual diagnostics.",
-    "difficulty": 1
+    "subObjective": "manage-impl.1",
+    "sourceUrl": "https://cloud.google.com/gemini/docs/cloud-assist/overview",
+    "lastVerified": "2026-10-01",
+    "prompt": "An operations engineer is troubleshooting an elevated error rate on a Cloud Run service and wants AI assistance that is aware of their Google Cloud project and the console page they are viewing. Which Google Cloud capability provides this?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Gemini Cloud Assist, which uses your project context to give help, troubleshooting, and recommendations in the console.",
+        "rationale": "Gemini Cloud Assist uses your project and organization IDs and the console page you are viewing as context, and it is aimed at designing, deploying, troubleshooting, and optimizing workloads."
+      },
+      {
+        "id": "b",
+        "text": "A standalone Gemini chat app opened in a separate browser tab, where the engineer pastes copied log lines and configuration settings.",
+        "rationale": "A chat app outside the console has none of the project or page context. The engineer must copy details in by hand, and the answers are generic."
+      },
+      {
+        "id": "c",
+        "text": "Log-based metrics in Cloud Logging that count matching error entries and are charted on a Cloud Monitoring dashboard.",
+        "rationale": "Log-based metrics are useful telemetry, but they only count and chart. They do not interpret an incident or recommend a fix."
+      },
+      {
+        "id": "d",
+        "text": "The gcloud --help output for Cloud Run commands, which lists command syntax and flags from static reference text.",
+        "rationale": "Help text is the same for every user and says nothing about the state of your service, so it cannot diagnose an error rate."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "As of April 10, 2026, Gemini Cloud Assist investigations (root-cause analysis) are limited to Premium Support customers or those granted access; the in-console assistance described here is a separate capability.",
+    "difficulty": 1,
+    "examOnly": true
   },
   {
     "id": "q-manage-impl-012",
     "type": "single",
     "domainId": "manage-impl",
-    "concepts": ["api-client-libraries", "programmatic-access"],
+    "concepts": [
+      "api-client-libraries",
+      "programmatic-access"
+    ],
+    "subObjective": "manage-impl.2",
+    "sourceUrl": "https://cloud.google.com/apis/docs/client-libraries-explained",
+    "lastVerified": "2026-10-01",
     "prompt": "A team is deciding between calling Google Cloud APIs through the official client libraries versus hand-written calls to the raw REST/JSON endpoints. Which statement is the strongest argument for using the client libraries?",
     "choices": [
-      {"id": "a", "text": "Client libraries handle authentication (ADC), retries with backoff, pagination, and idiomatic types, reducing boilerplate and errors."},
-      {"id": "b", "text": "Raw REST calls are the only way to authenticate to Google APIs."},
-      {"id": "c", "text": "Client libraries bypass IAM permission checks for convenience."},
-      {"id": "d", "text": "Client libraries are required because Google does not document the REST APIs."}
+      {
+        "id": "a",
+        "text": "Cloud Client Libraries handle authentication through ADC and low-level server communication, and expose idiomatic types for each language.",
+        "rationale": "Google recommends Cloud Client Libraries where available because they handle authentication and communication details and give idiomatic code, which cuts boilerplate and mistakes."
+      },
+      {
+        "id": "b",
+        "text": "Authentication to Google APIs is only possible through raw REST calls, so the libraries are just thin wrappers around that path.",
+        "rationale": "ADC works with libraries and with your own client code. The libraries add credential discovery on top rather than being limited to one path."
+      },
+      {
+        "id": "c",
+        "text": "Client libraries skip IAM permission checks on calls made by the application, which removes a common cause of denied requests.",
+        "rationale": "Every API call is authorized by IAM no matter which client sends it. Libraries cannot bypass permissions."
+      },
+      {
+        "id": "d",
+        "text": "Client libraries are mandatory because Google does not publish documentation for the REST and JSON endpoints of its APIs.",
+        "rationale": "All Google Cloud APIs expose a documented JSON/REST interface, and many also have gRPC. Writing raw calls is allowed, just more work."
+      }
     ],
-    "correct": ["a"],
-    "explanation": "**Correct: a.** The Cloud Client Libraries integrate Application Default Credentials, implement automatic retries with exponential backoff, handle pagination, and expose idiomatic, strongly typed objects per language. This removes large amounts of error-prone boilerplate compared to crafting REST calls by hand.\n\n**Why the others are wrong:**\n- **b:** Raw REST is one option, not the only authentication path; ADC works with both, and libraries simplify it.\n- **c:** Client libraries never bypass IAM; all API calls are still authorized by IAM regardless of transport.\n- **d:** Google fully documents its REST APIs; the libraries are a convenience layer, not a substitute for documentation.",
+    "correct": [
+      "a"
+    ],
     "difficulty": 2
   },
   {
     "id": "q-manage-impl-013",
     "type": "single",
     "domainId": "manage-impl",
-    "concepts": ["apigee", "api-management", "service-accounts"],
+    "concepts": [
+      "apigee",
+      "api-management",
+      "service-accounts"
+    ],
+    "subObjective": "manage-impl.1",
+    "sourceUrl": "https://cloud.google.com/apigee/docs/api-platform/reference/policies/verify-api-key-policy",
+    "lastVerified": "2026-10-01",
     "prompt": "An Apigee API proxy needs to verify a caller's identity before routing to the backend, and you want to enforce that only registered developer apps with an approved API product can access the API. Which Apigee mechanism is the standard fit?",
     "choices": [
-      {"id": "a", "text": "Use a VerifyAPIKey policy (or OAuthV2 policy) so the proxy validates the credential against the app's API product entitlements."},
-      {"id": "b", "text": "Open the proxy with no security policy and rely on the backend firewall."},
-      {"id": "c", "text": "Hardcode allowed IP addresses in the target endpoint."},
-      {"id": "d", "text": "Store every partner's password in a KVM and compare it in a JavaScript policy."}
+      {
+        "id": "a",
+        "text": "Add a VerifyAPIKey policy, or an OAuthV2 policy, so that the proxy validates credentials against the app's API product entitlements.",
+        "rationale": "VerifyAPIKey confirms the key is valid, not revoked, and approved for the resources in the app's API products. OAuth client credentials follow the same product model."
+      },
+      {
+        "id": "b",
+        "text": "Leave the proxy without a security policy and depend on the firewall in front of the backend to reject callers.",
+        "rationale": "A firewall cannot tell developer apps apart or check product entitlements, and it removes the gateway's purpose as the access control point."
+      },
+      {
+        "id": "c",
+        "text": "Hardcode the allowed partner IP addresses into the target endpoint configuration and reject everything else there.",
+        "rationale": "IP allowlists are brittle, break when partners change networks, and identify neither the developer app nor the API product it may call."
+      },
+      {
+        "id": "d",
+        "text": "Store each partner's password in a key value map and compare it to the request header in a JavaScript policy.",
+        "rationale": "Hand-built credential checking is insecure and reimplements what API keys and OAuth already do, without product entitlements or revocation."
+      }
     ],
-    "correct": ["a"],
-    "explanation": "**Correct: a.** Apigee's developer/app/API-product model issues API keys (or OAuth client credentials) scoped to API products. A VerifyAPIKey or OAuthV2 policy at the start of the proxy flow validates the credential and confirms the calling app is entitled to the requested API product, the standard way to gate access.\n\n**Why the others are wrong:**\n- **b:** Removing the security policy defeats the purpose of an API gateway and pushes security entirely to the backend.\n- **c:** IP allowlists are brittle and do not identify developer apps or enforce product entitlements.\n- **d:** Storing and comparing passwords manually is insecure and reinvents what VerifyAPIKey/OAuthV2 already provide.",
+    "correct": [
+      "a"
+    ],
     "difficulty": 3
   },
   {
     "id": "q-manage-impl-014",
     "type": "single",
     "domainId": "manage-impl",
-    "concepts": ["gcloud-cli", "gsutil-bq"],
+    "concepts": [
+      "gcloud-cli",
+      "gsutil-bq"
+    ],
+    "subObjective": "manage-impl.2",
+    "sourceUrl": "https://cloud.google.com/bigquery/docs/loading-data-cloud-storage-json",
+    "lastVerified": "2026-10-01",
     "prompt": "From a CI pipeline you must load a newline-delimited JSON file from Cloud Storage into a BigQuery table, auto-detecting the schema. Which command is correct?",
     "choices": [
-      {"id": "a", "text": "`bq load --source_format=NEWLINE_DELIMITED_JSON --autodetect dataset.table gs://bucket/data.json`"},
-      {"id": "b", "text": "`gsutil load dataset.table gs://bucket/data.json`"},
-      {"id": "c", "text": "`gcloud bigquery import gs://bucket/data.json`"},
-      {"id": "d", "text": "`bq cp gs://bucket/data.json dataset.table`"}
+      {
+        "id": "a",
+        "text": "bq load --source_format=NEWLINE_DELIMITED_JSON --autodetect dataset.table gs://bucket/data.json",
+        "rationale": "bq load takes the destination table and a Cloud Storage URI, and the source format flag plus schema auto-detection cover the JSON file and its schema."
+      },
+      {
+        "id": "b",
+        "text": "gsutil load --source_format=NEWLINE_DELIMITED_JSON --autodetect dataset.table gs://bucket/data.json",
+        "rationale": "gsutil works on Cloud Storage objects and has no load subcommand for BigQuery, so the flags do not rescue it."
+      },
+      {
+        "id": "c",
+        "text": "gcloud bigquery import --source_format=NEWLINE_DELIMITED_JSON --autodetect gs://bucket/data.json dataset.table",
+        "rationale": "There is no gcloud bigquery import command. BigQuery loads from the CLI use bq load."
+      },
+      {
+        "id": "d",
+        "text": "bq cp --source_format=NEWLINE_DELIMITED_JSON --autodetect gs://bucket/data.json dataset.table",
+        "rationale": "bq cp copies one BigQuery table to another and cannot read a file from Cloud Storage."
+      }
     ],
-    "correct": ["a"],
-    "explanation": "**Correct: a.** `bq load` is the BigQuery CLI command for loading data. Specifying `--source_format=NEWLINE_DELIMITED_JSON` and `--autodetect` loads the JSON file and infers the schema automatically into `dataset.table`.\n\n**Why the others are wrong:**\n- **b:** `gsutil` operates on Cloud Storage objects and has no `load` subcommand for BigQuery.\n- **c:** There is no `gcloud bigquery import` command for ad hoc loads; BigQuery loads are done with `bq load`.\n- **d:** `bq cp` copies an existing BigQuery table to another table; it cannot load a file from GCS.",
-    "difficulty": 2
+    "correct": [
+      "a"
+    ],
+    "difficulty": 2,
+    "examOnly": true
   },
   {
     "id": "q-manage-impl-015",
     "type": "multiple",
     "domainId": "manage-impl",
-    "concepts": ["service-accounts", "programmatic-access", "api-client-libraries"],
-    "prompt": "Your application runs on GKE and must call BigQuery using least privilege, without storing any service account key files. Which TWO actions together implement the recommended approach?",
-    "choices": [
-      {"id": "a", "text": "Use Workload Identity Federation for GKE to bind the pod's Kubernetes service account to a dedicated IAM service account, then rely on ADC."},
-      {"id": "b", "text": "Grant that dedicated IAM service account only the specific BigQuery roles the workload needs (for example roles/bigquery.dataViewer and roles/bigquery.jobUser)."},
-      {"id": "c", "text": "Mount a downloaded service account key as a Kubernetes Secret and reference it via GOOGLE_APPLICATION_CREDENTIALS."},
-      {"id": "d", "text": "Grant the Compute Engine default service account Owner so any pod can act."},
-      {"id": "e", "text": "Embed a long-lived OAuth refresh token in the container image."}
+    "concepts": [
+      "service-accounts",
+      "programmatic-access",
+      "api-client-libraries"
     ],
-    "correct": ["a", "b"],
-    "explanation": "The correct actions are **a** and **b**.\n\n**Correct:**\n- **a:** Workload Identity (Workload Identity Federation for GKE) lets a Kubernetes service account impersonate a dedicated IAM service account. Pods get short-lived credentials automatically through ADC, with no key files to manage. This is Google's recommended GKE-to-Google-API auth pattern.\n- **b:** Least privilege means granting that IAM service account only the narrow BigQuery roles required, not broad roles.\n\n**Why the others are wrong:**\n- **c:** Mounting a downloaded key as a Secret reintroduces a long-lived, leakable credential that must be rotated, defeating the goal.\n- **d:** Granting Owner to the default service account is the opposite of least privilege and dangerously broad.\n- **e:** Baking a refresh token into an image is a long-lived secret embedded in an artifact, a serious security risk.",
-    "difficulty": 3
+    "subObjective": "manage-impl.2",
+    "sourceUrl": "https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity",
+    "lastVerified": "2026-10-01",
+    "prompt": "Your application runs on GKE and must call BigQuery using least privilege, without storing any service account key files. Which actions together implement the recommended approach? Choose two.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Enable Workload Identity Federation for GKE and let the pod call BigQuery through ADC with its federated Kubernetes identity.",
+        "rationale": "Workload Identity Federation for GKE is the recommended way for pods to reach Google Cloud APIs without key files. The current best practice is to grant roles directly to IAM principal identifiers, falling back to service account impersonation only for APIs with federation limitations."
+      },
+      {
+        "id": "b",
+        "text": "Grant only the BigQuery roles the workload needs, such as roles/bigquery.dataViewer and roles/bigquery.jobUser, to that identity.",
+        "rationale": "Federation proves who the pod is but grants nothing on its own. Least privilege means binding narrow predefined roles to the workload's principal, or to the impersonated service account if one is used."
+      },
+      {
+        "id": "c",
+        "text": "Store a downloaded service account key as a Kubernetes Secret and set GOOGLE_APPLICATION_CREDENTIALS to the mounted key file path.",
+        "rationale": "This reintroduces a long-lived key that must be rotated and can leak from the cluster, which is exactly what the requirement forbids."
+      },
+      {
+        "id": "d",
+        "text": "Grant the Compute Engine default service account the Owner role so that any pod on the cluster can act with it.",
+        "rationale": "Owner on a shared default identity is the opposite of least privilege and gives every workload on the nodes that access."
+      },
+      {
+        "id": "e",
+        "text": "Bake a long-lived OAuth refresh token into the container image so the pod can request access tokens when it starts.",
+        "rationale": "A refresh token in an image is a long-lived secret that travels with every copy of the artifact, and it ties the workload to a user identity."
+      }
+    ],
+    "correct": [
+      "a",
+      "b"
+    ],
+    "explanation": "Google's current guidance is to use IAM principal identifiers directly; linking a Kubernetes service account to an IAM service account is the fallback.",
+    "difficulty": 3,
+    "examOnly": true
   },
   {
     "id": "q-manage-impl-016",
     "type": "single",
     "domainId": "manage-impl",
-    "concepts": ["testing-frameworks", "app-infra-deployment"],
+    "concepts": [
+      "testing-frameworks",
+      "app-infra-deployment"
+    ],
+    "subObjective": "manage-impl.1",
+    "sourceUrl": "https://dora.dev/capabilities/test-automation/",
+    "lastVerified": "2026-10-01",
     "prompt": "In a CI/CD pipeline for a microservice, you want the fastest feedback layer to catch logic regressions before any deployment, running in seconds on every commit. Which test type belongs at the base of the testing pyramid for this purpose?",
     "choices": [
-      {"id": "a", "text": "Unit tests that exercise individual functions/classes in isolation with mocks."},
-      {"id": "b", "text": "End-to-end tests that spin up the full environment for every commit."},
-      {"id": "c", "text": "Manual exploratory testing by QA before each merge."},
-      {"id": "d", "text": "Load tests at 10x production traffic on every commit."}
+      {
+        "id": "a",
+        "text": "Unit tests that exercise individual functions and classes in isolation, using mocks for their dependencies.",
+        "rationale": "Unit tests check a single method or class in isolation, run in seconds, and are the first stage of the pipeline: every change builds and runs them before slower checks."
+      },
+      {
+        "id": "b",
+        "text": "End-to-end tests that deploy the full environment and drive realistic user journeys on every commit.",
+        "rationale": "These are valuable but slow and fragile, and they need a deployed system. They belong later in the pipeline and in smaller numbers."
+      },
+      {
+        "id": "c",
+        "text": "Manual exploratory testing by a QA engineer before each merge request is approved and integrated.",
+        "rationale": "Manual testing has a place alongside automation, but it cannot give per-commit feedback in seconds and does not scale with commit volume."
+      },
+      {
+        "id": "d",
+        "text": "Load tests at 10x production traffic that run against a staging cluster as part of every commit build.",
+        "rationale": "Performance tests run against deployed software in later pipeline stages. Running heavy load tests per commit is slow and costly and does not target logic regressions."
+      }
     ],
-    "correct": ["a"],
-    "explanation": "**Correct: a.** Unit tests sit at the base of the testing pyramid: they are numerous, fast (seconds), isolated with mocks, and give the quickest feedback on logic regressions, making them ideal to run on every commit.\n\n**Why the others are wrong:**\n- **b:** End-to-end tests are valuable but slow and brittle; running the full environment on every commit is expensive and belongs higher (and sparser) in the pyramid.\n- **c:** Manual testing does not scale to per-commit feedback and is not automated.\n- **d:** Load tests are essential before launches but are far too heavy and slow to run on every commit as the primary fast feedback layer.",
+    "correct": [
+      "a"
+    ],
     "difficulty": 1
   },
   {
     "id": "q-manage-impl-017",
     "type": "single",
     "domainId": "manage-impl",
-    "concepts": ["cloud-code", "cloud-shell", "app-infra-deployment"],
+    "concepts": [
+      "cloud-code",
+      "cloud-shell",
+      "app-infra-deployment"
+    ],
+    "subObjective": "manage-impl.2",
+    "sourceUrl": "https://cloud.google.com/code/docs",
+    "lastVerified": "2026-10-01",
     "prompt": "A developer wants IDE integration that scaffolds Kubernetes/Cloud Run apps, provides Skaffold-based local-to-cloud iteration, and offers inline GCP API support inside VS Code and IntelliJ. Which tool is this?",
     "choices": [
-      {"id": "a", "text": "Cloud Code, the IDE extension/plugin for VS Code and JetBrains IDEs."},
-      {"id": "b", "text": "The gcloud CLI alone."},
-      {"id": "c", "text": "Cloud Build configuration files."},
-      {"id": "d", "text": "The BigQuery web UI."}
+      {
+        "id": "a",
+        "text": "Cloud Code, the IDE extension for VS Code and IntelliJ, with run-ready samples and Skaffold-based build and run loops.",
+        "rationale": "Cloud Code provides IDE support across the Kubernetes and Cloud Run development cycle in VS Code, IntelliJ, and Cloud Shell, including sample templates, Skaffold configuration editing, and continuous build-and-run."
+      },
+      {
+        "id": "b",
+        "text": "The gcloud CLI on its own, with its command groups for container clusters and Cloud Run deployments.",
+        "rationale": "gcloud is a command-line tool. It deploys and manages resources but offers no editor scaffolding, snippets, or debugging inside the IDE."
+      },
+      {
+        "id": "c",
+        "text": "Cloud Build configuration files that define build steps and are stored beside the application source.",
+        "rationale": "Cloud Build files describe CI steps that run in the cloud. They are not an IDE experience and do not give a local iteration loop."
+      },
+      {
+        "id": "d",
+        "text": "The BigQuery web UI, with saved queries and scheduled queries for the data used by the application.",
+        "rationale": "The BigQuery console is for working with data and has no application scaffolding or debugging features."
+      }
     ],
-    "correct": ["a"],
-    "explanation": "**Correct: a.** Cloud Code is the set of IDE plugins for VS Code and JetBrains/IntelliJ that scaffolds GKE and Cloud Run applications, integrates Skaffold for continuous local-to-cloud development loops, provides YAML authoring help, and surfaces Google Cloud API client library support and Gemini Code Assist inline. It is also bundled in the Cloud Shell Editor.\n\n**Why the others are wrong:**\n- **b:** The gcloud CLI is a command-line tool, not an IDE integration with scaffolding and inline editing.\n- **c:** Cloud Build config files define CI steps; they are not an IDE developer-experience tool.\n- **d:** The BigQuery web UI is for querying data, unrelated to application IDE scaffolding.",
+    "correct": [
+      "a"
+    ],
     "difficulty": 1
   },
   {
     "id": "q-manage-impl-018",
     "type": "multiple",
     "domainId": "manage-impl",
-    "concepts": ["migration-tooling", "app-infra-deployment"],
-    "prompt": "Cymbal Retail is planning multiple migrations to Google Cloud. Match the workload to the right tool. Which TWO pairings are correct?",
-    "caseStudyId": "cymbal-retail",
-    "choices": [
-      {"id": "a", "text": "Migrating a self-managed PostgreSQL database to Cloud SQL with minimal downtime: Database Migration Service (DMS)."},
-      {"id": "b", "text": "Moving 200 TB of archival files from on-prem NAS into Cloud Storage: Storage Transfer Service (with Transfer Appliance for offline)."},
-      {"id": "c", "text": "Migrating a running on-prem PostgreSQL database: Storage Transfer Service."},
-      {"id": "d", "text": "Bulk-loading archival files into Cloud Storage: Database Migration Service."},
-      {"id": "e", "text": "Migrating VMware VMs to Compute Engine: BigQuery Data Transfer Service."}
+    "concepts": [
+      "migration-tooling",
+      "app-infra-deployment"
     ],
-    "correct": ["a", "b"],
-    "explanation": "The correct pairings are **a** and **b**.\n\n**Correct:**\n- **a:** Database Migration Service handles homogeneous and heterogeneous database migrations (for example PostgreSQL to Cloud SQL/AlloyDB) with continuous replication for minimal-downtime cutover.\n- **b:** Storage Transfer Service moves large object/file datasets into Cloud Storage; for very large offline transfers, Transfer Appliance ships physical hardware.\n\n**Why the others are wrong:**\n- **c:** Storage Transfer Service moves files/objects, not live relational databases; databases use DMS.\n- **d:** DMS is for databases, not bulk file/object loads.\n- **e:** VMware VM migration uses Migrate to Virtual Machines, not BigQuery Data Transfer Service (which schedules BigQuery loads).",
+    "caseStudyId": "cymbal-retail",
+    "subObjective": "manage-impl.1",
+    "sourceUrl": "https://cloud.google.com/storage-transfer/docs/overview",
+    "lastVerified": "2026-10-01",
+    "prompt": "Cymbal Retail is planning multiple migrations to Google Cloud. Match the workload to the right tool. Which pairings are correct? Choose two.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Migrating a self-managed PostgreSQL database to Cloud SQL with minimal downtime: Database Migration Service with replication.",
+        "rationale": "Database Migration Service migrates databases into Cloud SQL and AlloyDB for PostgreSQL, handling the initial snapshot and ongoing replication so cut-over downtime stays small."
+      },
+      {
+        "id": "b",
+        "text": "Moving 200 TB of archival files from an on-premises NAS to Cloud Storage: Storage Transfer Service, or Transfer Appliance offline.",
+        "rationale": "Storage Transfer Service moves on-premises file data into Cloud Storage at scale and is optimized for transfers above 1 TiB. Transfer Appliance covers the offline, ship-the-hardware case."
+      },
+      {
+        "id": "c",
+        "text": "Migrating a running on-premises PostgreSQL database while keeping a continuous replication stream going: Storage Transfer Service.",
+        "rationale": "Storage Transfer Service moves objects and files, not live relational databases with ongoing change capture."
+      },
+      {
+        "id": "d",
+        "text": "Bulk-loading terabytes of archival files from on-premises storage into Cloud Storage: Database Migration Service.",
+        "rationale": "Database Migration Service targets database engines, not file or object data."
+      },
+      {
+        "id": "e",
+        "text": "Migrating on-premises VMware virtual machines to Compute Engine and testing clones: BigQuery Data Transfer Service.",
+        "rationale": "VMware VM migration uses Migrate to Virtual Machines. BigQuery Data Transfer Service only schedules loads into BigQuery."
+      }
+    ],
+    "correct": [
+      "a",
+      "b"
+    ],
     "difficulty": 3
   },
   {
     "id": "q-manage-impl-019",
     "type": "single",
     "domainId": "manage-impl",
-    "concepts": ["iac-terraform", "service-accounts", "programmatic-access"],
+    "concepts": [
+      "iac-terraform",
+      "service-accounts",
+      "programmatic-access"
+    ],
+    "subObjective": "manage-impl.2",
+    "sourceUrl": "https://cloud.google.com/docs/terraform/authentication",
+    "lastVerified": "2026-10-01",
     "prompt": "You run Terraform from a Cloud Build pipeline to provision GCP resources. What is the recommended way for Terraform to authenticate to Google Cloud in this pipeline?",
     "choices": [
-      {"id": "a", "text": "Let the Google Terraform provider use Application Default Credentials from the Cloud Build service account (or an impersonated, least-privilege service account)."},
-      {"id": "b", "text": "Generate a service account key JSON and commit it to the repo so Cloud Build can read it."},
-      {"id": "c", "text": "Hardcode an access token in the Terraform provider block."},
-      {"id": "d", "text": "Use a personal user OAuth token from one of the engineers."}
+      {
+        "id": "a",
+        "text": "Let the Google provider use ADC from the Cloud Build service account, or a least-privilege service account it impersonates.",
+        "rationale": "ADC is the recommended way to authenticate Terraform, and a CI pipeline should inherit the credentials of the service running it. Cloud Build injects them without any key download, and impersonation can narrow the permissions."
+      },
+      {
+        "id": "b",
+        "text": "Create a service account key JSON file and commit it to the repository so that Cloud Build can read it during each run.",
+        "rationale": "A key committed to source control is a long-lived credential exposed to everyone with repository access. Keys are a last resort."
+      },
+      {
+        "id": "c",
+        "text": "Hardcode a short-lived access token in the provider block and refresh it by editing the file before each build.",
+        "rationale": "Tokens expire quickly, so the pipeline would break between edits, and a token in configuration files ends up in version control."
+      },
+      {
+        "id": "d",
+        "text": "Use one engineer's personal OAuth credentials so that the pipeline inherits that person's broad permissions.",
+        "rationale": "Automation tied to a person breaks when they leave or rotate credentials, and it runs with far more privilege than the pipeline needs."
+      }
     ],
-    "correct": ["a"],
-    "explanation": "**Correct: a.** In Cloud Build, Terraform's Google provider should authenticate via Application Default Credentials, which automatically use the build's service account identity. For least privilege you typically have the build impersonate a dedicated, narrowly scoped Terraform service account. No keys are stored.\n\n**Why the others are wrong:**\n- **b:** Committing a key JSON exposes a long-lived credential in source control, a serious security risk.\n- **c:** Hardcoding an access token is insecure and tokens expire within about an hour.\n- **d:** Tying automation to a personal user token breaks when that person leaves and grants their broad personal permissions to the pipeline.",
+    "correct": [
+      "a"
+    ],
     "difficulty": 3
   },
   {
     "id": "q-manage-impl-020",
     "type": "single",
     "domainId": "manage-impl",
-    "concepts": ["apigee", "api-management", "app-infra-deployment"],
+    "concepts": [
+      "apigee",
+      "api-management",
+      "app-infra-deployment"
+    ],
+    "subObjective": "manage-impl.1",
+    "sourceUrl": "https://cloud.google.com/apigee/docs/api-platform/publish/portal/build-integrated-portal",
+    "lastVerified": "2026-10-01",
     "prompt": "A platform team wants to publish APIs to internal and partner developers with a self-service portal, generated documentation, key issuance, and analytics on traffic and latency. Which Apigee capability set covers these needs?",
     "choices": [
-      {"id": "a", "text": "Apigee Developer Portal plus Apigee Analytics (API products, app registration, and dashboards)."},
-      {"id": "b", "text": "Cloud CDN with signed URLs."},
-      {"id": "c", "text": "Cloud Monitoring uptime checks only."},
-      {"id": "d", "text": "A static website hosted on Cloud Storage listing the endpoints."}
+      {
+        "id": "a",
+        "text": "Apigee developer portal and Apigee Analytics, covering API products, app registration, published docs, and dashboards.",
+        "rationale": "The portal publishes API products with reference documentation rendered from your OpenAPI specs, and developers register apps there. Apigee Analytics reports traffic, response time, and top developers."
+      },
+      {
+        "id": "b",
+        "text": "Cloud CDN with signed URLs for each partner, which caches responses close to users and restricts who can fetch cached objects.",
+        "rationale": "Cloud CDN speeds delivery of cacheable content. It is not a developer portal and does not issue API keys or report API-level analytics."
+      },
+      {
+        "id": "c",
+        "text": "Cloud Monitoring uptime checks on each endpoint, alerting the team whenever an API stops answering the probes.",
+        "rationale": "Uptime checks show availability only. They provide no portal, no key issuance, and no per-developer traffic analytics."
+      },
+      {
+        "id": "d",
+        "text": "A static website on Cloud Storage that lists each endpoint with a manually maintained page of usage examples.",
+        "rationale": "A hand-written page offers no app registration, key issuance, or usage analytics and goes stale as the APIs change."
+      }
     ],
-    "correct": ["a"],
-    "explanation": "**Correct: a.** Apigee includes a Developer Portal where developers discover API products, read generated documentation, register apps, and obtain keys, plus Apigee Analytics dashboards that report traffic, latency, error rates, and top developers/apps. Together they deliver self-service publishing and observability.\n\n**Why the others are wrong:**\n- **b:** Cloud CDN accelerates cacheable content delivery; it is not an API developer portal or analytics platform.\n- **c:** Uptime checks verify availability but provide neither a portal, key issuance, nor API-level analytics.\n- **d:** A static endpoint listing offers no key issuance, app registration, or analytics, defeating the self-service goal.",
+    "correct": [
+      "a"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-manage-impl-021",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": [
+      "app-infra-deployment",
+      "ci-cd",
+      "change-management"
+    ],
+    "caseStudyId": "ehr-healthcare",
+    "subObjective": "manage-impl.1",
+    "sourceUrl": "https://cloud.google.com/deploy/docs/overview",
+    "lastVerified": "2026-10-01",
+    "prompt": "EHR Healthcare is adopting continuous deployment for its containerized patient-portal services. Compliance requires a named approver before any release reaches production, but dev and staging should receive each release automatically once the previous stage succeeds. How should the Cloud Deploy delivery pipeline be configured?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Define dev, staging, and prod targets in one pipeline, automate promotion through staging, and set requireApproval on the prod target.",
+        "rationale": "A single pipeline keeps one promotion sequence. Automation can promote a release after a successful rollout, and requireApproval on the prod target makes Cloud Deploy wait for an approver and emits a Pub/Sub message that a ticketing system can consume."
+      },
+      {
+        "id": "b",
+        "text": "Define a separate delivery pipeline for each environment, so that every release needs a fresh manual release creation in the next stage.",
+        "rationale": "Splitting the pipelines gives up the single promotion sequence and release lineage, and adds manual steps in dev and staging. Approval is a per-target setting inside one pipeline, so it needs no such split."
+      },
+      {
+        "id": "c",
+        "text": "Keep promotion fully automatic through every target and email the compliance team after each production rollout has finished.",
+        "rationale": "A notification after the fact is not an approval gate. The release would already be serving production traffic before anyone signed off."
+      },
+      {
+        "id": "d",
+        "text": "Use one shared target for all environments and hold the production rollout in a canary phase until the approver is ready.",
+        "rationale": "A target can be used only once in a given delivery pipeline, so environments need separate targets. Canary phases control traffic exposure and are not an approval mechanism."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "id": "q-manage-impl-022",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": [
+      "app-infra-deployment",
+      "serverless"
+    ],
+    "subObjective": "manage-impl.1",
+    "sourceUrl": "https://cloud.google.com/run/docs/rollouts-rollbacks-traffic-migration",
+    "lastVerified": "2026-10-01",
+    "prompt": "A team runs an internal API on Cloud Run and wants a blue/green style release: the new revision must be reachable for smoke tests before it serves any production traffic, and cutover must be reversible in seconds. What should they do?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Deploy with --no-traffic and a revision tag, smoke test the tag URL, then route traffic to the new revision while the old one stays available.",
+        "rationale": "A tagged revision deployed with no traffic gets its own URL for testing. Traffic is then shifted by percentage, and rolling back is just routing traffic to the previous revision."
+      },
+      {
+        "id": "b",
+        "text": "Deploy normally so the new revision takes all traffic at once, then watch error rates and redeploy the old container image if something fails.",
+        "rationale": "By default a new revision takes over traffic immediately, so there is no pre-cutover testing, and recovery needs a redeploy instead of a traffic change."
+      },
+      {
+        "id": "c",
+        "text": "Create a second Cloud Run service in the same region and ask every client to switch to its URL once the smoke tests have passed.",
+        "rationale": "Moving clients between URLs makes cutover and rollback slow and dependent on every caller. Revision traffic splitting inside one service does it instantly."
+      },
+      {
+        "id": "d",
+        "text": "Set the service's minimum instances to zero before deploying, so the new revision only starts once the first production request arrives.",
+        "rationale": "Minimum instances affect cold starts and cost, not traffic routing. The new revision would still take production traffic with no test window."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 1,
+    "examOnly": true
+  },
+  {
+    "id": "q-manage-impl-023",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": [
+      "managed-instance-groups",
+      "instance-templates",
+      "app-infra-deployment"
+    ],
+    "subObjective": "manage-impl.1",
+    "sourceUrl": "https://cloud.google.com/compute/docs/instance-groups/rolling-out-updates-to-managed-instance-groups",
+    "lastVerified": "2026-10-01",
+    "prompt": "A regional managed instance group runs 40 VMs serving checkout traffic. You must try a new instance template on a small fraction of the fleet, watch error rates, and be able to reverse course by touching only those VMs. Which approach fits?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Run a canary update that applies the new instance template to only a subset of the group's VMs, such as 10 percent of the fleet.",
+        "rationale": "A canary update is a rolling update where fewer instances than the whole group are updated. The group holds two template versions, and if the update goes badly only that subset has to be rolled back."
+      },
+      {
+        "id": "b",
+        "text": "Start a proactive rolling update to the new template with maxUnavailable set to the full group size so that it finishes quickly.",
+        "rationale": "A proactive update rolls the new configuration across all or most VMs, and a high maxUnavailable only makes it faster and more disruptive. There is no small test population to observe."
+      },
+      {
+        "id": "c",
+        "text": "Switch the group to opportunistic updates and wait for autoscaling events to replace VMs, accepting whichever VMs happen to be updated first.",
+        "rationale": "Opportunistic updates apply only when you request them or when VMs are recreated or added, so the size of the test population is not controlled and cannot be reasoned about."
+      },
+      {
+        "id": "d",
+        "text": "Change the template on running VMs through SSH with a startup script and revert the same way on each machine if something fails.",
+        "rationale": "Hand-editing running VMs bypasses the managed group, leaves configuration drift, and has no built-in way to track or reverse which VMs changed."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "id": "q-manage-impl-024",
+    "type": "multiple",
+    "domainId": "manage-impl",
+    "concepts": [
+      "apigee",
+      "api-management"
+    ],
+    "subObjective": "manage-impl.1",
+    "sourceUrl": "https://cloud.google.com/apigee/docs/api-platform/reference/policies/spike-arrest-policy",
+    "lastVerified": "2026-10-01",
+    "prompt": "A partner API on Apigee has two separate problems. A buggy client occasionally floods the proxy with thousands of calls within seconds and degrades the backend, and the business contract caps each partner at 500,000 calls per month. Which two policy choices address these problems? Choose two.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Add a SpikeArrest policy so that sudden bursts of requests are throttled before they reach the backend service.",
+        "rationale": "SpikeArrest throttles the rate of requests processed by the proxy and sent to the backend, which is its purpose: protecting against surges, buggy clients, and performance lags."
+      },
+      {
+        "id": "b",
+        "text": "Add a Quota policy keyed on the calling app, with a monthly interval, to enforce the contractual cap for each partner.",
+        "rationale": "Quota counts requests per app over a time unit such as a month and rejects calls past the limit. It is meant for business contracts and SLAs with developers and partners."
+      },
+      {
+        "id": "c",
+        "text": "Use only a Quota policy with a one-second interval so that a single policy absorbs bursts and also enforces the monthly cap.",
+        "rationale": "Apigee says not to use Quota to shield against traffic spikes. One counter cannot serve both a per-second limit and a monthly contractual allotment."
+      },
+      {
+        "id": "d",
+        "text": "Use a SpikeArrest policy keyed per developer app to count calls against the monthly contract and reject calls after the cap.",
+        "rationale": "SpikeArrest smooths the rate of traffic and is not a consumption counter over weeks or months, so it cannot enforce a contractual allotment."
+      },
+      {
+        "id": "e",
+        "text": "Add a JSONThreatProtection policy so that oversized or deeply nested payloads are rejected before the backend processes them.",
+        "rationale": "Payload protection guards against malicious or malformed bodies. It neither limits call rate nor counts calls toward a contract, so it addresses neither problem."
+      }
+    ],
+    "correct": [
+      "a",
+      "b"
+    ],
+    "explanation": "Use SpikeArrest for operational protection and Quota for commercial consumption limits; they solve different problems.",
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "id": "q-manage-impl-025",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": [
+      "app-infra-deployment",
+      "testing-validation"
+    ],
+    "subObjective": "manage-impl.1",
+    "sourceUrl": "https://cloud.google.com/deploy/docs/verify-deployment",
+    "lastVerified": "2026-10-01",
+    "exhibit": {
+      "label": "Cloud Deploy rollout summary (abridged)",
+      "format": "log",
+      "content": "rollout:   rel-0930-a-to-prod-0001\ntarget:    prod\nstrategy:  canary (phases: canary-25, stable)\nstate:     FAILED\nphases:\n  canary-25   deploy job: SUCCEEDED   verify job: FAILED (container exit code 1)\n  stable      NOT_STARTED"
+    },
+    "prompt": "A canary rollout of a new release to the prod target ends in the state shown. A teammate suggests advancing straight to the stable phase because the canary pods look healthy in the console. What is the best response?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Treat the failed verification as a failed rollout: read the verify container's output, then fix and retry it, or roll the target back to the last good release.",
+        "rationale": "Verification succeeds only when every verify container exits with code 0, and a failed verification fails the rollout. The sound options are to retry after a fix or to roll back, which creates a new rollout from the last successful release."
+      },
+      {
+        "id": "b",
+        "text": "Advance the rollout to the stable phase by hand, because a non-zero exit code from a verification container is just a warning.",
+        "rationale": "A non-zero exit code is a failure by definition and it fails the rollout. Ignoring a failed verification is possible but should be a deliberate decision after investigation, not because pods look healthy."
+      },
+      {
+        "id": "c",
+        "text": "Delete the delivery pipeline and recreate it, since a failed verification means the pipeline definition itself has become corrupted.",
+        "rationale": "The pipeline definition is not at fault. Verification results come from the test container's exit code, and they say something about the release or the tests."
+      },
+      {
+        "id": "d",
+        "text": "Re-run the canary phase with a higher traffic percentage so that the verification has more traffic to pass against, then promote.",
+        "rationale": "Verification runs your test container after deployment and judges it by exit code, not by traffic volume, so a larger percentage only widens exposure to a release that failed its checks."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "id": "q-manage-impl-026",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": [
+      "api-management",
+      "secure-apis"
+    ],
+    "subObjective": "manage-impl.1",
+    "sourceUrl": "https://cloud.google.com/api-gateway/docs/about-api-gateway",
+    "lastVerified": "2026-10-01",
+    "prompt": "A startup exposes three Cloud Run services to its own mobile app. They want API key validation and basic per-key quotas defined from OpenAPI specs, with no gateway proxy to deploy or patch, and they have no need for a developer portal or monetization. Which option fits best?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "API Gateway, which hosts the gateway for you and takes an OpenAPI-defined API config with API key authentication and quotas.",
+        "rationale": "API Gateway is a managed, Google-hosted gateway defined from an OpenAPI spec. It supports API keys, and quotas work by identifying the calling project through the key, which covers the stated needs."
+      },
+      {
+        "id": "b",
+        "text": "Apigee, with a proxy for each service, a developer portal, and monetization so the team can grow into partner programs later.",
+        "rationale": "Apigee is built for full-lifecycle management with portals, analytics, and monetization. For three internal services and basic keys it adds cost and complexity the team said it does not need."
+      },
+      {
+        "id": "c",
+        "text": "Cloud Endpoints, deploying and operating an ESPv2 proxy container in front of each Cloud Run service to enforce the API keys.",
+        "rationale": "Endpoints enforces keys through an ESP or ESPv2 proxy that you deploy and operate. That conflicts with the requirement of having no gateway proxy to deploy or patch."
+      },
+      {
+        "id": "d",
+        "text": "Code the key check and quota counters into each service, backed by a Memorystore instance that all three services share.",
+        "rationale": "This rebuilds gateway features in application code, couples the services through a shared cache, and adds components to run, secure, and keep consistent."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "id": "q-manage-impl-027",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": [
+      "cloud-emulators",
+      "testing-frameworks"
+    ],
+    "subObjective": "manage-impl.1",
+    "sourceUrl": "https://cloud.google.com/firestore/docs/emulator",
+    "lastVerified": "2026-10-01",
+    "prompt": "A CI job must test code that writes to Firestore. The team wants no cloud charges and no risk of touching production data. What should the job do?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Start the Firestore emulator from the gcloud CLI in the job and set FIRESTORE_EMULATOR_HOST so the client library connects to it.",
+        "rationale": "The gcloud CLI provides a local, in-memory Firestore emulator that works with all Firestore client libraries, and server libraries find it through FIRESTORE_EMULATOR_HOST. No cloud project is involved."
+      },
+      {
+        "id": "b",
+        "text": "Point the tests at a dedicated collection in the production database and delete the test documents after every run completes.",
+        "rationale": "Tests still run against production, so a bug or a failed cleanup can leave test data behind or touch real documents, and reads and writes are billed."
+      },
+      {
+        "id": "c",
+        "text": "Replace the client library with hand-written mocks in every test, since Google does not provide a local Firestore for testing.",
+        "rationale": "The premise is wrong because an emulator is provided. Mocks also stop exercising real Firestore query and write behavior, which integration tests are meant to cover."
+      },
+      {
+        "id": "d",
+        "text": "Run the tests against the production project using a read-only service account so that no data can be modified or deleted.",
+        "rationale": "A read-only identity cannot perform the writes under test, so the tests would fail, and production reads still carry cost and load."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 1,
+    "examOnly": true
+  },
+  {
+    "id": "q-manage-impl-028",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": [
+      "ci-cd",
+      "app-infra-deployment"
+    ],
+    "caseStudyId": "altostrat-media",
+    "subObjective": "manage-impl.1",
+    "sourceUrl": "https://cloud.google.com/kubernetes-engine/enterprise/config-sync/docs/overview",
+    "lastVerified": "2026-10-01",
+    "prompt": "Altostrat Media wants a centralized way to manage Kubernetes configuration for its containerized platform across many clusters. Operators currently run kubectl apply by hand and clusters drift apart, and the platform team wants application teams to propose changes through reviews. Which approach best meets these needs?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Adopt GitOps with Config Sync, storing manifests in Git and letting Config Sync reconcile every registered cluster to that source.",
+        "rationale": "Config Sync continuously reconciles clusters to a Git, OCI, or Helm source of truth, preventing drift, while pull requests give peer review, audit trails, and easy rollbacks."
+      },
+      {
+        "id": "b",
+        "text": "Add Cloud Build triggers that run kubectl apply against each cluster on every merge, with the kubeconfig files kept as build secrets.",
+        "rationale": "A push on merge corrects clusters only at that moment, so manual changes persist until the next merge. It also needs long-lived cluster credentials held by the build."
+      },
+      {
+        "id": "c",
+        "text": "Create one Cloud Deploy pipeline per cluster and have operators promote releases by hand whenever the manifests change.",
+        "rationale": "Cloud Deploy delivers releases through ordered targets and does not continuously reconcile cluster state, and hand-promoting to every cluster repeats the manual work."
+      },
+      {
+        "id": "d",
+        "text": "Run a nightly script that exports each cluster's live configuration and compares it against a designated reference cluster.",
+        "rationale": "Comparison only detects drift after it has happened, and a reference cluster is not a reviewed source of truth. Nothing corrects the differences automatically."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "id": "q-manage-impl-029",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": [
+      "app-infra-deployment",
+      "ci-cd"
+    ],
+    "subObjective": "manage-impl.1",
+    "sourceUrl": "https://docs.cloud.google.com/deploy/docs/deployment-strategies",
+    "lastVerified": "2026-10-01",
+    "prompt": "A team configures a Cloud Deploy pipeline whose prod target uses a canary strategy with 25 and 50 percent phases. The very first release of a brand-new service to prod completes with no canary phases. Why?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "With no earlier version running on the target to shift traffic away from, the first rollout can skip the canary phases.",
+        "rationale": "A canary progressively replaces an existing deployment. When the application is deployed for the first time, there is nothing to compare against, so the rollout may skip the canary phase or phases."
+      },
+      {
+        "id": "b",
+        "text": "Canary phases only run when a release is promoted by an automation rule, and the first promotion was triggered manually by an engineer.",
+        "rationale": "Canary behavior comes from the target's deployment strategy, not from how the promotion was triggered. Automation can advance phases but does not decide whether they exist."
+      },
+      {
+        "id": "c",
+        "text": "Canary percentages must be multiples of ten, so 25 percent was rejected and the strategy fell back to a standard deployment.",
+        "rationale": "Percentages can follow any progression as long as they are whole numbers, so 25 and 50 are valid and the configuration would not silently fall back."
+      },
+      {
+        "id": "d",
+        "text": "Canary strategies are available only for Cloud Run targets, and the prod target in this pipeline is a GKE cluster.",
+        "rationale": "Canary and standard strategies work across the runtimes that Cloud Deploy supports, which include both GKE and Cloud Run."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "id": "q-manage-impl-030",
+    "type": "multiple",
+    "domainId": "manage-impl",
+    "concepts": [
+      "load-testing",
+      "testing-frameworks"
+    ],
+    "subObjective": "manage-impl.1",
+    "sourceUrl": "https://cloud.google.com/run/docs/about-load-testing",
+    "lastVerified": "2026-10-01",
+    "prompt": "You will load test a new Cloud Run service before launch. Which practices follow Google Cloud's load-testing guidance for Cloud Run? Choose two.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Measure container concurrency and confirm that the service starts reliably in a small test before running the full load test.",
+        "rationale": "The guidance is to find concurrency and startup problems in a development or small test environment first, so the large test reveals real scaling limits rather than basic defects."
+      },
+      {
+        "id": "b",
+        "text": "Generate load with a harness such as JMeter running on a VM in the project's VPC, where rate and concurrency are controllable.",
+        "rationale": "A test harness lets you create a controlled spike and increase load deliberately. Knowing the rate and concurrency is what makes the results interpretable."
+      },
+      {
+        "id": "c",
+        "text": "Use Pub/Sub to fan out the test requests, since a topic can generate large, bursty traffic with very little setup effort.",
+        "rationale": "Pub/Sub is called out as a poor load generator because you cannot control the request rate or the number of clients, so the results cannot be interpreted."
+      },
+      {
+        "id": "d",
+        "text": "Judge results only from server-side Cloud Run metrics, because latency measured by the load tool adds noise and is not needed.",
+        "rationale": "Client-side latency matters because users experience it, and the guidance suggests querying the harness logs, and possibly a browser-based test, to see performance as the client sees it."
+      },
+      {
+        "id": "e",
+        "text": "Begin with one run at the full expected peak so that any bottleneck shows up immediately and in a single pass.",
+        "rationale": "The guidance favors small increments, so that you can tell at which load level and for which reason the service stops scaling. A single full-peak run hides that."
+      }
+    ],
+    "correct": [
+      "a",
+      "b"
+    ],
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "id": "q-manage-impl-031",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": [
+      "apigee",
+      "api-management"
+    ],
+    "caseStudyId": "cymbal-retail",
+    "subObjective": "manage-impl.1",
+    "sourceUrl": "https://cloud.google.com/apigee/docs/api-platform/publish/what-api-product",
+    "lastVerified": "2026-10-01",
+    "prompt": "Cymbal Retail offers its supplier-pricing API in two partner tiers: Standard partners may make 5,000 calls per day and Premium partners 100,000 calls per day. The team wants one proxy implementation and no code change when a partner moves between tiers. Which design fits Apigee best?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Clone the proxy for each tier, hardcode a different Quota limit in each clone, and publish both proxies to partner developers.",
+        "rationale": "Cloned proxies must be kept in sync forever, and moving a partner between tiers means moving it to a different proxy and endpoint, which is exactly the rework the team wants to avoid."
+      },
+      {
+        "id": "b",
+        "text": "Apply one Quota policy at the Standard limit and ask Premium partners to raise exceptions through support tickets whenever they are blocked.",
+        "rationale": "A single limit cannot express two entitlements, and handling exceptions by ticket is a manual process that blocks paying partners."
+      },
+      {
+        "id": "c",
+        "text": "Define one API product per tier with its own quota settings and attach the shared proxy to both, so each app's limit follows its product.",
+        "rationale": "API keys are provisioned for API products, and products can define request limits for service tiers. Quota limits can vary by product or app, so one proxy serves both tiers and a tier change is a product change."
+      },
+      {
+        "id": "d",
+        "text": "Use SpikeArrest with a different rate for each tier so that the per-second cap also holds each partner to a daily total of calls.",
+        "rationale": "SpikeArrest smooths short-term traffic and does not keep a running total over a day. Consumption allotments belong to the Quota policy."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-manage-impl-032",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": [
+      "iac-terraform",
+      "serverless"
+    ],
+    "subObjective": "manage-impl.2",
+    "sourceUrl": "https://cloud.google.com/run/docs/rollouts-rollbacks-traffic-migration",
+    "lastVerified": "2026-10-01",
+    "exhibit": {
+      "label": "First terraform apply for a new Cloud Run service",
+      "format": "config",
+      "language": "hcl",
+      "content": "resource \"google_cloud_run_v2_service\" \"api\" {\n  name     = \"orders-api\"\n  location = \"us-central1\"\n\n  template {\n    containers {\n      image = \"us-docker.pkg.dev/acme-prod/app/orders:2.4.0\"\n    }\n  }\n\n  traffic {\n    type     = \"TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION\"\n    revision = \"orders-api-green\"\n    percent  = 100\n  }\n}\n\n# Error: Error creating Service: googleapi: Error 400:\n#   Revision 'orders-api-green' not found"
+    },
+    "prompt": "A first terraform apply for a brand-new Cloud Run service fails as shown. What is the right judgment about the cause and the fix?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "The principal running Terraform lacks run.services.create, so grant it the Cloud Run Admin role and repeat the same apply once more afterwards.",
+        "rationale": "A missing permission produces a 403 permission error, not a 400 that names an absent revision, so more IAM roles would not change the outcome."
+      },
+      {
+        "id": "b",
+        "text": "Terraform cannot manage Cloud Run traffic splitting at all, so the traffic has to be set with gcloud after every single apply.",
+        "rationale": "Terraform can manage traffic for the Cloud Run resource. The failure comes from how this particular block references a revision."
+      },
+      {
+        "id": "c",
+        "text": "The traffic block pins a named revision that cannot exist on the first apply, so route to the latest revision first and pin one later.",
+        "rationale": "A pinned revision must already exist when the block is applied, otherwise the API rejects the request. On the first apply, send traffic to the latest revision and pin a named revision in a later change."
+      },
+      {
+        "id": "d",
+        "text": "The percent must stay below 100 for a first deployment, so lower it to 50 and let Cloud Run assign the remainder of traffic.",
+        "rationale": "A single target at 100 percent is valid, and traffic percentages across targets must total 100. The error is about a missing revision, not the percentage."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "id": "q-manage-impl-033",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": [
+      "app-infra-deployment",
+      "ci-cd"
+    ],
+    "subObjective": "manage-impl.1",
+    "sourceUrl": "https://docs.cloud.google.com/deploy/docs/deployment-strategies",
+    "lastVerified": "2026-10-01",
+    "prompt": "Which release strategy sends a small share of production traffic to the new version first and widens that share only if the new version behaves well?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Blue/green deployment, which keeps two full environments and switches all traffic from the old one to the new one at once.",
+        "rationale": "Blue/green is an all-at-once switch between two environments. It allows pre-cutover testing and fast rollback but does not expose a small share of traffic first."
+      },
+      {
+        "id": "b",
+        "text": "Canary deployment, which exposes a small portion of users or infrastructure to the new version before a full rollout.",
+        "rationale": "A canary deploys first to a portion of the infrastructure and widens exposure in stages, which reduces the number of users affected by a bug."
+      },
+      {
+        "id": "c",
+        "text": "Recreate deployment, which stops every instance of the old version and then starts instances of the new version.",
+        "rationale": "Recreate causes downtime between versions and gives no gradual exposure at all."
+      },
+      {
+        "id": "d",
+        "text": "Rolling deployment, which replaces instances in batches until all are updated, with no hold at a chosen traffic share.",
+        "rationale": "A rolling update proceeds through the whole fleet without pausing to evaluate a defined share of users, so it is not the same as a canary hold."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "difficulty": 1,
+    "examOnly": true
+  },
+  {
+    "id": "q-manage-impl-034",
+    "type": "multiple",
+    "domainId": "manage-impl",
+    "concepts": [
+      "app-infra-deployment",
+      "ci-cd"
+    ],
+    "caseStudyId": "knightmotives-automotive",
+    "subObjective": "manage-impl.1",
+    "sourceUrl": "https://cloud.google.com/deploy/docs/verify-deployment",
+    "lastVerified": "2026-10-01",
+    "prompt": "KnightMotives' online build-and-order system is unreliable and dealers are frustrated, so every release must be low risk. The team deploys with Cloud Deploy. Which two pipeline settings most reduce the risk of a bad release reaching all dealers? Choose two.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Define one target that serves dev, staging, and prod so that a single rollout updates every environment together.",
+        "rationale": "A target can be used only once in a delivery pipeline, and updating every environment at once removes the staged progression that catches problems early."
+      },
+      {
+        "id": "b",
+        "text": "Turn on automatic promotion from dev straight to prod to shorten the time that fixes spend waiting in staging.",
+        "rationale": "Skipping staging removes a validation stage, so defects would reach production faster instead of being caught earlier."
+      },
+      {
+        "id": "c",
+        "text": "Use a canary deployment strategy on the prod target so that the first phase serves only a portion of the dealer traffic.",
+        "rationale": "A canary deploys to a portion of the infrastructure first, which limits how many users a defect can affect before the rollout widens."
+      },
+      {
+        "id": "d",
+        "text": "Deploy to all production targets in parallel so that every region receives the release at the same moment.",
+        "rationale": "Parallel deployment is supported but maximizes blast radius when the release is faulty, which is the opposite of what the team wants."
+      },
+      {
+        "id": "e",
+        "text": "Configure deployment verification with test containers so that a non-zero exit code fails the rollout instead of promoting it.",
+        "rationale": "Cloud Deploy runs your verification containers after deployment and fails the rollout if any exits non-zero, stopping a bad release from progressing automatically."
+      }
+    ],
+    "correct": [
+      "c",
+      "e"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-manage-impl-035",
+    "type": "multiple",
+    "domainId": "manage-impl",
+    "concepts": [
+      "api-management",
+      "secure-apis"
+    ],
+    "subObjective": "manage-impl.1",
+    "sourceUrl": "https://cloud.google.com/endpoints/docs/openapi/quotas-configure",
+    "lastVerified": "2026-10-01",
+    "prompt": "A team plans to enforce usage limits for its API with Cloud Endpoints and an OpenAPI document. Which two statements about Endpoints quotas are correct? Choose two.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Limits can be set per day for each individual app that a developer registers, similar to developer apps in Apigee.",
+        "rationale": "Endpoints supports only per-minute limits that apply per consumer project, so it has no per-day limits and no concept of individually registered developer apps."
+      },
+      {
+        "id": "b",
+        "text": "Quotas are declared through OpenAPI extensions that define a named metric, a limit on that metric, and a cost for each method.",
+        "rationale": "The x-google-management metrics and quota limits sections together with x-google-quota metricCosts are how quotas are configured, and metricCosts maps methods to metrics."
+      },
+      {
+        "id": "c",
+        "text": "Quotas are enforced by a Cloud Armor policy that is attached to the backend service in front of the API.",
+        "rationale": "Endpoints enforces quotas through its own service configuration and proxy. Cloud Armor is a separate edge security product and plays no part in the OpenAPI quota model."
+      },
+      {
+        "id": "d",
+        "text": "Limits are enforced per minute and per consumer project, which is identified by the API key sent with each request.",
+        "rationale": "Currently only per-minute, per-project limits are supported, and the API key lets Endpoints identify the Google Cloud project that the calling application belongs to."
+      },
+      {
+        "id": "e",
+        "text": "Every method consumes exactly one unit of a shared metric, so method costs cannot be tuned independently of each other.",
+        "rationale": "Each method's cost is set independently, so different methods can consume the same named metric at different rates."
+      }
+    ],
+    "correct": [
+      "b",
+      "d"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-manage-impl-036",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": [
+      "gcloud-cli",
+      "sa-impersonation",
+      "service-accounts"
+    ],
+    "subObjective": "manage-impl.2",
+    "sourceUrl": "https://cloud.google.com/docs/authentication/use-service-account-impersonation",
+    "lastVerified": "2026-10-01",
+    "prompt": "An engineer wants to run a single gcloud command as a deployer service account to confirm what that account can do, without downloading a key. Which approach works?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Run gcloud auth activate-service-account with a downloaded key file, then run the command under that identity.",
+        "rationale": "This works only with a downloaded key, which is exactly what the engineer wants to avoid, and it leaves a long-lived credential on the machine."
+      },
+      {
+        "id": "b",
+        "text": "Run gcloud auth application-default login so that the next gcloud command automatically uses the service account.",
+        "rationale": "That command writes Application Default Credentials for client libraries and tools. It does not change which identity the gcloud commands use."
+      },
+      {
+        "id": "c",
+        "text": "Run gcloud config set account with the service account's email, which switches identity without any credential check.",
+        "rationale": "The account property selects among credentials that are already available to gcloud. It cannot create credentials for a service account out of nothing."
+      },
+      {
+        "id": "d",
+        "text": "Add the --impersonate-service-account flag with the account's email to that command, holding the Token Creator role on it.",
+        "rationale": "The flag makes gcloud request short-lived credentials for that service account for this command. The caller needs roles/iam.serviceAccountTokenCreator on the target account."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "difficulty": 1,
+    "examOnly": true
+  },
+  {
+    "id": "q-manage-impl-037",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": [
+      "api-client-libraries",
+      "programmatic-access"
+    ],
+    "subObjective": "manage-impl.2",
+    "sourceUrl": "https://docs.cloud.google.com/docs/authentication/application-default-credentials",
+    "lastVerified": "2026-10-01",
+    "prompt": "A developer is running a Python app on a laptop that uses a Google Cloud client library. The team forbids downloading service account keys. What is the simplest compliant way to give the library credentials during local development?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Run gcloud auth login, because the credentials from it are automatically picked up by every Google Cloud client library on the machine.",
+        "rationale": "That command authorizes the gcloud CLI itself. Client libraries use ADC, which looks for an environment variable, a file from application-default login, or an attached service account."
+      },
+      {
+        "id": "b",
+        "text": "Run gcloud auth application-default login, which stores credentials in a well-known local file that ADC finds automatically.",
+        "rationale": "ADC checks the local file created by this command, so the code runs unchanged between a laptop and production, where an attached service account is used instead."
+      },
+      {
+        "id": "c",
+        "text": "Create a service account key and keep it in the repository's .env file so that the whole team shares one identity.",
+        "rationale": "This is a long-lived key in version control and a shared identity, which breaks both the no-keys policy and individual accountability."
+      },
+      {
+        "id": "d",
+        "text": "Attach a service account to the laptop and let the metadata server provide credentials the way it does on Compute Engine.",
+        "rationale": "Attached service accounts and the metadata server exist only on Google Cloud resources, not on a developer's laptop."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "difficulty": 1,
+    "examOnly": true
+  },
+  {
+    "id": "q-manage-impl-038",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": [
+      "iac-terraform",
+      "change-management"
+    ],
+    "subObjective": "manage-impl.2",
+    "sourceUrl": "https://cloud.google.com/docs/terraform/best-practices/operations",
+    "lastVerified": "2026-10-01",
+    "exhibit": {
+      "label": "terraform plan output on the pull request",
+      "format": "log",
+      "content": "  # google_sql_database_instance.orders must be replaced\n-/+ resource \"google_sql_database_instance\" \"orders\" {\n      ~ name = \"orders-db\" -> \"orders-db-v2\" # forces replacement\n        # (14 unchanged attributes hidden)\n    }\n\nPlan: 1 to add, 0 to change, 1 to destroy."
+    },
+    "prompt": "A pull request renames the Terraform-managed Cloud SQL instance that holds the production orders database, to follow a new naming convention. The plan output is shown. What should the reviewer do?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Approve it, because the plan adds one resource and destroys one, so the net resource count stays the same and no data is lost.",
+        "rationale": "Counting resources hides the effect: the destroyed resource is the production database, and its data does not move to the new instance by itself."
+      },
+      {
+        "id": "b",
+        "text": "Approve it and apply with -target so that only the new instance is created, leaving the old instance untouched in Terraform state afterwards.",
+        "rationale": "A targeted apply is a workaround that leaves state and configuration out of step, and it still does not move data to the new instance."
+      },
+      {
+        "id": "c",
+        "text": "Reject the change as written: the rename forces replacement and destroys the database, so revert it or plan a deliberate migration.",
+        "rationale": "The forces replacement marker means the old instance is destroyed and a new empty one created. Reviewing the plan exists to catch this before apply, and a rename should be reverted or handled as a planned data migration."
+      },
+      {
+        "id": "d",
+        "text": "Approve it after running terraform apply -refresh-only, which will update the name in place on the existing instance.",
+        "rationale": "A refresh-only run synchronizes state with real infrastructure and does not rename anything. The configuration change would still force replacement afterward."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "id": "q-manage-impl-039",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": [
+      "iac-terraform",
+      "declarative-provisioning"
+    ],
+    "caseStudyId": "ehr-healthcare",
+    "subObjective": "manage-impl.2",
+    "sourceUrl": "https://cloud.google.com/docs/terraform/best-practices/root-modules",
+    "lastVerified": "2026-10-01",
+    "prompt": "EHR Healthcare must provision new, consistent environments on demand and has suffered outages from misconfiguration across similar-but-separate environments. The team uses Terraform. Which structure follows Google's recommendations?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "A single root configuration with a CLI workspace per environment, using conditionals on the workspace name for any differences between them.",
+        "rationale": "Google recommends using only the default workspace. Workspaces make each environment hard to inspect, and one shared configuration becomes a single point of failure for environment separation."
+      },
+      {
+        "id": "b",
+        "text": "A modules directory with the service configuration, plus one directory per environment with its own backend.tf that instantiates it.",
+        "rationale": "Each environment directory instantiates the shared service module with its own state backend, so code is reused and a change in one environment cannot corrupt another's state."
+      },
+      {
+        "id": "c",
+        "text": "A full copy of the configuration in each environment's directory, edited by hand wherever one environment has to differ.",
+        "rationale": "Copies drift apart over time, which recreates the similar-but-separate environments that caused the outages."
+      },
+      {
+        "id": "d",
+        "text": "A single root configuration and state for every environment, with count expressions that switch resources on or off per environment.",
+        "rationale": "One state for everything has the largest blast radius, slows every run, and a mistake in a count expression can touch production resources."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-manage-impl-040",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": [
+      "infrastructure-as-code",
+      "iac-terraform"
+    ],
+    "subObjective": "manage-impl.2",
+    "sourceUrl": "https://cloud.google.com/infrastructure-manager/docs/overview",
+    "lastVerified": "2026-10-01",
+    "prompt": "A platform team already writes Terraform for Google Cloud. They want Google to run terraform apply for them from a Git repository, keep revision history and state for each deployment, and let engineers preview changes first, without running CI runners or a Kubernetes cluster. What should they use?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Config Connector, installed on a GKE cluster, which converts the Terraform files into Kubernetes custom resources for reconciliation.",
+        "rationale": "Config Connector needs a Kubernetes cluster and is driven by its own custom resources rather than Terraform configurations."
+      },
+      {
+        "id": "b",
+        "text": "Cloud Deploy, defining a delivery pipeline whose targets apply the Terraform configuration to each environment in the right order.",
+        "rationale": "Cloud Deploy delivers applications to runtime targets. Infrastructure Manager's own documentation points to Cloud Deploy for application deployment, not for running Terraform."
+      },
+      {
+        "id": "c",
+        "text": "Infrastructure Manager, creating deployments from the repository, reviewing previews first, and tracking each change as a revision.",
+        "rationale": "Infrastructure Manager runs Terraform for you in an ephemeral Cloud Build environment, keeps revisions with logs and state, and supports preview deployments before applying."
+      },
+      {
+        "id": "d",
+        "text": "A Jenkins server on a Compute Engine VM that checks out the repository and runs terraform commands on a fixed schedule.",
+        "rationale": "This is exactly the self-managed runner the team wants to avoid, and it leaves state handling, patching, and credentials to the team."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-manage-impl-041",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": [
+      "declarative-provisioning",
+      "infrastructure-as-code"
+    ],
+    "subObjective": "manage-impl.2",
+    "sourceUrl": "https://cloud.google.com/config-connector/docs/overview",
+    "lastVerified": "2026-10-01",
+    "prompt": "A platform team already manages all cluster configuration as Kubernetes manifests reconciled by Config Sync. They want application teams to declare a Pub/Sub topic and a Cloud SQL instance in those same manifests, and have the cloud resources created and kept in line automatically. Which tool fits?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Cloud Deploy, which renders the manifests and will provision the cloud resources before it deploys the workloads to clusters.",
+        "rationale": "Cloud Deploy delivers application releases to targets. It does not turn manifests into Google Cloud resources such as topics or databases."
+      },
+      {
+        "id": "b",
+        "text": "Cloud Shell, which can run gcloud commands from the cluster whenever a developer commits a new manifest to the Git repository.",
+        "rationale": "Cloud Shell is an interactive environment for people, not a controller that reacts to commits or keeps resources in line."
+      },
+      {
+        "id": "c",
+        "text": "Cloud Build, with a trigger that runs a kubectl command to call the Pub/Sub and Cloud SQL APIs for every manifest in the Git repository.",
+        "rationale": "kubectl talks to the Kubernetes API, not to Pub/Sub or Cloud SQL, and a one-shot trigger would not keep the resources reconciled afterwards."
+      },
+      {
+        "id": "d",
+        "text": "Config Connector, which adds custom resources and controllers so Kubernetes manifests can create and reconcile Google Cloud resources.",
+        "rationale": "Config Connector is a Kubernetes add-on whose CRDs and controllers manage Google Cloud resources, letting teams use the same tooling, RBAC, and desired-state model for cloud resources as for workloads."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-manage-impl-042",
+    "type": "multiple",
+    "domainId": "manage-impl",
+    "concepts": [
+      "gcloud-cli",
+      "programmatic-access"
+    ],
+    "subObjective": "manage-impl.2",
+    "sourceUrl": "https://cloud.google.com/sdk/docs/scripting-gcloud",
+    "lastVerified": "2026-10-01",
+    "prompt": "A CI job runs gcloud commands that sometimes stop and wait for a confirmation prompt, and a later step parses the output with text tools. Which two changes make the script reliable? Choose two.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Run several gcloud commands in parallel from the same shell so that the whole job finishes sooner than it does today.",
+        "rationale": "The scripting guidance notes that parallel execution of multiple gcloud commands is not supported, so this trades reliability for speed."
+      },
+      {
+        "id": "b",
+        "text": "Pipe the human-readable table output into awk and rely on the column positions staying the same across releases.",
+        "rationale": "Default table output is meant for people, and columns can change. Scripts need predictable output from format and filter options."
+      },
+      {
+        "id": "c",
+        "text": "Request structured output with --format, such as json or value(), and select resources with --filter instead of parsing tables.",
+        "rationale": "The --filter and --format flags exist so that a script gets predictable output, regardless of how the default view looks."
+      },
+      {
+        "id": "d",
+        "text": "Pre-answer every prompt by piping yes into each command, since gcloud has no setting that disables interactive confirmation.",
+        "rationale": "The premise is false: gcloud can disable prompts, and piping answers blindly can confirm destructive actions that the default would decline."
+      },
+      {
+        "id": "e",
+        "text": "Add the --quiet flag so that prompts are disabled and each prompt falls back to its default answer automatically.",
+        "rationale": "Disabling prompts is the documented way to stop a script from blocking, and the defaults are then used for any confirmation or input."
+      }
+    ],
+    "correct": [
+      "c",
+      "e"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-manage-impl-043",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": [
+      "workload-identity-federation",
+      "api-client-libraries",
+      "programmatic-access"
+    ],
+    "subObjective": "manage-impl.2",
+    "sourceUrl": "https://docs.cloud.google.com/docs/authentication/application-default-credentials",
+    "lastVerified": "2026-10-01",
+    "exhibit": {
+      "label": "CI job log (third-party CI service, outside Google Cloud)",
+      "format": "log",
+      "content": "Run python load_orders.py\nTraceback (most recent call last):\n  File \"load_orders.py\", line 7, in <module>\n    client = storage.Client(project=\"acme-analytics\")\n  ...\ngoogle.auth.exceptions.DefaultCredentialsError: Your default credentials were not found.\nTo set up Application Default Credentials, see\nhttps://cloud.google.com/docs/authentication/external/set-up-adc\nError: Process completed with exit code 1."
+    },
+    "prompt": "A pipeline step on a third-party CI service, which runs outside Google Cloud, fails with the error shown. The security team forbids service account keys. What should you do?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Attach a user-managed service account to the CI runner so that its metadata server supplies credentials to the library at runtime.",
+        "rationale": "Attaching a service account works only for resources on Google Cloud that have a metadata server. A runner on another provider has none."
+      },
+      {
+        "id": "b",
+        "text": "Add a step that runs gcloud auth login with an engineer's credentials and rely on the client library to reuse that login.",
+        "rationale": "gcloud auth login authorizes the CLI, not ADC, and it would tie automation to a person's broad permissions."
+      },
+      {
+        "id": "c",
+        "text": "Store a service account key as a CI secret and write it to disk, with GOOGLE_APPLICATION_CREDENTIALS pointing at the key file.",
+        "rationale": "This would clear the error but breaks the stated policy. Service account keys are a security risk, and a more secure alternative exists."
+      },
+      {
+        "id": "d",
+        "text": "Set up Workload Identity Federation for the CI provider and point GOOGLE_APPLICATION_CREDENTIALS at its credential config file.",
+        "rationale": "ADC reads GOOGLE_APPLICATION_CREDENTIALS, which can point to a Workload Identity Federation configuration. Federation is the preferred way to obtain Google credentials from an external identity provider without keys."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "difficulty": 3
+  },
+  {
+    "id": "q-manage-impl-044",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": [
+      "cloud-shell",
+      "programmatic-access"
+    ],
+    "subObjective": "manage-impl.2",
+    "sourceUrl": "https://cloud.google.com/shell/docs/how-cloud-shell-works",
+    "lastVerified": "2026-10-01",
+    "prompt": "A developer installs a CLI tool into /usr/local/bin in Cloud Shell during one session. In the next session the tool is gone, although files in the home directory are still there. How should they make the tool available in every session?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Request a larger persistent disk for the Cloud Shell VM so that system directories also survive across separate sessions.",
+        "rationale": "Only the 5 GB home directory is persistent, and its size cannot be expanded in Cloud Shell. System directories belong to the ephemeral VM."
+      },
+      {
+        "id": "b",
+        "text": "Switch Cloud Shell to another region, because tools placed in system directories persist only within the region of one session.",
+        "rationale": "Region has no bearing here. The VM is ephemeral wherever it runs, and anything outside the home directory is discarded with it."
+      },
+      {
+        "id": "c",
+        "text": "Keep the session open continuously, since the VM is discarded only when the browser tab itself is closed by the user.",
+        "rationale": "A session ends after an hour of inactivity, and its VM is discarded then, so keeping a tab open is not a dependable way to keep tools."
+      },
+      {
+        "id": "d",
+        "text": "Install the tool under $HOME, or install it from the customization script that Cloud Shell runs each time the VM boots.",
+        "rationale": "Files in the home directory persist, including installed software and scripts. Cloud Shell also runs $HOME/.customize_environment at boot to install packages into every session."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-manage-impl-045",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": [
+      "gsutil-bq",
+      "gcloud-cli"
+    ],
+    "subObjective": "manage-impl.2",
+    "sourceUrl": "https://cloud.google.com/storage/docs/gsutil",
+    "lastVerified": "2026-10-01",
+    "prompt": "A team is writing new automation that manages Cloud Storage buckets and objects, including soft delete and managed folders. Which command-line tool should they build on?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "gsutil, because it is the actively developed tool and receives support for each new Cloud Storage feature first.",
+        "rationale": "gsutil is a legacy, minimally maintained tool, and it does not support newer features such as soft delete and managed folders."
+      },
+      {
+        "id": "b",
+        "text": "bq, because its commands can read and write Cloud Storage objects the same way they work with BigQuery tables.",
+        "rationale": "bq is the BigQuery command-line tool. It can load from Cloud Storage but does not manage buckets or objects."
+      },
+      {
+        "id": "c",
+        "text": "gcloud storage, because gsutil is legacy and minimally maintained and does not support soft delete or managed folders.",
+        "rationale": "gcloud storage is the recommended replacement for gsutil, covers newer features, and needs less manual tuning to reach fast transfer rates."
+      },
+      {
+        "id": "d",
+        "text": "gcloud compute, because its commands manage the disks and images that sit underneath objects held in Cloud Storage.",
+        "rationale": "gcloud compute manages Compute Engine resources. Cloud Storage objects are not stored on disks that users manage."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "difficulty": 1
+  },
+  {
+    "id": "q-manage-impl-046",
+    "type": "multiple",
+    "domainId": "manage-impl",
+    "concepts": [
+      "api-client-libraries",
+      "programmatic-access"
+    ],
+    "subObjective": "manage-impl.2",
+    "sourceUrl": "https://cloud.google.com/storage/docs/retry-strategy",
+    "lastVerified": "2026-10-01",
+    "prompt": "A service uses the Cloud Storage client library with its own retry wrapper. Which two practices fit Google Cloud's guidance on retrying requests? Choose two.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Retry every failed request in the same way, because a retried request always has the same effect as the original one.",
+        "rationale": "Only idempotent requests can be repeated without changing the end state. Retrying others can cause race conditions and conflicts."
+      },
+      {
+        "id": "b",
+        "text": "Retry permanent errors such as permission-denied responses, because they usually clear up after a few more attempts.",
+        "rationale": "Responses for permanent errors mean a change is needed, such as granting access. Retrying them only repeats the failure."
+      },
+      {
+        "id": "c",
+        "text": "Treat get and list requests as safe to retry after transient errors, because repeating them never changes the stored data.",
+        "rationale": "Get and list requests are always idempotent, so repeating them leaves the target resource in the same state."
+      },
+      {
+        "id": "d",
+        "text": "Retry a request that is not idempotent without any precondition, because a duplicate write is always harmless to the data.",
+        "rationale": "Duplicates of non-idempotent requests can leave different end states and conflicts, so they need a condition or careful handling."
+      },
+      {
+        "id": "e",
+        "text": "Retry a conditionally idempotent object write only after a generation-match precondition has been applied to the call.",
+        "rationale": "Some operations are idempotent only with specific arguments. Cloud Storage accepts preconditions and ETags as those conditions, and such operations should be retried only when the condition holds."
+      }
+    ],
+    "correct": [
+      "c",
+      "e"
+    ],
+    "difficulty": 3
+  },
+  {
+    "id": "q-manage-impl-047",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": [
+      "iac-terraform",
+      "ci-cd"
+    ],
+    "caseStudyId": "cymbal-retail",
+    "subObjective": "manage-impl.2",
+    "sourceUrl": "https://cloud.google.com/docs/terraform/resource-management/managing-infrastructure-as-code",
+    "lastVerified": "2026-10-01",
+    "prompt": "Cymbal Retail wants fewer errors from manual infrastructure changes. The team decides to keep Terraform in Git and run it through Cloud Build. Which workflow follows Google's recommended GitOps pattern?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Engineers run terraform apply from laptops after reviewing their own plan, then commit the Terraform files afterwards to record the change.",
+        "rationale": "Git then lags behind reality, there is no shared review, and the execution context varies by laptop. The Git repository should be the source of truth that drives changes."
+      },
+      {
+        "id": "b",
+        "text": "A feature-branch push runs terraform plan in Cloud Build for review, and a merge into an environment branch triggers the apply.",
+        "rationale": "In the tutorial pattern, pushes to the environment branches trigger apply, while pushes to any other branch run only terraform plan. Reviewers see the plan before the change is merged."
+      },
+      {
+        "id": "c",
+        "text": "Every push to any branch runs terraform apply in Cloud Build, so that each change is validated against the real project at once.",
+        "rationale": "Applying from every branch changes real infrastructure before review or merge, and parallel feature branches would race on the same state."
+      },
+      {
+        "id": "d",
+        "text": "Cloud Build runs terraform plan only for production, while dev and staging are changed by hand in the console to move quickly.",
+        "rationale": "Manual console changes in lower environments are the unreviewed, untracked changes that cause the errors the team wants to remove."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-manage-impl-048",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": [
+      "sa-impersonation",
+      "iac-terraform",
+      "service-accounts"
+    ],
+    "subObjective": "manage-impl.2",
+    "sourceUrl": "https://cloud.google.com/docs/terraform/authentication",
+    "lastVerified": "2026-10-01",
+    "prompt": "Engineers authenticate locally with their own accounts, but Terraform should run as an environment-specific deployer service account without key files. An admin granted engineers roles/iam.serviceAccountUser on that service account and set impersonate_service_account in the Google provider. The first plan fails with a permission error on generating a token. What is the correct fix?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Grant roles/owner on the project to each engineer so that every token request is allowed, whichever service account is used.",
+        "rationale": "Broad project roles violate least privilege, and the missing permission is on the target service account, so a project role is the wrong place to fix it."
+      },
+      {
+        "id": "b",
+        "text": "Give the deployer service account the Service Account User role on itself so that it can mint tokens for the engineers.",
+        "rationale": "Impersonation is the engineers' principal requesting a token for the service account. Granting the service account a role on itself does not give that permission to the engineers."
+      },
+      {
+        "id": "c",
+        "text": "Remove impersonate_service_account and rely only on each engineer's own credentials when Terraform runs on their own machines.",
+        "rationale": "This would make the error disappear but abandons the requirement that Terraform run as the environment-specific service account."
+      },
+      {
+        "id": "d",
+        "text": "Grant the engineers roles/iam.serviceAccountTokenCreator on the deployer account, which allows them to impersonate it.",
+        "rationale": "Impersonating a service account requires the Service Account Token Creator role, which includes iam.serviceAccounts.getAccessToken. Service Account User is for attaching a service account to resources."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "difficulty": 3
+  },
+  {
+    "id": "q-manage-impl-049",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": [
+      "gcloud-cli",
+      "programmatic-access"
+    ],
+    "subObjective": "manage-impl.2",
+    "sourceUrl": "https://cloud.google.com/sdk/docs/configurations",
+    "lastVerified": "2026-10-01",
+    "prompt": "Engineers keep running gcloud commands against the wrong project because they switch between dev and prod by editing properties each time. What is the built-in way to avoid this?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Re-run gcloud init before every session, because it resets all properties so that the project is chosen again from scratch.",
+        "rationale": "Running init each time is slow and relies on the engineer picking correctly every time, which does not remove the error."
+      },
+      {
+        "id": "b",
+        "text": "Keep a different Cloud Shell home directory for each project, since gcloud stores its properties in a per-project folder.",
+        "rationale": "gcloud properties are not stored per project folder. Named configurations are the mechanism for separate property sets."
+      },
+      {
+        "id": "c",
+        "text": "Display the project ID in the shell prompt and rely on the engineer to read it carefully before each command is run.",
+        "rationale": "A prompt helps awareness but remains a manual check that people skip under pressure. It does not make the target explicit."
+      },
+      {
+        "id": "d",
+        "text": "Create a named configuration per environment and switch with gcloud config configurations activate or --configuration.",
+        "rationale": "A configuration is a named set of properties such as project and account. Only one is active at a time, and the --configuration flag runs a command under a specific one."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "difficulty": 1
+  },
+  {
+    "id": "q-manage-impl-050",
+    "type": "multiple",
+    "domainId": "manage-impl",
+    "concepts": [
+      "cloud-emulators",
+      "testing-frameworks"
+    ],
+    "subObjective": "manage-impl.1",
+    "sourceUrl": "https://cloud.google.com/spanner/docs/emulator",
+    "lastVerified": "2026-10-01",
+    "prompt": "A team adopts the local Spanner emulator for integration tests in CI. Which two statements about its limits should shape the test design? Choose two.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Schema and data persist between restarts, so tests can rely on tables that an earlier CI run created in the emulator.",
+        "rationale": "The emulator stores data only in memory and loses all state, including data, schema, and configs, whenever it restarts."
+      },
+      {
+        "id": "b",
+        "text": "Authentication and IAM are not supported, so permission and role problems can be found only against a real instance.",
+        "rationale": "The emulator does not support authentication, IAM, permissions, or roles, so access-control behavior must be tested against real Spanner."
+      },
+      {
+        "id": "c",
+        "text": "PLAN and PROFILE query modes return full execution plans, so query performance can be tuned reliably against the emulator.",
+        "rationale": "In those modes the emulator returns an empty plan, and its performance and scalability do not compare to production, so tuning there is unreliable."
+      },
+      {
+        "id": "d",
+        "text": "All state, including data and schema, is lost on restart, so each test run must create the schema it needs.",
+        "rationale": "Because everything is in memory, a restart wipes data and schema, so tests should create their own schema when they start."
+      },
+      {
+        "id": "e",
+        "text": "Audit logging and monitoring tools work as they do in production, so alerting policies can be validated using the emulator.",
+        "rationale": "The emulator does not support the audit logging and monitoring tools, so observability must be validated against a real instance."
+      }
+    ],
+    "correct": [
+      "b",
+      "d"
+    ],
     "difficulty": 2
   }
 ]

@@ -7,29 +7,36 @@
       "hybrid-networking",
       "vpc-design"
     ],
-    "prompt": "A company runs an on-premises data center and wants a dedicated, private, SLA-backed connection to Google Cloud with 50 Gbps of guaranteed bandwidth that does **not** traverse the public internet. They want the highest level of resilience that Google publishes a 99.99% availability SLA for. Which approach should the architect recommend?",
+    "subObjective": "provision.1",
+    "sourceUrl": "https://docs.cloud.google.com/network-connectivity/docs/interconnect/tutorials/dedicated-creating-9999-availability",
+    "lastVerified": "2026-10-01",
+    "prompt": "A company runs an on-premises data center and wants a dedicated, private connection to Google Cloud with tens of Gbps of bandwidth that does **not** traverse the public internet. They want the topology for which Google publishes a 99.99% availability SLA. Which approach should the architect recommend?",
     "choices": [
       {
         "id": "a",
-        "text": "A single Dedicated Interconnect connection terminated at one edge location"
+        "text": "A single Dedicated Interconnect connection terminated at one edge location, with one VLAN attachment and a single Cloud Router",
+        "rationale": "A single connection is a single point of failure at the facility and edge availability domain level, so it cannot qualify for the 99.99% topology."
       },
       {
         "id": "b",
-        "text": "Dedicated Interconnect with at least two connections across two metropolitan availability zones at two separate edge locations"
+        "text": "Dedicated Interconnect with four connections, two in each of two metros and spread across both edge availability domains, plus two Cloud Routers",
+        "rationale": "Google's 99.99% Dedicated Interconnect topology needs at least four connections (two in each of two metros, in different edge availability domains), at least four VLAN attachments across two regions, and a Cloud Router in each region."
       },
       {
         "id": "c",
-        "text": "HA VPN with two tunnels over the public internet"
+        "text": "HA VPN with one tunnel on each gateway interface, using BGP sessions on a Cloud Router across the public internet",
+        "rationale": "HA VPN can carry a 99.99% SLA, but its encrypted tunnels still cross the public internet, which the stated requirement rules out."
       },
       {
         "id": "d",
-        "text": "Partner Interconnect with a single VLAN attachment"
+        "text": "Partner Interconnect with a single VLAN attachment provisioned through one service provider in a single metro area",
+        "rationale": "Partner Interconnect is private, but a single VLAN attachment has no redundancy; its 99.99% topology needs four attachments across two metros with two Cloud Routers."
       }
     ],
     "correct": [
       "b"
     ],
-    "explanation": "**Correct: b.** Google's 99.99% SLA for Dedicated Interconnect requires a topology with at least two connections in two different *metropolitan availability zones* (different edge availability domains), each terminating in a separate Cloud Router/region path. This removes single points of failure at the physical and metro level.\n\n- **a** is wrong: a single connection has no SLA (or only a 99.9% configuration at best with proper redundancy in one metro) and is a single point of failure.\n- **c** is wrong: HA VPN traverses the public internet and tops out at much lower throughput per tunnel; it is not a private dedicated 50 Gbps path. HA VPN's SLA is 99.99% but the question explicitly requires a private, non-internet, high-bandwidth dedicated link.\n- **d** is wrong: Partner Interconnect is for sub-10 Gbps needs or when you cannot reach a colocation facility; a single VLAN attachment carries no 99.99% SLA. **Best practice:** size Dedicated Interconnect at 10/100 Gbps circuits, use redundant connections in two metros, and back it up with HA VPN for defense in depth.",
+    "explanation": "Redundancy for the SLA is counted in connections, metros, edge availability domains and Cloud Routers, not in circuit size.",
     "difficulty": 2
   },
   {
@@ -40,34 +47,42 @@
       "vpc-design",
       "private-service-connect"
     ],
-    "prompt": "An architect is designing connectivity so that workloads in a consumer VPC can reach a SaaS provider's service and a published Google API **privately**, without exposing the service via external IPs or using VPC Peering's transitive limitations. Which statements about Private Service Connect (PSC) are correct? (Select two.)",
+    "subObjective": "provision.1",
+    "sourceUrl": "https://docs.cloud.google.com/vpc/docs/private-service-connect",
+    "lastVerified": "2026-10-01",
+    "prompt": "An architect is designing connectivity so that workloads in a consumer VPC can reach a SaaS provider's service and a published Google API **privately**, without external IPs and without VPC Peering's transitivity limits. Which statements about Private Service Connect (PSC) are correct? Choose two.",
     "choices": [
       {
-        "id": "a",
-        "text": "PSC lets a consumer create an internal endpoint (a forwarding rule with an internal IP) that maps to a producer's published service"
-      },
-      {
-        "id": "b",
-        "text": "PSC requires the consumer and producer VPCs to be connected by VPC Network Peering"
-      },
-      {
         "id": "c",
-        "text": "PSC can be used to privately access supported Google APIs through a `googleapis.com` endpoint without going over the internet"
+        "text": "PSC endpoints or backends can target supported Google APIs, so API traffic uses internal IP addresses instead of public ones",
+        "rationale": "Endpoints and backends can target Google APIs, giving granular IP control as an alternative to Private Google Access."
       },
       {
         "id": "d",
-        "text": "PSC automatically makes routes transitive across all peered VPCs in the organization"
+        "text": "PSC makes routes transitive across every VPC peered with the consumer network, so shared services are reachable organization-wide",
+        "rationale": "PSC exchanges no routes and is not a transitivity mechanism; access is granted per service through explicit accept lists."
       },
       {
         "id": "e",
-        "text": "PSC endpoints must use external (public) IP addresses to reach the producer service"
+        "text": "PSC endpoints must be assigned external IP addresses so the producer's load balancer can accept the consumer's connections",
+        "rationale": "Endpoints use internal IP addresses from the consumer VPC; the point of PSC is to avoid public addressing."
+      },
+      {
+        "id": "a",
+        "text": "A consumer creates an internal endpoint (a forwarding rule with an internal IP address) that maps to the producer's published service",
+        "rationale": "PSC endpoints are deployed as forwarding rules that give the consumer an internal IP address mapped to the producer's service attachment."
+      },
+      {
+        "id": "b",
+        "text": "PSC requires the consumer and producer VPC networks to be connected by VPC Network Peering before an endpoint can reach the service",
+        "rationale": "PSC is service-oriented: traffic targets a single service IP and each side is isolated by NAT, so no peering of the two networks is needed."
       }
     ],
     "correct": [
       "a",
       "c"
     ],
-    "explanation": "**Correct: a and c.** Private Service Connect creates a private, one-directional consumer-to-producer connection. The consumer deploys a PSC *endpoint* (a forwarding rule bound to an internal IP in the consumer VPC) that maps to the producer's *service attachment* (a). PSC also supports private access to Google and third-party APIs via a private endpoint resolving `*.googleapis.com`, keeping traffic off the internet (c).\n\n- **b** is wrong: PSC explicitly avoids the need for VPC Peering, eliminating IP-range overlap and transitivity problems.\n- **d** is wrong: PSC is point-to-point, not a transitivity mechanism.\n- **e** is wrong: PSC endpoints use *internal* IPs. **Best practice:** prefer PSC over peering for service exposure when you want IP independence, no route leakage, and tenant isolation.",
+    "explanation": "Prefer PSC over peering when you want one-directional, per-service access with no route leakage between networks.",
     "difficulty": 2
   },
   {
@@ -77,29 +92,36 @@
     "concepts": [
       "load-balancing"
     ],
+    "subObjective": "provision.1",
+    "sourceUrl": "https://docs.cloud.google.com/load-balancing/docs/choosing-load-balancer",
+    "lastVerified": "2026-10-01",
     "prompt": "A global web application serves HTTPS traffic to users worldwide. The architect needs a single anycast IP, TLS termination at the edge, URL-based routing to different backend services, and integration with Cloud CDN. Which load balancer is the correct choice?",
     "choices": [
       {
         "id": "a",
-        "text": "Regional external passthrough Network Load Balancer"
+        "text": "Regional external passthrough Network Load Balancer, with one regional IP address for the backends in a single region",
+        "rationale": "It is Layer 4 and regional: no TLS termination, no URL maps, no Cloud CDN, and no single global anycast address."
       },
       {
         "id": "b",
-        "text": "Global external Application Load Balancer"
+        "text": "Global external Application Load Balancer, with one anycast IP address, edge TLS termination and URL maps",
+        "rationale": "It is the Layer 7 global option: one anycast IP, TLS termination at distributed edge locations, URL-based routing, Cloud CDN support and multi-region backends."
       },
       {
         "id": "c",
-        "text": "Internal passthrough Network Load Balancer"
+        "text": "Internal passthrough Network Load Balancer, with a private regional IP address reachable only from inside the VPC network",
+        "rationale": "It is internal and regional, so it cannot serve internet users and offers no TLS termination, URL routing or CDN."
       },
       {
         "id": "d",
-        "text": "Regional internal Application Load Balancer"
+        "text": "Regional internal Application Load Balancer, with a private IP address, TLS termination and URL maps in one region",
+        "rationale": "It has Layer 7 features but is internal and regional, with no Cloud CDN support and no global anycast address for worldwide users."
       }
     ],
     "correct": [
       "b"
     ],
-    "explanation": "**Correct: b.** The global external Application Load Balancer (L7) provides a single global anycast IP, edge TLS termination, host/path URL maps for content-based routing, and native Cloud CDN integration. It is the canonical choice for global internet-facing HTTP(S).\n\n- **a** is wrong: a passthrough Network Load Balancer is L4, regional, does not terminate TLS or do URL routing, and is not a CDN origin in the same way.\n- **c** is wrong: internal passthrough NLB serves internal L4 traffic only.\n- **d** is wrong: a regional internal ALB is L7 but internal and regional, so no single global anycast IP for worldwide users. **Best practice:** pair the global external ALB with Cloud Armor for WAF/DDoS and Cloud CDN for caching.",
+    "explanation": "Pair the global external Application Load Balancer with Cloud Armor and Cloud CDN for edge protection and caching.",
     "difficulty": 1
   },
   {
@@ -110,29 +132,36 @@
       "firewall",
       "intrusion-protection"
     ],
-    "prompt": "A security team wants to apply consistent, hierarchical firewall rules across an entire folder of projects, and separately wants managed Layer 7 deep-packet intrusion detection on north-south and east-west traffic. Which combination correctly maps the requirements to Google Cloud features?",
+    "subObjective": "provision.1",
+    "sourceUrl": "https://docs.cloud.google.com/firewall/docs/firewall-policies-overview",
+    "lastVerified": "2026-10-01",
+    "prompt": "A security team wants to apply consistent, hierarchical firewall rules across an entire folder of projects, and separately wants managed intrusion detection (threat detection for malware, spyware and command-and-control traffic) on its VPC traffic. Which combination correctly maps the requirements to Google Cloud features?",
     "choices": [
       {
-        "id": "a",
-        "text": "VPC firewall rules per project for hierarchy; Cloud Armor for intrusion detection"
-      },
-      {
-        "id": "b",
-        "text": "Hierarchical firewall policies at the folder level; Cloud IDS for managed intrusion detection"
-      },
-      {
         "id": "c",
-        "text": "Hierarchical firewall policies for IDS; Cloud NAT for hierarchy"
+        "text": "Hierarchical firewall policies for intrusion detection; Cloud NAT gateways to provide the folder-wide rule hierarchy",
+        "rationale": "Firewall policies allow, deny or pass traffic; they do not inspect payloads for threats. Cloud NAT translates egress addresses and has no policy hierarchy."
       },
       {
         "id": "d",
-        "text": "Cloud Armor for hierarchy; VPC Service Controls for intrusion detection"
+        "text": "Cloud Armor policies for the folder-wide hierarchy; VPC Service Controls perimeters for packet-level intrusion detection",
+        "rationale": "Cloud Armor policies attach to backend services, not folders. VPC Service Controls limit API-level data exfiltration and do not inspect packets."
+      },
+      {
+        "id": "a",
+        "text": "VPC firewall rules configured separately in each project for the hierarchy; Cloud Armor security policies for intrusion detection",
+        "rationale": "VPC firewall rules apply to a single network and are not inherited from a folder; Cloud Armor protects internet-facing load balancers and is not an intrusion detection service."
+      },
+      {
+        "id": "b",
+        "text": "Hierarchical firewall policies associated with the folder; Cloud IDS for managed intrusion detection on mirrored traffic",
+        "rationale": "Hierarchical policies associate with an organization or folder and cascade to child projects. Cloud IDS analyzes mirrored traffic with Palo Alto Networks threat detection and alerts on intrusions."
       }
     ],
     "correct": [
       "b"
     ],
-    "explanation": "**Correct: b.** Hierarchical firewall policies attach at the organization or *folder* level and are inherited by all child projects/VPCs, giving consistent guardrails. Cloud IDS is Google's managed intrusion detection service (built on Palo Alto Networks threat signatures) that inspects traffic via packet mirroring for L7 threats.\n\n- **a** is wrong: per-project VPC rules are not hierarchical/inherited; Cloud Armor is a WAF/DDoS edge service, not an IDS.\n- **c** is wrong: hierarchical firewall policies are not IDS; Cloud NAT provides egress NAT, not hierarchy.\n- **d** is wrong: Cloud Armor is not a hierarchy mechanism; VPC Service Controls create data-exfiltration perimeters, not packet-level intrusion detection. **Best practice:** combine hierarchical policies (guardrails), Cloud IDS (detection), and Cloud Armor (edge WAF).",
+    "explanation": "Cloud IDS only detects and alerts; pair it with Cloud NGFW rules if traffic must be blocked.",
     "difficulty": 2
   },
   {
@@ -143,29 +172,36 @@
       "storage-allocation",
       "data-lifecycle"
     ],
-    "prompt": "Logs are written to a Cloud Storage bucket and accessed heavily for 30 days, occasionally for the next 11 months, and almost never afterward but must be retained for 7 years for compliance. The architect wants to minimize cost while keeping the data in one bucket. What is the best configuration?",
+    "subObjective": "provision.2",
+    "sourceUrl": "https://docs.cloud.google.com/storage/docs/storage-classes",
+    "lastVerified": "2026-10-01",
+    "prompt": "Logs are written to a Cloud Storage bucket and read heavily for 30 days, occasionally for the next 11 months, and almost never afterward, but they must be retained for 7 years for compliance. The architect wants to minimize cost while keeping the data in one bucket. What is the best configuration?",
     "choices": [
       {
         "id": "a",
-        "text": "Store everything in Standard storage and delete after 7 years"
+        "text": "Keep every object in Standard storage for its entire life and delete objects once they reach 7 years of age",
+        "rationale": "Standard has the highest storage price, and nearly all of the 7 years is spent on data that is almost never read."
       },
       {
         "id": "b",
-        "text": "Use Object Lifecycle Management to transition objects Standard -> Nearline at 30 days -> Coldline at 365 days -> Archive at ~1 year+, retaining 7 years"
+        "text": "Use Object Lifecycle Management to move objects to Nearline at 30 days and Archive at one year, deleting them after 7 years",
+        "rationale": "Age-based SetStorageClass rules match the access curve: Standard while hot, Nearline (30-day minimum) for occasional reads, Archive (365-day minimum) for the long tail, then a Delete rule."
       },
       {
         "id": "c",
-        "text": "Store everything in Archive from day one to minimize cost"
+        "text": "Write every object directly to Archive storage on day one, because it has the lowest per-GiB storage price of any class",
+        "rationale": "Archive has retrieval fees and a 365-day minimum duration, so the heavily read first month would be expensive and early deletion would be charged."
       },
       {
         "id": "d",
-        "text": "Use Autoclass but disable any transition to colder classes"
+        "text": "Enable Autoclass with Nearline as the terminal class, so that objects are never moved into colder and cheaper classes",
+        "rationale": "With the default Nearline terminal class, objects never reach Archive pricing, so the long tail stays more expensive than a deliberate Archive transition."
       }
     ],
     "correct": [
       "b"
     ],
-    "explanation": "**Correct: b.** Object Lifecycle Management lets you define age-based rules to transition objects to progressively colder, cheaper classes that match the access pattern: Standard for the hot first 30 days, Nearline (30-day min) for occasional access, Coldline (90-day min) and finally Archive (365-day min) for long-term retention, with a delete rule at 7 years.\n\n- **a** is wrong: Standard for 7 years is far more expensive than tiering.\n- **c** is wrong: Archive has high retrieval cost and a 365-day minimum storage duration; objects accessed heavily for 30 days would incur early-deletion and retrieval charges.\n- **d** is wrong: Autoclass with no cold transitions defeats the purpose; Autoclass is actually a great hands-off alternative when access patterns are unpredictable, but disabling cold transitions removes the savings. **Best practice:** add a bucket retention policy/lock for the 7-year compliance hold so objects cannot be deleted early.",
+    "explanation": "Add a locked retention policy as well if objects must be undeletable for the 7 years; lifecycle Delete is skipped while a retention policy is unmet.",
     "difficulty": 2
   },
   {
@@ -176,34 +212,41 @@
       "data-retention",
       "backup-recovery"
     ],
-    "prompt": "An auditor requires that financial records in Cloud Storage be immutable and undeletable for exactly 5 years (WORM compliance), and that nobody — including project owners — can shorten the retention window. Which controls achieve this? (Select two.)",
+    "subObjective": "provision.2",
+    "sourceUrl": "https://docs.cloud.google.com/storage/docs/bucket-lock",
+    "lastVerified": "2026-10-01",
+    "prompt": "An auditor requires that financial records in Cloud Storage be immutable and undeletable for exactly 5 years (WORM compliance), and that nobody, including project owners, can shorten the retention window. Which controls achieve this? Choose two.",
     "choices": [
       {
         "id": "a",
-        "text": "Set a bucket retention policy of 5 years and apply a retention policy lock"
+        "text": "Set a bucket retention policy of 5 years, so objects cannot be deleted or replaced until each one is 5 years old",
+        "rationale": "A retention policy sets the minimum age before deletion or replacement and applies retroactively to existing objects, failing attempts with retentionPolicyNotMet."
       },
       {
         "id": "b",
-        "text": "Enable Object Versioning and rely on soft delete"
+        "text": "Enable Object Versioning and rely on soft delete so that any deleted or overwritten data can always be recovered later",
+        "rationale": "Versioning and soft delete recover mistakes but do not enforce a regulatory window; versions can still be removed and soft-deleted data expires after its own retention duration."
       },
       {
         "id": "c",
-        "text": "Use Bucket Lock so the retention policy becomes permanently immutable and cannot be reduced or removed"
+        "text": "Lock the retention policy (Bucket Lock), which stops it from being reduced or removed even by project owners",
+        "rationale": "Once locked, a policy cannot be removed or shortened (it can only be increased), which is what turns the retention window into WORM protection."
       },
       {
         "id": "d",
-        "text": "Grant only the project owner storage.admin and trust them not to delete"
+        "text": "Grant only the project owner the storage.admin role and instruct them in writing never to delete the financial records",
+        "rationale": "A written instruction is not a technical control, and an owner can still delete objects or change permissions."
       },
       {
         "id": "e",
-        "text": "Apply an IAM deny policy that blocks all reads for 5 years"
+        "text": "Apply an IAM deny policy that blocks every read of the bucket for 5 years so that the stored data stays untouched",
+        "rationale": "Denying reads blocks the auditors, does not prevent deletion or overwrite, and can itself be altered by administrators."
       }
     ],
     "correct": [
       "a",
       "c"
     ],
-    "explanation": "**Correct: a and c.** A bucket *retention policy* sets a minimum retention period during which objects cannot be deleted or overwritten (a). Applying a *retention policy lock* (Bucket Lock) makes the policy permanent: it can be increased but never decreased or removed, even by owners — satisfying WORM/immutability (c). Together these meet regulatory holds (SEC 17a-4-style).\n\n- **b** is wrong: Object Versioning and soft delete protect against accidental overwrite/delete but do not enforce a regulatory immutable window; versions can still be permanently removed.\n- **d** is wrong: trusting an admin is not a technical control and violates least-privilege/immutability requirements.\n- **e** is wrong: an IAM deny on reads does not make data immutable and would break legitimate audit access. **Best practice:** combine Bucket Lock with object holds (event-based/temporary) for per-object legal holds.",
     "difficulty": 2
   },
   {
@@ -214,29 +257,36 @@
       "storage-allocation",
       "data-lifecycle"
     ],
-    "prompt": "An architect must transfer 800 TB of archival video from an on-premises NAS to Cloud Storage. The site has a 1 Gbps internet link that is also needed for production traffic, and the migration must complete within two weeks. What is the most appropriate transfer method?",
+    "subObjective": "provision.2",
+    "sourceUrl": "https://docs.cloud.google.com/transfer-appliance/docs/4.0/overview",
+    "lastVerified": "2026-10-01",
+    "prompt": "An architect must transfer 300 TB of archival video from an on-premises NAS to Cloud Storage within five weeks. The site has a 1 Gbps internet link, roughly 70% of which production traffic already uses. What is the most appropriate transfer method?",
     "choices": [
       {
         "id": "a",
-        "text": "gsutil/gcloud storage parallel composite uploads over the existing 1 Gbps link"
+        "text": "Run gcloud storage uploads with parallel composite uploads over the existing 1 Gbps link, throttled to protect production traffic",
+        "rationale": "At 1 Gbps even a fully idle link moves roughly 10 TB a day; with only about 30% free, 300 TB would take months, so tuning the uploader cannot meet the deadline."
       },
       {
         "id": "b",
-        "text": "Storage Transfer Service over the public internet"
+        "text": "Use Storage Transfer Service with agents on the NAS to copy the data over the public internet during off-peak hours",
+        "rationale": "Storage Transfer Service speeds up and manages online copies, but the data still crosses the same constrained link."
       },
       {
         "id": "c",
-        "text": "Transfer Appliance: ship a physical appliance, load data on-prem, and ship it back to Google"
+        "text": "Order Transfer Appliance, copy the data locally at LAN speed, and ship the appliance to Google for upload to Cloud Storage",
+        "rationale": "Google's guidance suits Transfer Appliance when a network upload would take over a week; capturing 300 TB takes under 25 days including shipping, independent of the shared link."
       },
       {
         "id": "d",
-        "text": "Set up a Dedicated Interconnect first, then copy with gcloud storage"
+        "text": "Provision a Dedicated Interconnect circuit first and then copy the data with gcloud storage over the new private connection",
+        "rationale": "A circuit takes lead time to order and cross-connect, and it adds standing cost for a one-time copy when an offline path already fits the deadline."
       }
     ],
     "correct": [
       "c"
     ],
-    "explanation": "**Correct: c.** Transferring 800 TB over a contended 1 Gbps link is infeasible in two weeks (even saturated, ~1 Gbps moves roughly ~10 TB/day, and the link is shared with production). Transfer Appliance is purpose-built for large offline migrations: Google ships a rugged storage appliance, you copy data locally at LAN speed, and ship it back for ingestion into Cloud Storage.\n\n- **a** is wrong: parallel composite uploads still ride the same saturated 1 Gbps link.\n- **b** is wrong: Storage Transfer Service is great for cloud-to-cloud or online sources but is still bound by the WAN link for on-prem.\n- **d** is wrong: provisioning Dedicated Interconnect typically takes weeks and the lead time alone breaks the two-week deadline. **Best practice:** use the rule of thumb that anything beyond ~tens of TB on a modest WAN link is a Transfer Appliance candidate.",
+    "explanation": "Compare the transfer time on the usable bandwidth against the deadline: when it exceeds about a week, an offline appliance is the usual answer.",
     "difficulty": 2
   },
   {
@@ -247,29 +297,36 @@
       "compute-provisioning",
       "spot-vs-standard"
     ],
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/compute/docs/instances/spot",
+    "lastVerified": "2026-10-01",
     "prompt": "A batch image-rendering pipeline is fault-tolerant, checkpoints frequently, and can restart interrupted tasks. The team wants the lowest possible compute cost on Compute Engine and accepts that instances may be reclaimed at any time. Which provisioning model should they use?",
     "choices": [
       {
-        "id": "a",
-        "text": "Standard on-demand VMs with committed use discounts"
-      },
-      {
-        "id": "b",
-        "text": "Spot VMs in a managed instance group"
-      },
-      {
         "id": "c",
-        "text": "Sole-tenant nodes"
+        "text": "Sole-tenant nodes that reserve dedicated physical servers for the rendering workload and its licensing needs",
+        "rationale": "Sole-tenant nodes serve isolation and licensing needs at higher cost, and Spot VMs cannot run on them at all."
       },
       {
         "id": "d",
-        "text": "Reserved capacity with a 3-year commitment"
+        "text": "Reserved capacity bought with a three-year commitment sized for the peak rendering fleet, paid whether used or not",
+        "rationale": "A long commitment suits predictable always-on load, the opposite of interruptible batch work that wants the cheapest price."
+      },
+      {
+        "id": "a",
+        "text": "Standard on-demand VMs covered by committed use discounts that are sized to the average rendering load",
+        "rationale": "Commitments cut the price of steady usage but cost far more than Spot, and the team is paying for capacity an interruptible job does not need."
+      },
+      {
+        "id": "b",
+        "text": "Spot VMs in a managed instance group that recreates preempted instances when capacity returns",
+        "rationale": "Spot VMs give discounts of up to 91% with no SLA, which suits checkpointed, restartable work, and a MIG keeps the group at its target size by recreating preempted VMs."
       }
     ],
     "correct": [
       "b"
     ],
-    "explanation": "**Correct: b.** Spot VMs offer the deepest discounts (typically 60-91% off on-demand) in exchange for preemption with no SLA — ideal for fault-tolerant, checkpointed, restartable batch work. Running them in a managed instance group lets the MIG automatically recreate preempted instances.\n\n- **a** is wrong: CUDs lower cost for steady-state usage but require commitment and are far pricier than Spot for interruptible work.\n- **c** is wrong: sole-tenant nodes are for licensing/compliance isolation and are more expensive, not cheaper.\n- **d** is wrong: 3-year reservations optimize predictable, always-on workloads, the opposite of cheap interruptible batch. **Best practice:** combine Spot with checkpointing and a MIG; use the 30-second preemption notice to checkpoint gracefully.",
+    "explanation": "Enable the 120-second preemption notice (default is none) so tasks can checkpoint before shutdown.",
     "difficulty": 1
   },
   {
@@ -280,29 +337,36 @@
       "gke",
       "container-orchestration"
     ],
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/kubernetes-engine/docs/concepts/choose-cluster-mode",
+    "lastVerified": "2026-10-01",
     "prompt": "A team wants Kubernetes on Google Cloud but does not want to manage node pools, node upgrades, capacity planning, or bin-packing; they want to pay per-Pod resource request and have Google operate the nodes. Which option fits best?",
     "choices": [
       {
         "id": "a",
-        "text": "GKE Standard with node auto-provisioning"
+        "text": "GKE Standard with node auto-provisioning, which creates node pools automatically as Pod demand changes",
+        "rationale": "Standard still leaves node configuration and upgrades with the team and bills for whole nodes rather than for Pod requests."
       },
       {
         "id": "b",
-        "text": "GKE Autopilot"
+        "text": "GKE Autopilot, where Google manages the nodes and billing follows the resources that the Pods request",
+        "rationale": "In Autopilot, GKE manages nodes and scaling and provisions compute to match workload specifications, so you pay for Pod resource requests."
       },
       {
         "id": "c",
-        "text": "Self-managed Kubernetes (kubeadm) on Compute Engine"
+        "text": "Self-managed Kubernetes with kubeadm on Compute Engine VMs, with the team operating the control plane itself",
+        "rationale": "Self-managing maximizes the operational burden, including control plane upgrades, node capacity and bin-packing."
       },
       {
         "id": "d",
-        "text": "Cloud Run for Anthos on a user-managed cluster"
+        "text": "Knative serving installed on a cluster that the team operates, so the platform handles Pod autoscaling",
+        "rationale": "A serverless layer on a user-managed cluster still leaves the cluster, node pools and upgrades with the team."
       }
     ],
     "correct": [
       "b"
     ],
-    "explanation": "**Correct: b.** GKE Autopilot is the fully managed, hands-off mode: Google provisions and manages nodes, you are billed primarily for the CPU/memory/ephemeral storage your Pods *request*, and node operations, security hardening, and scaling are handled for you.\n\n- **a** is wrong: GKE Standard (even with node auto-provisioning) still leaves you responsible for node pool configuration, upgrades scheduling, and you pay per node.\n- **c** is wrong: self-managed Kubernetes maximizes operational burden.\n- **d** is wrong: it still requires you to manage the underlying cluster. **Best practice:** choose Autopilot when you want least operational overhead and a per-Pod cost model; choose Standard when you need privileged daemonsets, specific node hardware, or fine-grained control.",
+    "explanation": "Choose Standard instead when you need privileged workloads or granular control over node configuration.",
     "difficulty": 1
   },
   {
@@ -313,29 +377,36 @@
       "serverless",
       "cloud-run"
     ],
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/run/docs/configuring/min-instances",
+    "lastVerified": "2026-10-01",
     "prompt": "A stateless containerized REST API has spiky traffic, must scale to zero when idle, and should scale out automatically based on concurrent requests with minimal infrastructure management. The team already builds OCI container images. What is the best fit?",
     "choices": [
       {
-        "id": "a",
-        "text": "Cloud Run (services)"
-      },
-      {
-        "id": "b",
-        "text": "Compute Engine managed instance group with autoscaling"
-      },
-      {
         "id": "c",
-        "text": "GKE Standard with the Horizontal Pod Autoscaler"
+        "text": "GKE Standard with the Horizontal Pod Autoscaler, running node pools that the team sizes and upgrades",
+        "rationale": "Standard clusters require node pool management and keep nodes running, which conflicts with scale to zero and minimal infrastructure management."
       },
       {
         "id": "d",
-        "text": "App Engine flexible environment"
+        "text": "The App Engine flexible environment, with containers running on always-on VMs that the platform manages",
+        "rationale": "Flexible runs containers on Compute Engine VMs and keeps a minimum of one instance running, so it cannot scale to zero."
+      },
+      {
+        "id": "a",
+        "text": "Cloud Run services, with request-driven autoscaling and the minimum instance count left at its default of zero",
+        "rationale": "Cloud Run scales out on incoming requests and concurrency, and a minimum of zero (the default) lets it scale in to nothing when idle."
+      },
+      {
+        "id": "b",
+        "text": "A Compute Engine managed instance group with autoscaling, using VM images that the team builds, patches and maintains",
+        "rationale": "A MIG leaves the team with VM image lifecycle and slower VM start-up, so spiky container traffic is neither as hands-off nor as fast to scale as Cloud Run."
       }
     ],
     "correct": [
       "a"
     ],
-    "explanation": "**Correct: a.** Cloud Run runs stateless containers serverlessly, scales to zero when idle, autoscales on concurrent requests, and requires no cluster or VM management — a perfect match for a spiky, stateless, containerized API.\n\n- **b** is wrong: MIGs do not scale to zero cleanly and require VM/image lifecycle management.\n- **c** is wrong: GKE Standard adds cluster management overhead and HPA does not scale the cluster to zero by default.\n- **d** is wrong: App Engine flexible runs on always-on VMs that do not scale to zero. **Best practice:** Cloud Run for request-driven containers; use Cloud Run jobs for run-to-completion batch, and set concurrency to tune cost vs. latency.",
+    "explanation": "Use Cloud Run jobs for run-to-completion batch work, and tune concurrency to trade cost against latency.",
     "difficulty": 1
   },
   {
@@ -346,29 +417,36 @@
       "vmware-engine",
       "hybrid-networking"
     ],
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/vmware-engine/docs/overview",
+    "lastVerified": "2026-10-01",
     "prompt": "An enterprise wants to lift-and-shift its VMware vSphere estate to Google Cloud with minimal changes, keeping vCenter, vSAN, and NSX, while gaining a path to modernize later. Which service is designed for this?",
     "choices": [
       {
         "id": "a",
-        "text": "Migrate to Virtual Machines (formerly Migrate for Compute Engine)"
+        "text": "Migrate to Virtual Machines, converting each VMware VM into a native Compute Engine instance after replication",
+        "rationale": "Migration converts VMs into Compute Engine instances, which is re-platforming away from vCenter, vSAN and NSX rather than keeping them."
       },
       {
         "id": "b",
-        "text": "Google Cloud VMware Engine"
+        "text": "Google Cloud VMware Engine, a managed VMware environment running on dedicated bare metal nodes in Google Cloud",
+        "rationale": "VMware Engine runs vSphere, vCenter, vSAN, NSX and HCX on dedicated, physically isolated bare metal, so the estate moves with minimal change."
       },
       {
         "id": "c",
-        "text": "GKE on-prem (Anthos clusters on VMware)"
+        "text": "GKE on VMware clusters (formerly Anthos clusters on VMware), running Kubernetes on the existing on-premises vSphere hosts",
+        "rationale": "That product runs Kubernetes on VMware in your own data center; it does not relocate a vSphere estate into Google Cloud."
       },
       {
         "id": "d",
-        "text": "Bare Metal Solution"
+        "text": "Bare Metal Solution, providing dedicated servers in a regional extension for specialized workloads such as Oracle databases",
+        "rationale": "Bare Metal Solution supplies specialized bare metal servers, not a managed VMware environment with vCenter, vSAN and NSX."
       }
     ],
     "correct": [
       "b"
     ],
-    "explanation": "**Correct: b.** Google Cloud VMware Engine (GCVE) delivers a fully managed VMware Cloud Foundation stack (vSphere, vCenter, vSAN, NSX) running on dedicated nodes in Google Cloud, enabling true lift-and-shift of vSphere workloads without re-platforming, with later modernization paths.\n\n- **a** is wrong: Migrate to Virtual Machines converts VMware VMs into native Compute Engine instances — that is re-platforming away from vSphere, not keeping vCenter/vSAN/NSX.\n- **c** is wrong: that runs Kubernetes on existing on-prem VMware, not a managed VMware estate in Google Cloud.\n- **d** is wrong: Bare Metal Solution is for specialized workloads like Oracle, not a managed VMware SDDC. **Best practice:** use GCVE for fast migration and time-bound modernization, connected via Cloud VPN/Interconnect.",
+    "explanation": "Naming of the Anthos-era and Bare Metal Solution distractors was not re-verified against current docs; their roles as distractors do not depend on it.",
     "difficulty": 2
   },
   {
@@ -379,35 +457,44 @@
       "infra-orchestration",
       "terraform"
     ],
-    "prompt": "An architect is standardizing infrastructure-as-code on Google Cloud and wants a managed way to run Terraform with state management, drift detection, and policy enforcement, while also offering teams reusable, validated blueprints. Which statements are accurate? (Select two.)",
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/infrastructure-manager/docs/overview",
+    "lastVerified": "2026-10-01",
+    "prompt": "An architect is standardizing infrastructure as code on Google Cloud and wants a managed way to run Terraform, with previews before changes apply, while also offering teams reusable, validated blueprints. Which statements are accurate? Choose two.",
     "choices": [
       {
-        "id": "a",
-        "text": "Infrastructure Manager is Google Cloud's managed service for deploying Terraform configurations and storing state"
-      },
-      {
-        "id": "b",
-        "text": "Cloud Foundation Toolkit provides reusable, opinionated Terraform/blueprint modules aligned to Google best practices"
-      },
-      {
         "id": "c",
-        "text": "Deployment Manager is the recommended go-forward IaC tool over Terraform for new projects"
+        "text": "Deployment Manager is the recommended infrastructure-as-code service for new projects and still gets ongoing feature investment",
+        "rationale": "Deployment Manager reached end of support on March 31, 2026; Google points users to Infrastructure Manager or other Terraform tooling."
       },
       {
         "id": "d",
-        "text": "Terraform state must always be stored on the local engineer's laptop for security"
+        "text": "Terraform state should always be kept on each engineer's laptop so that no remote system holds sensitive resource data",
+        "rationale": "Local state breaks collaboration and locking and risks loss; shared state belongs in a remote, access-controlled backend."
       },
       {
         "id": "e",
-        "text": "Config Connector cannot manage Google Cloud resources from within Kubernetes"
+        "text": "Config Connector cannot manage Google Cloud resources from Kubernetes and works only with other cloud providers' APIs",
+        "rationale": "Config Connector is a Kubernetes add-on that manages Google Cloud resources as Kubernetes custom resources."
+      },
+      {
+        "id": "a",
+        "text": "Infrastructure Manager is a managed service that deploys Terraform configurations and can create preview deployments before applying",
+        "rationale": "It runs Terraform as deployments and revisions, sourced from Cloud Storage, Git or local directories, and supports previews."
+      },
+      {
+        "id": "b",
+        "text": "Terraform blueprints package reusable modules and policy into opinionated, deployable solutions that follow Google-recommended designs",
+        "rationale": "Blueprints are described as packages of deployable, reusable modules and policy implementing a specific opinionated solution."
       }
     ],
     "correct": [
       "a",
       "b"
     ],
-    "explanation": "**Correct: a and b.** Infrastructure Manager is Google Cloud's managed Terraform runner: it executes your configs, manages state, and integrates with IAM and service accounts (a). The Cloud Foundation Toolkit (CFT) ships curated, production-grade Terraform modules and blueprints encoding Google best practices (b).\n\n- **c** is wrong: Deployment Manager is legacy; Terraform (via Infrastructure Manager) is the recommended modern approach.\n- **d** is wrong: state should be stored remotely (e.g., in a Cloud Storage backend or managed by Infrastructure Manager) for collaboration and locking, not on a laptop.\n- **e** is wrong: Config Connector explicitly lets you manage Google Cloud resources declaratively as Kubernetes objects. **Best practice:** combine Infrastructure Manager + CFT modules + policy validation (e.g., policy-as-code) for governed IaC.",
-    "difficulty": 2
+    "explanation": "The old stem listed drift detection and policy enforcement as Infrastructure Manager features; the current overview does not document them, so they are no longer asserted.",
+    "difficulty": 2,
+    "examOnly": true
   },
   {
     "id": "q-provision-013",
@@ -417,30 +504,38 @@
       "patch-management",
       "infra-orchestration"
     ],
-    "prompt": "A fleet of hundreds of Compute Engine VMs across multiple projects needs scheduled OS patching with reporting on which VMs are compliant, plus the ability to run scripts on the fleet. Which Google Cloud capability should the architect use?",
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/compute/docs/os-patch-management",
+    "lastVerified": "2026-10-01",
+    "prompt": "A fleet of hundreds of Compute Engine VMs in a single project needs scheduled OS patching with reporting on which VMs are compliant, plus the ability to run pre- and post-patch scripts. Which Google Cloud capability should the architect use?",
     "choices": [
       {
         "id": "a",
-        "text": "Manually SSH into each VM and run the package manager"
+        "text": "Connect to each VM over SSH and run the distribution package manager by hand on a rotating weekly schedule",
+        "rationale": "Manual SSH does not scale to hundreds of VMs and produces no compliance reporting."
       },
       {
         "id": "b",
-        "text": "VM Manager (OS patch management, OS config, and patch compliance reporting)"
+        "text": "VM Manager patch management, with scheduled deployments, maintenance windows and a compliance dashboard",
+        "rationale": "VM Manager patch uses the OS Config agent for one-time or recurring deployments with maintenance windows and pre/post scripts, and its dashboard reports compliance."
       },
       {
         "id": "c",
-        "text": "Cloud Build triggers that rebuild every VM image nightly"
+        "text": "Cloud Build triggers that bake a fresh custom image and recreate the whole VM fleet from it every night",
+        "rationale": "Rebuilding every VM nightly is disruptive and wasteful; image baking suits golden images, not routine patching of a running fleet."
       },
       {
         "id": "d",
-        "text": "Cloud Scheduler invoking gcloud compute reset on each VM"
+        "text": "Cloud Scheduler jobs that call the Compute Engine API to reset every VM on a fixed schedule each night",
+        "rationale": "A reset restarts the machine but installs no patches and reports nothing about compliance."
       }
     ],
     "correct": [
       "b"
     ],
-    "explanation": "**Correct: b.** VM Manager provides OS patch management (scheduled patch jobs across projects via the OS Config agent), patch compliance reporting/dashboards, OS inventory, and OS policy/script execution at fleet scale.\n\n- **a** is wrong: manual SSH does not scale and provides no compliance reporting.\n- **c** is wrong: rebuilding all images nightly is wasteful and disruptive; image baking is for golden images, not routine patching of running fleets.\n- **d** is wrong: resetting VMs does not patch the OS. **Best practice:** combine VM Manager patch deployments with maintenance windows and a golden-image strategy for new instances.",
-    "difficulty": 1
+    "explanation": "Patch jobs run only for VMs in a single project, so a multi-project fleet needs a separate deployment per project.",
+    "difficulty": 1,
+    "examOnly": true
   },
   {
     "id": "q-provision-014",
@@ -450,29 +545,36 @@
       "gemini-agent-platform",
       "ml-pipelines"
     ],
+    "subObjective": "provision.4",
+    "sourceUrl": "https://docs.cloud.google.com/vertex-ai/docs/pipelines/introduction",
+    "lastVerified": "2026-10-01",
     "prompt": "A data science team wants to orchestrate a repeatable ML workflow — data preprocessing, training, evaluation, and conditional model deployment — as a managed, serverless, reproducible DAG on Google Cloud's AI platform (the Gemini Enterprise Agent Platform, formerly Vertex AI). Which component should they use?",
     "choices": [
       {
-        "id": "a",
-        "text": "Vertex AI / Gemini Enterprise Agent Platform Pipelines (managed Kubeflow/TFX pipelines)"
-      },
-      {
-        "id": "b",
-        "text": "A single long-running Compute Engine VM running a bash script"
-      },
-      {
         "id": "c",
-        "text": "Cloud Functions chained manually with Pub/Sub for each step"
+        "text": "Cloud Run functions chained manually through Pub/Sub topics, with one function for each stage of the workflow",
+        "rationale": "Chained functions are brittle to operate and give no ML artifact or metadata lineage or step caching."
       },
       {
         "id": "d",
-        "text": "BigQuery scheduled queries"
+        "text": "BigQuery scheduled queries that run SQL statements on a recurring schedule to stand in for each workflow stage",
+        "rationale": "Scheduled queries run SQL on a timer; they do not orchestrate training, evaluation and deployment steps as a DAG."
+      },
+      {
+        "id": "a",
+        "text": "Gemini Enterprise Agent Platform Pipelines (formerly Vertex AI Pipelines), built with the Kubeflow Pipelines SDK or TFX",
+        "rationale": "Pipelines orchestrates ML workflows serverlessly as a DAG, with artifact lineage tracking and execution caching so unchanged steps are skipped."
+      },
+      {
+        "id": "b",
+        "text": "A single long-running Compute Engine VM that runs a bash script for each stage of the workflow in order, keeping state on local disk",
+        "rationale": "A hand-rolled script on one VM has no managed orchestration, caching or lineage, and the VM is a single point of failure."
       }
     ],
     "correct": [
       "a"
     ],
-    "explanation": "**Correct: a.** The platform's Pipelines feature runs ML workflows as serverless, containerized DAGs (built on Kubeflow Pipelines/TFX), giving you reproducibility, artifact + metadata lineage tracking, caching, and conditional steps for things like deploy-if-metrics-pass.\n\n- **b** is wrong: a hand-rolled script on a VM lacks reproducibility, lineage, and managed orchestration.\n- **c** is wrong: chaining Cloud Functions manually is brittle and gives no ML lineage/metadata tracking.\n- **d** is wrong: scheduled queries handle SQL, not full ML DAGs with training/eval/deploy steps. **Best practice:** use pipeline components from the SDK, enable caching to skip unchanged steps, and gate deployment on evaluation metrics.",
+    "explanation": "The platform was previously named Vertex AI; the current docs title the feature Gemini Enterprise Agent Platform Pipelines.",
     "difficulty": 2
   },
   {
@@ -483,29 +585,36 @@
       "ai-hypercomputer",
       "gpu-tpu"
     ],
+    "subObjective": "provision.4",
+    "sourceUrl": "https://docs.cloud.google.com/ai-hypercomputer/docs/overview",
+    "lastVerified": "2026-10-01",
     "prompt": "A research team is training a very large foundation model that needs thousands of accelerators with high-bandwidth interconnect and a tightly co-located, dense compute fabric optimized for large-scale training and inference. Which Google Cloud offering describes this integrated supercomputing architecture, and what accelerator is purpose-built by Google for it?",
     "choices": [
       {
         "id": "a",
-        "text": "AI Hypercomputer architecture, using Cloud TPUs (and GPUs) with high-bandwidth interconnect"
+        "text": "AI Hypercomputer, which integrates TPUs and GPUs with high-bandwidth networking, storage and optimized open software",
+        "rationale": "AI Hypercomputer is Google's integrated supercomputing system for AI: TPUs and NVIDIA GPUs, networking and storage, open frameworks, and flexible consumption such as reservations and Dynamic Workload Scheduler."
       },
       {
         "id": "b",
-        "text": "A single n2-standard-2 VM with a software GPU emulator"
+        "text": "A fleet of general-purpose CPU VMs on the default network, training with generic data-parallel software and no accelerators",
+        "rationale": "CPU-only VMs on a standard network lack the accelerators and interconnect needed for foundation-model training at scale."
       },
       {
         "id": "c",
-        "text": "Cloud Run with CPU-only autoscaling"
+        "text": "Cloud Run jobs with CPU-only autoscaling, splitting the training dataset across many short-lived containers",
+        "rationale": "Short-lived CPU containers have neither accelerators nor the tightly coupled, high-bandwidth fabric that distributed training needs."
       },
       {
         "id": "d",
-        "text": "Persistent Disk snapshots used as a training accelerator"
+        "text": "Persistent Disk snapshots restored onto many VMs in parallel to speed up the training of the large model",
+        "rationale": "Snapshots are backups; restoring them adds no compute acceleration and does not provide an accelerator fabric."
       }
     ],
     "correct": [
       "a"
     ],
-    "explanation": "**Correct: a.** AI Hypercomputer is Google's integrated supercomputing architecture that combines performance-optimized hardware (Cloud TPUs and GPUs), high-bandwidth/low-latency networking, dense liquid-cooled pods, and a software stack tuned for large-scale training and serving. Cloud TPUs are Google's purpose-built accelerators for this; GPUs are also supported.\n\n- **b** is wrong: a tiny CPU VM with a 'GPU emulator' is not a thing for large-scale training.\n- **c** is wrong: Cloud Run CPU-only cannot train large foundation models.\n- **d** is wrong: Persistent Disk snapshots are backups, not accelerators. **Best practice:** use TPU/GPU slices with reservations or DWS (Dynamic Workload Scheduler) for capacity, and Cluster Director / managed orchestration for the fabric.",
+    "explanation": "Google's purpose-built accelerator in this architecture is the Cloud TPU; NVIDIA GPUs are supported alongside it.",
     "difficulty": 2
   },
   {
@@ -516,34 +625,42 @@
       "prebuilt-ai-apis",
       "model-garden"
     ],
-    "prompt": "A product team wants to add AI features quickly without training models from scratch. Which statements about Google Cloud's prebuilt AI and model options are accurate? (Select two.)",
+    "subObjective": "provision.5",
+    "sourceUrl": "https://docs.cloud.google.com/vertex-ai/generative-ai/docs/model-garden/explore-models",
+    "lastVerified": "2026-10-01",
+    "prompt": "A product team wants to add AI features quickly without training models from scratch. Which statements about Google Cloud's prebuilt AI and model options are accurate? Choose two.",
     "choices": [
       {
         "id": "a",
-        "text": "Model Garden is a catalog where teams can discover, test, and deploy first-party (Gemini), open, and third-party models"
+        "text": "Model Garden is a hub where teams discover, test, deploy and tune Google, open and partner models",
+        "rationale": "Model Garden is the central hub within the Gemini Enterprise Agent Platform for first-party (Gemini), open and partner models."
       },
       {
         "id": "b",
-        "text": "The Cloud Vision API can perform label detection, OCR, and object localization without custom training"
+        "text": "The Cloud Vision API offers label detection, OCR, object localization and SafeSearch as pretrained features with no custom training",
+        "rationale": "These Vision API features are ready to use through an API call; custom training is only needed for specialized detection."
       },
       {
         "id": "c",
-        "text": "Prebuilt APIs like Vision and Speech-to-Text require you to provision and manage GPU clusters yourself"
+        "text": "Prebuilt APIs such as Vision and Speech-to-Text require the customer to provision and operate their own GPU clusters",
+        "rationale": "Prebuilt APIs are fully managed endpoints; the customer provisions no accelerators."
       },
       {
         "id": "d",
-        "text": "NotebookLM is a low-level IaaS block-storage product"
+        "text": "NotebookLM is a low-level block storage product that attaches disks to Compute Engine VMs for AI datasets",
+        "rationale": "NotebookLM is an AI research and note-taking assistant, not an infrastructure storage product."
       },
       {
         "id": "e",
-        "text": "Using a prebuilt API guarantees zero ongoing cost regardless of usage"
+        "text": "Calling a prebuilt API is free of charge regardless of request volume, because Google hosts the models itself",
+        "rationale": "Prebuilt APIs are consumed as metered managed services, so cost grows with usage rather than staying at zero."
       }
     ],
     "correct": [
       "a",
       "b"
     ],
-    "explanation": "**Correct: a and b.** Model Garden is the catalog/hub for discovering, evaluating, tuning, and deploying first-party (Gemini), open-source, and partner models (a). The Cloud Vision API offers ready-to-use capabilities — label detection, OCR/text detection, object localization, safe-search, etc. — via a simple API call with no model training (b).\n\n- **c** is wrong: prebuilt APIs are fully managed; you do not provision GPU clusters.\n- **d** is wrong: NotebookLM is an AI research/grounded-assistant tool (part of the Gemini Enterprise family), not block storage.\n- **e** is wrong: prebuilt APIs are usage-priced; cost scales with calls/volume. **Best practice:** start with prebuilt APIs for common tasks, move to Model Garden / tuned models when you need customization.",
+    "explanation": "Start with prebuilt APIs for common tasks; move to Model Garden models or tuning when the task needs customization.",
     "difficulty": 1
   },
   {
@@ -555,29 +672,36 @@
       "load-balancing"
     ],
     "caseStudyId": "altostrat-media",
-    "prompt": "Altostrat Media streams video globally and is consolidating multiple business units, each currently with its own project and overlapping RFC 1918 ranges, into a unified network. They want centralized control of subnets and firewall policy by the network team, while application teams deploy workloads in their own projects that share the same VPC. Which design should the architect recommend?",
+    "subObjective": "provision.1",
+    "sourceUrl": "https://docs.cloud.google.com/vpc/docs/shared-vpc",
+    "lastVerified": "2026-10-01",
+    "prompt": "Altostrat Media streams video globally and is consolidating multiple business units, each with its own project and VPC and overlapping RFC 1918 ranges, into one network. They accept re-addressing workloads into a single planned address space. They want the network team to control subnets and firewall policy centrally, while application teams deploy in their own projects on that shared network. Which design should the architect recommend?",
     "choices": [
       {
         "id": "a",
-        "text": "A Shared VPC: a host project owns the VPC/subnets/firewalls, and service projects attach to consume them"
+        "text": "A Shared VPC, where a host project owns the VPC, subnets and firewalls while service projects attach and deploy into them",
+        "rationale": "Shared VPC separates central network ownership (host project) from workload ownership (service projects) on one network with one address plan."
       },
       {
         "id": "b",
-        "text": "VPC Network Peering between every pair of business-unit VPCs"
+        "text": "VPC Network Peering between every pair of business-unit VPCs, with each unit still managing its own subnets and firewalls",
+        "rationale": "Peering forbids overlapping subnet ranges, is not transitive, and does not exchange firewall rules, so control stays decentralized."
       },
       {
         "id": "c",
-        "text": "One flat VPC where every team has full Owner on the network"
+        "text": "One flat VPC inside a single project, where every application team holds the Owner role on the network",
+        "rationale": "Owner access for every team abandons least privilege and centralized control, and a single project removes per-team project boundaries."
       },
       {
         "id": "d",
-        "text": "Separate VPCs connected only by HA VPN tunnels in a full mesh"
+        "text": "Separate VPCs for each business unit joined by a full mesh of HA VPN tunnels managed by the network team",
+        "rationale": "A VPN mesh is complex and bandwidth-limited, still leaves one firewall policy per VPC, and cannot join networks with overlapping ranges."
       }
     ],
     "correct": [
       "a"
     ],
-    "explanation": "**Correct: a.** Shared VPC fits exactly: a *host project* centrally owns the VPC, subnets, and firewall rules (network team), while *service projects* (application teams) attach and deploy resources into shared subnets. This gives centralized network/security governance with delegated app deployment, and a single coherent address space avoiding overlap.\n\n- **b** is wrong: full-mesh peering is operationally heavy, non-transitive, and does not resolve overlapping RFC 1918 ranges or centralize firewall control.\n- **c** is wrong: granting Owner to everyone violates least privilege and centralized control.\n- **d** is wrong: full-mesh VPN is complex, lower-throughput, and still leaves decentralized control. **Best practice:** Shared VPC + hierarchical firewall policies, with the network team managing subnets and IAM-scoped subnet access per team.",
+    "explanation": "Grant the Compute Network User role per subnet so each team can use only its own subnets.",
     "difficulty": 2
   },
   {
@@ -589,29 +713,36 @@
       "data-retention"
     ],
     "caseStudyId": "ehr-healthcare",
+    "subObjective": "provision.2",
+    "sourceUrl": "https://docs.cloud.google.com/backup-disaster-recovery/docs/concepts/backup-dr",
+    "lastVerified": "2026-10-01",
     "prompt": "EHR Healthcare runs production databases on Compute Engine and Cloud SQL and must meet strict RPO/RTO and HIPAA-aligned retention. The team wants automated, policy-driven, application-consistent backups of Compute Engine disks across the organization with centralized retention and the ability to restore quickly. Which Google Cloud service is the best fit?",
     "choices": [
       {
-        "id": "a",
-        "text": "Backup and DR Service (with backup plans/vaults) plus Cloud SQL automated backups and PITR"
-      },
-      {
-        "id": "b",
-        "text": "A cron job that runs gcloud compute disks snapshot with no retention policy"
-      },
-      {
         "id": "c",
-        "text": "Copying VM disks to a Standard Cloud Storage bucket manually each week"
+        "text": "A weekly manual copy of each VM disk image into a Standard Cloud Storage bucket, with retention tracked by hand in a sheet",
+        "rationale": "Weekly manual copies give a poor recovery point objective, are error-prone, and are not application-consistent."
       },
       {
         "id": "d",
-        "text": "Relying solely on GKE etcd backups"
+        "text": "Kubernetes etcd backups of the container clusters, relied on as the only copy of the application databases and disks",
+        "rationale": "etcd holds Kubernetes object state, not the data in the databases and disks that must meet the RPO and RTO."
+      },
+      {
+        "id": "a",
+        "text": "Backup and DR Service plans and vaults covering Compute Engine disks and Cloud SQL, with enforced retention and application-consistent restore points",
+        "rationale": "Backup and DR protects Compute Engine, Persistent Disk and Cloud SQL through central backup plans, supports application-consistent recovery points, and vaults enforce WORM retention."
+      },
+      {
+        "id": "b",
+        "text": "A cron job that runs scheduled disk snapshot commands and keeps every snapshot indefinitely, with no retention rules defined",
+        "rationale": "Ad-hoc snapshots offer no governance or application consistency, and unbounded retention grows cost with no compliance control."
       }
     ],
     "correct": [
       "a"
     ],
-    "explanation": "**Correct: a.** Google Cloud Backup and DR Service provides centralized, policy-driven backup plans with retention enforcement and application-consistent backups for Compute Engine (and other sources), plus fast restore and isolated backup vaults — ideal for regulated RPO/RTO needs. For Cloud SQL, enabling automated backups with point-in-time recovery (binary logging) meets the database RPO.\n\n- **b** is wrong: ad-hoc snapshots with no retention policy give no governance, no app-consistency guarantees, and risk uncontrolled growth/cost.\n- **c** is wrong: manual weekly copies yield poor RPO and are error-prone and not app-consistent.\n- **d** is wrong: etcd backups cover Kubernetes object state, not the application databases here. **Best practice:** define backup plans per workload tier with retention matching compliance, store in backup vaults, and regularly test restores against RTO.",
+    "explanation": "Match backup plan frequency and vault retention to each workload tier, and test restores against the RTO.",
     "difficulty": 2
   },
   {
@@ -623,29 +754,36 @@
       "hybrid-networking"
     ],
     "caseStudyId": "cymbal-retail",
-    "prompt": "Cymbal Retail runs analytics on Google Cloud but keeps a large transactional dataset in another public cloud. Analysts want to query that external data with minimal data movement and without standing up and managing their own ETL clusters. Which approach best matches a multicloud analytics requirement?",
+    "subObjective": "provision.1",
+    "sourceUrl": "https://docs.cloud.google.com/bigquery/docs/omni-introduction",
+    "lastVerified": "2026-10-01",
+    "prompt": "Cymbal Retail runs analytics on Google Cloud but keeps a large transactional dataset exported as files in Amazon S3. Analysts want to query that data with minimal data movement and without standing up and managing their own ETL clusters. Which approach best matches this multicloud analytics requirement?",
     "choices": [
       {
         "id": "a",
-        "text": "BigQuery Omni to query data in other clouds (AWS/Azure) from BigQuery without moving it"
+        "text": "BigQuery Omni, which runs the BigQuery engine in the AWS region so analysts query the S3 data in place from BigQuery",
+        "rationale": "Omni runs the BigQuery query engine in other clouds (Amazon S3 and Azure Blob Storage), so data need not be moved into BigQuery storage."
       },
       {
         "id": "b",
-        "text": "Export the entire dataset nightly to Cloud Storage and re-import it"
+        "text": "Export the entire dataset nightly to Cloud Storage and reload it into BigQuery before the analysts run their queries",
+        "rationale": "Nightly copies add movement, duplicate storage and staleness, which is exactly what the requirement tries to avoid."
       },
       {
         "id": "c",
-        "text": "Run a self-managed Spark cluster on Compute Engine that pulls all data each query"
+        "text": "A self-managed Spark cluster on Compute Engine that reads the full S3 dataset again for every analyst query",
+        "rationale": "A self-run cluster brings back the operations burden and still pulls the data across clouds on each query."
       },
       {
         "id": "d",
-        "text": "Set up VPC Peering between the two clouds and query over the peering link"
+        "text": "VPC Network Peering between Google Cloud and the other cloud, then querying the files over the peering link",
+        "rationale": "Peering connects Google Cloud VPC networks; it is neither a connection to another cloud nor a query engine."
       }
     ],
     "correct": [
       "a"
     ],
-    "explanation": "**Correct: a.** BigQuery Omni lets analysts run BigQuery (using the BigQuery engine via Anthos/managed infrastructure) directly against data residing in AWS or Azure, minimizing data movement and avoiding self-managed clusters — the canonical managed multicloud analytics pattern.\n\n- **b** is wrong: nightly full exports are slow, costly, increase data duplication/staleness, and defeat 'minimal movement.'\n- **c** is wrong: a self-managed Spark cluster reintroduces the operational burden they want to avoid and still moves data per query.\n- **d** is wrong: VPC Peering is not supported between Google Cloud and other public clouds in that manner, and it does not provide a federated query engine. **Best practice:** use BigQuery Omni for in-place cross-cloud queries; use BigQuery's storage/federation features and authorized views for governance.",
+    "explanation": "Omni is limited to specific AWS and Azure regions and has query restrictions, so check the limitations before committing.",
     "difficulty": 2
   },
   {
@@ -657,29 +795,36 @@
       "spot-vs-standard"
     ],
     "caseStudyId": "knightmotives-automotive",
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/compute/docs/instances/committed-use-discounts-overview",
+    "lastVerified": "2026-10-01",
     "prompt": "KnightMotives Automotive runs a 24/7 customer-facing telemetry ingestion service on Compute Engine with steady, predictable baseline load that rarely changes. The CFO wants the lowest sustainable cost for this always-on workload **without** risking interruptions. Which pricing/provisioning strategy is most appropriate?",
     "choices": [
       {
-        "id": "a",
-        "text": "Spot VMs, because they are the cheapest"
-      },
-      {
-        "id": "b",
-        "text": "Committed Use Discounts (1- or 3-year) on standard VMs sized to the steady baseline"
-      },
-      {
         "id": "c",
-        "text": "On-demand VMs with no commitment and no discounts"
+        "text": "On-demand VMs with no commitment, so the team keeps full freedom to resize or stop the fleet at any moment",
+        "rationale": "Pure on-demand pricing gives up the discount that a predictable, rarely changing baseline would earn."
       },
       {
         "id": "d",
-        "text": "Scale the service to zero between requests using Spot preemption"
+        "text": "Spot VMs that the service scales to zero between requests, relying on preemption to remove idle capacity",
+        "rationale": "Preemption is unpredictable and unannounced by default; a continuously running ingestion service cannot rely on it, and idle periods are not the issue here."
+      },
+      {
+        "id": "a",
+        "text": "Spot VMs for the entire fleet, because they carry the lowest hourly price of any Compute Engine pricing model available",
+        "rationale": "Spot VMs can be preempted at any time and are excluded from the Compute Engine SLA, which a 24/7 customer-facing service cannot tolerate."
+      },
+      {
+        "id": "b",
+        "text": "Committed use discounts with 1-year or 3-year terms, sized to the steady baseline of standard, non-preemptible VMs",
+        "rationale": "Commitments give steady always-on usage a discount (up to 55%, or 70% for memory-optimized, for resource-based CUDs) while keeping standard VMs that are never preempted."
       }
     ],
     "correct": [
       "b"
     ],
-    "explanation": "**Correct: b.** For an always-on, predictable baseline that must not be interrupted, Committed Use Discounts (1- or 3-year resource or spend-based commitments) deliver substantial savings (up to ~57-70% depending on type/term) while keeping standard, non-preemptible VMs — no interruption risk.\n\n- **a** and **d** are wrong: Spot VMs can be preempted at any time with no SLA, which is unacceptable for a 24/7 customer-facing service.\n- **c** is wrong: pure on-demand leaves significant savings on the table for steady predictable load; sustained-use discounts help automatically but CUDs are cheaper for committed baselines. **Best practice:** cover the steady baseline with CUDs, and handle bursty peaks above baseline with on-demand (or Spot for any fault-tolerant batch side-work).",
+    "explanation": "Flexible (spend-based) CUDs range from 17% to 63% by service and term; cover the baseline with commitments and burst above it on demand.",
     "difficulty": 2
   },
   {
@@ -691,30 +836,38 @@
       "load-balancing",
       "hybrid-networking"
     ],
+    "subObjective": "provision.1",
+    "sourceUrl": "https://docs.cloud.google.com/vpc/docs/about-accessing-google-apis-endpoints",
+    "lastVerified": "2026-10-01",
     "prompt": "A retailer runs latency-sensitive services on-premises that must call Google Cloud APIs (BigQuery, Cloud Storage) **without traversing the public internet**, and must also expose a **single global anycast IP** for a web tier running in multiple regions. Which combination meets both requirements?",
     "choices": [
       {
         "id": "a",
-        "text": "Private Service Connect endpoints for Google APIs, plus a global external Application Load Balancer for the web tier"
+        "text": "Private Service Connect endpoints for Google APIs over hybrid links, plus a global external Application Load Balancer",
+        "rationale": "PSC endpoints for Google APIs are reachable from on-premises hosts over Cloud VPN or Interconnect, and the global external Application Load Balancer provides one anycast IP for multi-region backends."
       },
       {
         "id": "b",
-        "text": "Cloud NAT for API access, plus a regional external Application Load Balancer in each region"
+        "text": "Cloud NAT for the Google API calls, plus a regional external Application Load Balancer in each region of backends",
+        "rationale": "Cloud NAT translates outbound traffic from Google Cloud resources; it does not give on-premises hosts private API access, and regional load balancers have regional IPs."
       },
       {
         "id": "c",
-        "text": "Public Google API access secured with Cloud Armor, plus DNS round-robin across regional IPs"
+        "text": "Public Google API endpoints protected by Cloud Armor, plus DNS round-robin across the regional load balancer IPs",
+        "rationale": "Public endpoints traverse the internet, and round-robin DNS neither gives a single anycast IP nor reacts to backend health."
       },
       {
         "id": "d",
-        "text": "VPC Network Peering to Google's API network, plus an internal Application Load Balancer"
+        "text": "VPC Network Peering to Google's API network, plus an internal Application Load Balancer for the web tier",
+        "rationale": "Peering joins VPC networks, so there is no peering to Google's API network, and an internal load balancer is not internet-facing."
       }
     ],
     "correct": [
       "a"
     ],
-    "explanation": "Private Service Connect provides private, internal-IP access to Google APIs from on-prem/VPC, and a **global external Application Load Balancer** offers a single anycast IP with multi-region backends and health-based steering. Cloud NAT is for outbound internet egress, not private Google API access. DNS round-robin is not a single anycast IP and lacks health awareness. You cannot VPC-peer to Google's API network, and an internal ALB is not internet-facing.",
-    "difficulty": 3
+    "explanation": "On-premises clients also need DNS that resolves the endpoint name to its internal IP; without a private zone, queries go to public DNS.",
+    "difficulty": 3,
+    "examOnly": true
   },
   {
     "id": "q-provision-022",
@@ -724,31 +877,38 @@
       "vpc-design",
       "hybrid-networking"
     ],
-    "prompt": "An organization uses a **Shared VPC** to centralize network administration across many service projects. Which statements are TRUE? (Choose two.)",
+    "subObjective": "provision.1",
+    "sourceUrl": "https://docs.cloud.google.com/vpc/docs/shared-vpc",
+    "lastVerified": "2026-10-01",
+    "prompt": "An organization uses a **Shared VPC** to centralize network administration across many service projects. Which statements are TRUE? Choose two.",
     "choices": [
       {
-        "id": "a",
-        "text": "Subnets and firewall rules are defined in the host project and shared with attached service projects"
-      },
-      {
-        "id": "b",
-        "text": "Each service project must create its own VPC and peer it to the host project's VPC"
-      },
-      {
         "id": "c",
-        "text": "Resources in a service project (e.g., Compute Engine VMs) can use subnets owned by the host project"
+        "text": "Resources in a service project, such as Compute Engine VMs, can be created in subnets that the host project owns",
+        "rationale": "Service project resources such as VMs and load balancers can use the shared network's subnets."
       },
       {
         "id": "d",
-        "text": "Shared VPC removes the need for IAM — any service project can use any subnet automatically"
+        "text": "Shared VPC removes the need for IAM grants, so any service project can use any subnet in the host project automatically",
+        "rationale": "Use of subnets is granted through the Compute Network User role, either on the whole host project or on specific subnets."
+      },
+      {
+        "id": "a",
+        "text": "The host project owns the subnets and firewall rules, which attached service projects then use for their own resources",
+        "rationale": "Administrators manage the network, routes and firewall rules in the host project, and service project teams deploy onto them."
+      },
+      {
+        "id": "b",
+        "text": "Each service project must create its own VPC network and peer it with the host project's network, which is how sharing works",
+        "rationale": "Peering is a different connectivity model; Shared VPC lets service projects use the host project's own network directly."
       }
     ],
     "correct": [
       "a",
       "c"
     ],
-    "explanation": "With Shared VPC, the **host project** owns the VPC, subnets, and firewall rules; attached **service projects** run resources that consume those host subnets. (b) describes VPC Network Peering, a different model. (d) is false — subnet usage is granted explicitly via the **Compute Network User** IAM role on specific subnets or the host project.",
-    "difficulty": 3
+    "difficulty": 2,
+    "examOnly": true
   },
   {
     "id": "q-provision-023",
@@ -759,30 +919,38 @@
       "container-orchestration",
       "compute-provisioning"
     ],
-    "prompt": "A team must run a workload that requires **DaemonSets, a custom CNI plugin, and node-level GPU drivers**, with control over the node OS. They want the least operational overhead that still satisfies these requirements. Which platform fits?",
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/kubernetes-engine/docs/resources/autopilot-standard-feature-comparison",
+    "lastVerified": "2026-10-01",
+    "prompt": "A team needs privileged node-level agents deployed as DaemonSets, Ubuntu as the node OS image, and hands-on control over node pool configuration. They want the least operational overhead that still satisfies these requirements. Which platform fits?",
     "choices": [
       {
         "id": "a",
-        "text": "GKE Standard"
+        "text": "GKE Standard, where the team configures node pools and can choose an Ubuntu node image",
+        "rationale": "Standard gives you node pools you manage and optional Ubuntu or Windows node images, and it does not apply Autopilot's privileged-workload restrictions."
       },
       {
         "id": "b",
-        "text": "Cloud Run"
+        "text": "Cloud Run, with fully managed containers that scale per request and give no access to nodes",
+        "rationale": "Cloud Run is serverless: there are no nodes, DaemonSets, node images or node pools to configure."
       },
       {
         "id": "c",
-        "text": "GKE Autopilot"
+        "text": "GKE Autopilot, with Google-managed nodes on Container-Optimized OS and allowlist-gated privileged workloads",
+        "rationale": "Autopilot manages node pools and pre-configures Container-Optimized OS with containerd, and privileged workloads need allowlisting, so node image and pool control are not available."
       },
       {
         "id": "d",
-        "text": "Cloud Run functions"
+        "text": "Cloud Run functions, with event-driven source-based functions and no access to any cluster or node",
+        "rationale": "Functions are an even higher-level serverless abstraction with no nodes or DaemonSets."
       }
     ],
     "correct": [
       "a"
     ],
-    "explanation": "DaemonSets, custom CNI, node-level GPU drivers, and node-OS control all require access to the nodes, which only **GKE Standard** provides. Cloud Run and Cloud Run functions are fully serverless (no nodes/DaemonSets). GKE **Autopilot** manages nodes for you and restricts privileged node-level access, DaemonSets, and custom CNI — so it cannot meet these requirements.",
-    "difficulty": 3
+    "explanation": "The old explanation said Autopilot cannot run DaemonSets; Autopilot supports them. The deciding factors here are node OS choice, node pool control and privileged access.",
+    "difficulty": 2,
+    "examOnly": true
   },
   {
     "id": "q-provision-024",
@@ -793,29 +961,1999 @@
       "data-lifecycle",
       "backup-recovery"
     ],
-    "prompt": "A healthcare customer must guarantee that audit-log objects in Cloud Storage **cannot be deleted or overwritten for 7 years — even by project administrators** — to satisfy a regulatory retention mandate. What should you configure?",
+    "subObjective": "provision.2",
+    "sourceUrl": "https://docs.cloud.google.com/storage/docs/bucket-lock",
+    "lastVerified": "2026-10-01",
+    "prompt": "A healthcare customer must guarantee that audit-log objects in Cloud Storage **cannot be deleted or overwritten for 7 years, even by project administrators**, to satisfy a regulatory retention mandate. What should you configure?",
     "choices": [
       {
-        "id": "a",
-        "text": "A bucket retention policy with a 7-year period, then apply a locked Bucket Lock"
-      },
-      {
-        "id": "b",
-        "text": "Object versioning with a lifecycle rule that deletes noncurrent versions after 7 years"
-      },
-      {
         "id": "c",
-        "text": "An IAM deny rule on storage.objects.delete for all administrators"
+        "text": "Add an IAM deny rule on storage.objects.delete for every administrator account in the project",
+        "rationale": "Administrators can change IAM policies, so a deny rule is not an immutable control and does not stop overwrites."
       },
       {
         "id": "d",
-        "text": "Manual object holds applied to each object"
+        "text": "Place a temporary hold on each object by hand and release those holds only after 7 years have passed",
+        "rationale": "Temporary holds can be released at any time by anyone with permission and do not scale to every new object."
+      },
+      {
+        "id": "a",
+        "text": "Set a 7-year bucket retention policy, then lock it with Bucket Lock so it cannot be shortened or removed",
+        "rationale": "A retention policy blocks deletion and overwrite until each object is 7 years old, and locking makes the policy irreversible, even for administrators."
+      },
+      {
+        "id": "b",
+        "text": "Enable Object Versioning and add a lifecycle rule that deletes noncurrent versions after 7 years have passed",
+        "rationale": "In a versioned bucket a live version can still be made noncurrent, and versioning enforces no minimum age before removal."
       }
     ],
     "correct": [
       "a"
     ],
-    "explanation": "**Bucket Lock** makes the retention policy immutable (WORM): objects can't be deleted or overwritten before the retention period elapses, and the policy itself can't be shortened or removed — even by administrators. Versioning still permits deleting versions. IAM rules can be changed by admins. Manual holds don't scale and can be released.",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "id": "q-provision-025",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "hybrid-networking",
+      "ha-failover"
+    ],
+    "subObjective": "provision.1",
+    "sourceUrl": "https://docs.cloud.google.com/network-connectivity/docs/vpn/concepts/topologies",
+    "lastVerified": "2026-10-01",
+    "examOnly": true,
+    "prompt": "A team built an HA VPN gateway to an on-premises router and wants Google's 99.99% availability SLA for the connection. They created two tunnels, both attached to interface 0 of the HA VPN gateway, each with its own BGP session on a Cloud Router. The on-premises router exposes two public IP addresses. Which change gets the design to the SLA topology?",
+    "choices": [
+      {
+        "id": "b",
+        "text": "Add a third and fourth tunnel on interface 0 so that four tunnels share the same gateway interface and BGP session pair",
+        "rationale": "Tunnel count is not what the SLA keys on: every tunnel still leaves through one gateway interface, which remains a single point of failure."
+      },
+      {
+        "id": "c",
+        "text": "Replace the HA VPN gateway with a Classic VPN gateway that uses static routes over the two existing tunnels",
+        "rationale": "HA VPN requires dynamic BGP routing and is the topology that Google's SLA guidance describes; a static-route Classic VPN design is not that topology."
+      },
+      {
+        "id": "d",
+        "text": "Keep both tunnels on interface 0 but set the VPC network to global dynamic routing so that failover crosses regions",
+        "rationale": "Dynamic routing mode controls in which regions learned routes apply; it does nothing to spread tunnels across the gateway's two interfaces."
+      },
+      {
+        "id": "a",
+        "text": "Move the second tunnel to gateway interface 1, so each interface carries a tunnel, and keep BGP on both tunnels",
+        "rationale": "The 99.99% SLA requires at least one tunnel on each HA VPN gateway interface, paired with the matching peer interface, with dynamic (BGP) routing on every tunnel."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "Pairing is interface to interface: tunnel 0 joins interface 0 to the peer's interface, tunnel 1 joins interface 1.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-026",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "hybrid-connectivity",
+      "ha-failover"
+    ],
+    "caseStudyId": "ehr-healthcare",
+    "subObjective": "provision.1",
+    "sourceUrl": "https://docs.cloud.google.com/network-connectivity/docs/interconnect/concepts/partner-overview",
+    "lastVerified": "2026-10-01",
+    "examOnly": true,
+    "prompt": "EHR Healthcare is retiring a colocation facility, but the data center that hosts its insurer-integration systems is not located in a Dedicated Interconnect colocation facility. The team needs about 2 Gbps of private connectivity to Google Cloud and wants the topology that carries Google's 99.99% availability SLA. Which design should the architect recommend?",
+    "choices": [
+      {
+        "id": "c",
+        "text": "Partner Interconnect with two attachments in one metro on a single Cloud Router, using separate provider devices",
+        "rationale": "Two attachments in one metro on one Cloud Router fall short of the four-attachment, two-metro, two-Cloud-Router topology required for 99.99%."
+      },
+      {
+        "id": "d",
+        "text": "Dedicated Interconnect with two 10 Gbps connections in one metro, ordered through a nearby colocation facility",
+        "rationale": "The site is not in a Dedicated Interconnect facility, and two connections in one metro still fall short of the four-connection 99.99% topology."
+      },
+      {
+        "id": "a",
+        "text": "Partner Interconnect with four VLAN attachments spread across two metros, terminating on two Cloud Routers",
+        "rationale": "Partner Interconnect fits a site that cannot reach a Dedicated Interconnect facility or needs less than a full 10 Gbps; its 99.99% topology uses four attachments across two metros and two Cloud Routers."
+      },
+      {
+        "id": "b",
+        "text": "Partner Interconnect with one 2 Gbps VLAN attachment on a single Cloud Router, trusting the provider's redundancy",
+        "rationale": "A single attachment is one failure domain; the provider's internal redundancy is outside the SLA, which covers only the VPC-to-provider segment."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-027",
+    "type": "multiple",
+    "domainId": "provision",
+    "concepts": [
+      "hybrid-networking",
+      "network-design"
+    ],
+    "subObjective": "provision.1",
+    "sourceUrl": "https://docs.cloud.google.com/dns/docs/best-practices",
+    "lastVerified": "2026-10-01",
+    "examOnly": true,
+    "prompt": "A company hosts Cloud DNS private zones for `gcp.example.internal` and keeps corporate DNS servers on-premises for `corp.example.com`. Over Cloud Interconnect, VMs in the VPC must resolve corporate names, and on-premises servers must resolve the Google Cloud names. Which configurations are needed? Choose two.",
+    "choices": [
+      {
+        "id": "d",
+        "text": "Create a DNS peering zone in the VPC that names the on-premises DNS servers as the target of the peering",
+        "rationale": "Peering zones forward queries from one VPC network to another; they cannot target on-premises servers."
+      },
+      {
+        "id": "e",
+        "text": "Copy every on-premises record into a private zone by hand and update the zone whenever the corporate DNS changes",
+        "rationale": "Duplicated records drift out of date, and copies do nothing to let on-premises hosts resolve the Google Cloud names."
+      },
+      {
+        "id": "a",
+        "text": "Create a Cloud DNS forwarding zone for the corporate domain that sends the VPC's queries to the on-premises DNS servers",
+        "rationale": "A forwarding zone for the on-premises domain is the documented way for VMs to query corporate DNS while keeping internal Compute Engine names working."
+      },
+      {
+        "id": "b",
+        "text": "Create a DNS server policy with inbound forwarding so that on-premises hosts can query the VPC's private zones",
+        "rationale": "An inbound server policy gives on-premises resolvers a forwarding target to reach Cloud DNS private zones."
+      },
+      {
+        "id": "c",
+        "text": "Create a public Cloud DNS zone for the corporate domain and list the on-premises server addresses as its NS records",
+        "rationale": "A public zone is served from Google's public name servers; it does not make VPC queries go to private on-premises servers."
+      }
+    ],
+    "correct": [
+      "a",
+      "b"
+    ],
+    "explanation": "Allow source range 35.199.192.0/19 through on-premises firewalls and advertise a route for it, because Cloud DNS queries originate from it.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-028",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "load-balancing",
+      "network-provisioning"
+    ],
+    "subObjective": "provision.1",
+    "sourceUrl": "https://docs.cloud.google.com/load-balancing/docs/proxy-only-subnets",
+    "lastVerified": "2026-10-01",
+    "examOnly": true,
+    "prompt": "A team deploys a regional internal Application Load Balancer in us-east1 and needs the network resource that its Envoy-based proxies run in. Which prerequisite must exist in that VPC network and region?",
+    "choices": [
+      {
+        "id": "b",
+        "text": "A reserved global anycast IP address and a Google-managed TLS certificate attached to the load balancer's target HTTPS proxy",
+        "rationale": "A regional internal load balancer uses a regional internal IP address; a global anycast address belongs to global external load balancers."
+      },
+      {
+        "id": "c",
+        "text": "A Cloud Router and a Cloud NAT gateway in us-east1, so that the load balancer's proxies can reach their backends",
+        "rationale": "Proxies reach backends over internal addresses, so NAT is irrelevant; Cloud NAT handles outbound internet traffic for private VMs."
+      },
+      {
+        "id": "d",
+        "text": "A VPC Network Peering connection to the producer network that hosts the proxies on the customer's behalf",
+        "rationale": "Load balancer proxies are allocated from a proxy-only subnet inside the customer's own VPC, not from a peered producer network."
+      },
+      {
+        "id": "a",
+        "text": "A proxy-only subnet in us-east1 (REGIONAL_MANAGED_PROXY purpose), with a firewall rule admitting its range to backends",
+        "rationale": "Regional internal Application Load Balancers require a proxy-only subnet, and backends must permit ingress from that subnet's CIDR range."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 1
+  },
+  {
+    "id": "q-provision-029",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "load-balancing",
+      "global-load-balancing"
+    ],
+    "subObjective": "provision.1",
+    "sourceUrl": "https://docs.cloud.google.com/load-balancing/docs/choosing-load-balancer",
+    "lastVerified": "2026-10-01",
+    "examOnly": true,
+    "prompt": "A game studio runs a custom TLS-wrapped TCP protocol, not HTTP, on servers in three regions. Players worldwide must connect to one anycast IP address, with TLS terminated at Google's edge. Which load balancer fits?",
+    "choices": [
+      {
+        "id": "c",
+        "text": "Regional external passthrough Network Load Balancer in each region, with players choosing a regional IP address",
+        "rationale": "Passthrough load balancers do not terminate TLS, each has a regional IP address, and backends are limited to one region."
+      },
+      {
+        "id": "d",
+        "text": "Internal passthrough Network Load Balancer reached through a public DNS record that points at its private address",
+        "rationale": "An internal load balancer is reachable only inside the VPC network, so internet players cannot connect to it."
+      },
+      {
+        "id": "a",
+        "text": "Global external proxy Network Load Balancer, with an anycast IP, optional TLS offload and multi-region backends",
+        "rationale": "It is a Layer 4 proxy with a global anycast address, optional SSL offload and backends in multiple regions."
+      },
+      {
+        "id": "b",
+        "text": "Global external Application Load Balancer, using URL maps to send the custom protocol by path to each region's backends",
+        "rationale": "Application Load Balancers are Layer 7 and route requests by host and path; a custom TCP protocol has no URL to route on."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 1
+  },
+  {
+    "id": "q-provision-030",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "vpc-design",
+      "network-design"
+    ],
+    "subObjective": "provision.1",
+    "sourceUrl": "https://docs.cloud.google.com/network-connectivity/docs/network-connectivity-center/concepts/overview",
+    "lastVerified": "2026-10-01",
+    "examOnly": true,
+    "prompt": "After acquisitions, a company has twelve VPC networks in different projects. A hub VPC is peered with each of the other eleven, yet workloads in two spoke VPCs cannot reach each other. The team wants any-to-any connectivity among all twelve without a mesh of peerings. What should the architect recommend?",
+    "choices": [
+      {
+        "id": "c",
+        "text": "Add a Cloud NAT gateway in the hub VPC so that traffic from one spoke is translated and forwarded to the other spokes",
+        "rationale": "Cloud NAT translates outbound traffic to external destinations; it is not a router between VPC networks."
+      },
+      {
+        "id": "d",
+        "text": "Move all twelve networks into a Shared VPC host project so that peering becomes transitive for the attached projects",
+        "rationale": "Shared VPC lets service projects use one host network; it does not link separate VPC networks or make peering transitive."
+      },
+      {
+        "id": "e",
+        "text": "Install a router appliance VM in the hub and hand-maintain static routes for every pair of peered spoke networks",
+        "rationale": "Static routes cannot make peering transitive, and pairs of spokes would need hand-maintained routes that drift."
+      },
+      {
+        "id": "a",
+        "text": "Create a Network Connectivity Center hub and attach each VPC as a VPC spoke to obtain any-to-any connectivity",
+        "rationale": "NCC provides transitive, any-to-any connectivity across VPC spokes through one hub, with no pairwise peering needed."
+      },
+      {
+        "id": "b",
+        "text": "Enable custom route export and import on every hub peering so that routes learned from one spoke reach the others",
+        "rationale": "Peering does not provide transitive routing, and the custom route flags only change which static and dynamic routes are exchanged with a direct peer."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-031",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "hybrid-connectivity",
+      "network-design"
+    ],
+    "caseStudyId": "knightmotives-automotive",
+    "subObjective": "provision.1",
+    "sourceUrl": "https://docs.cloud.google.com/network-connectivity/docs/network-connectivity-center/concepts/overview",
+    "lastVerified": "2026-10-01",
+    "examOnly": true,
+    "prompt": "KnightMotives must upgrade connectivity between eight manufacturing plants and headquarters. Each plant connects to Google Cloud through its own HA VPN tunnels or Interconnect VLAN attachments, and plants must also exchange traffic with each other. The team wants Google's network as the backbone instead of provisioning links between every pair of plants. Which design fits?",
+    "choices": [
+      {
+        "id": "d",
+        "text": "Build a full mesh of HA VPN tunnels directly between the eight plant sites, running BGP on each pair of site routers for failover",
+        "rationale": "A mesh needs a tunnel set for every pair of sites and its own BGP configuration, which is the provisioning burden the team wants to avoid."
+      },
+      {
+        "id": "a",
+        "text": "Build a Network Connectivity Center hub, attach each plant's VPN tunnels or VLAN attachments as hybrid spokes, and enable site-to-site transfer",
+        "rationale": "Hybrid spokes let dynamic routes from one site be re-advertised to the others, so plants reach each other over Google's backbone; each spoke needs its own ASN."
+      },
+      {
+        "id": "b",
+        "text": "Create a VPC Network Peering connection from the headquarters VPC to each plant's router so that routes are exchanged between sites",
+        "rationale": "VPC Network Peering connects VPC networks only; it cannot peer with on-premises routers."
+      },
+      {
+        "id": "c",
+        "text": "Terminate each plant on Classic VPN tunnels to a single VPC and rely on its routes to forward plant-to-plant traffic over the tunnels",
+        "rationale": "Classic VPN tunnels are not supported as NCC spokes, and nothing in this design enables plants to exchange routes with each other."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
     "difficulty": 3
+  },
+  {
+    "id": "q-provision-032",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "hybrid-networking",
+      "vpc-design"
+    ],
+    "subObjective": "provision.1",
+    "sourceUrl": "https://docs.cloud.google.com/vpc/docs/routes",
+    "lastVerified": "2026-10-01",
+    "examOnly": true,
+    "prompt": "An HA VPN with a Cloud Router in us-central1 connects a VPC to the data center, and BGP is established. VMs in us-central1 reach on-premises hosts, but VMs in europe-west1 in the same VPC have no route to them. The VPC uses the default dynamic routing mode. What is the most appropriate fix?",
+    "choices": [
+      {
+        "id": "e",
+        "text": "Enable Private Google Access on the europe-west1 subnets so that the VMs can reach private on-premises addresses",
+        "rationale": "Private Google Access gives VMs without external IPs access to Google APIs; it does not provide routes to on-premises networks."
+      },
+      {
+        "id": "a",
+        "text": "Switch the VPC network's dynamic routing mode to global, so that learned dynamic routes apply in every region",
+        "rationale": "The default regional mode applies dynamic routes in the Cloud Router's region only; global mode creates them in all regions of the VPC."
+      },
+      {
+        "id": "b",
+        "text": "Build another HA VPN gateway and Cloud Router in europe-west1 and add static routes there for the same prefixes",
+        "rationale": "Extra gateways and hand-maintained static routes add cost and drift; changing the routing mode needs no new connectivity."
+      },
+      {
+        "id": "c",
+        "text": "Raise the BGP MED on the us-central1 sessions so that europe-west1 instances prefer the learned routes over local ones",
+        "rationale": "MED influences which path is preferred among routes that already exist; it does not create routes in a region that has none."
+      },
+      {
+        "id": "d",
+        "text": "Tag the europe-west1 VMs and add a firewall rule that allows egress from those tags to the on-premises prefixes",
+        "rationale": "The VMs lack a route, not permission; firewall rules cannot supply a missing route."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 3
+  },
+  {
+    "id": "q-provision-033",
+    "type": "multiple",
+    "domainId": "provision",
+    "concepts": [
+      "vpc-design",
+      "network-design"
+    ],
+    "subObjective": "provision.1",
+    "sourceUrl": "https://docs.cloud.google.com/vpc/docs/vpc-peering",
+    "lastVerified": "2026-10-01",
+    "examOnly": true,
+    "prompt": "A team is planning VPC Network Peering between a shared-services VPC and several application VPCs and wants to know what the design guarantees. Which statements are accurate? Choose three.",
+    "choices": [
+      {
+        "id": "b",
+        "text": "Firewall rules are not exchanged between peered networks, so each VPC needs its own rules for traffic arriving from the peer",
+        "rationale": "Each network enforces only its own firewall rules; nothing is imported from the peer."
+      },
+      {
+        "id": "c",
+        "text": "Clients in one peered network can reach an internal load balancer that is hosted in the other peered network",
+        "rationale": "Internal load balancers are reachable across a peering, which makes shared services behind them consumable."
+      },
+      {
+        "id": "d",
+        "text": "Subnet ranges in peered networks may overlap as long as the VMs that use them carry different network tags",
+        "rationale": "Peering forbids a subnet range that matches, contains or fits within a range in the peer; tags do not change that."
+      },
+      {
+        "id": "e",
+        "text": "A firewall rule that targets a network tag also applies to VMs carrying the same tag in the peered network",
+        "rationale": "Tag-targeted rules resolve only to instances in the rule's own VPC network, even if peered VMs carry the same tag."
+      },
+      {
+        "id": "a",
+        "text": "Peering is not transitive, so two application VPCs that peer with the shared-services VPC cannot reach each other through it",
+        "rationale": "Peering does not provide transitive routing: networks peered to the same third network do not gain connectivity to one another."
+      }
+    ],
+    "correct": [
+      "a",
+      "b",
+      "c"
+    ],
+    "difficulty": 3
+  },
+  {
+    "id": "q-provision-034",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "network-provisioning",
+      "hybrid-networking"
+    ],
+    "caseStudyId": "cymbal-retail",
+    "subObjective": "provision.1",
+    "sourceUrl": "https://docs.cloud.google.com/nat/docs/ports-and-addresses",
+    "lastVerified": "2026-10-01",
+    "examOnly": true,
+    "prompt": "Cymbal Retail's catalog-sync workers run on private GKE nodes and reach a supplier's SFTP endpoint through Cloud NAT. During the nightly sync, connections to the supplier fail intermittently even though the gateway shows plenty of free ports overall. Use the exhibit to choose the best fix.",
+    "exhibit": {
+      "label": "Cloud NAT gateway settings and nightly load",
+      "format": "table",
+      "content": "| Setting | Value |\n|---|---|\n| NAT gateway IP addresses | 4 |\n| Port allocation | Static, 64 minimum ports per VM |\n| Worker VMs behind the gateway | 12 |\n| Peak simultaneous SFTP connections per worker VM | about 300 |\n| SFTP destination | 203.0.113.20, tcp/22 (one supplier endpoint) |\n| Ports reserved across the gateway at peak | 768 of 258,048 |"
+    },
+    "choices": [
+      {
+        "id": "a",
+        "text": "Raise the minimum ports per VM above the peak per-VM connection count, or use dynamic port allocation with a higher maximum",
+        "rationale": "Ports reserved per VM cap simultaneous connections to one destination IP, port and protocol; 64 ports allow about 64 connections where roughly 300 are needed."
+      },
+      {
+        "id": "b",
+        "text": "Add more NAT IP addresses to the gateway so that every worker VM receives extra ports toward the supplier endpoint",
+        "rationale": "More IPs enlarge the pool, but each VM still holds only its configured minimum ports, so the per-VM limit remains."
+      },
+      {
+        "id": "c",
+        "text": "Assign external IP addresses directly to the worker nodes so that they bypass Cloud NAT, accepting public exposure",
+        "rationale": "That removes the NAT limit but breaks the private-node design and widens the attack surface when a configuration change would solve it."
+      },
+      {
+        "id": "d",
+        "text": "Replace the single NAT gateway with one gateway per worker VM so that no two VMs share the same translation state",
+        "rationale": "Each VM already reserves its own ports; splitting gateways leaves the same 64-port allocation for each VM."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 3
+  },
+  {
+    "id": "q-provision-035",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "disaster-recovery",
+      "rto-rpo"
+    ],
+    "subObjective": "provision.2",
+    "sourceUrl": "https://docs.cloud.google.com/storage/docs/availability-durability",
+    "lastVerified": "2026-10-01",
+    "prompt": "A trading firm stores transaction journals in Cloud Storage and must continue in a second region after a regional outage with no more than 15 minutes of newly written data missing. The bucket must fail over without manual intervention. Which configuration meets this?",
+    "choices": [
+      {
+        "id": "d",
+        "text": "A regional bucket with a scheduled Storage Transfer Service job that copies new objects to a second region every hour",
+        "rationale": "An hourly copy leaves up to an hour of data missing and needs manual repointing of applications."
+      },
+      {
+        "id": "e",
+        "text": "A regional bucket in the primary region, since its data is already redundant across multiple zones",
+        "rationale": "Zones share one region, so zone redundancy does not protect against a regional outage."
+      },
+      {
+        "id": "a",
+        "text": "A dual-region bucket, for example NAM4, with turbo replication enabled for its two regions",
+        "rationale": "Turbo replication targets replicating 100% of new objects between the two regions within a 15-minute RPO, and dual-region buckets fail over automatically."
+      },
+      {
+        "id": "b",
+        "text": "A multi-region US bucket with turbo replication enabled, because multi-region buckets span more locations",
+        "rationale": "Turbo replication applies only to dual-region buckets, not to multi-region buckets."
+      },
+      {
+        "id": "c",
+        "text": "A dual-region bucket with default replication, relying on the typical one-hour replication of most new objects",
+        "rationale": "Default replication has a 12-hour RPO; most objects replicating within an hour is a typical case, not a bound."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-036",
+    "type": "multiple",
+    "domainId": "provision",
+    "concepts": [
+      "data-retention",
+      "backup-recovery"
+    ],
+    "subObjective": "provision.2",
+    "sourceUrl": "https://docs.cloud.google.com/storage/docs/soft-delete",
+    "lastVerified": "2026-10-01",
+    "examOnly": true,
+    "prompt": "A cleanup script deleted objects from a Cloud Storage bucket that still has its default data protection settings. Which statements are accurate? Choose two.",
+    "choices": [
+      {
+        "id": "c",
+        "text": "Soft-deleted objects stop incurring storage charges the moment they are deleted, so keeping them costs nothing",
+        "rationale": "Soft-deleted objects continue to accrue storage charges until their retention period expires."
+      },
+      {
+        "id": "d",
+        "text": "Soft delete protects individual objects only, so a deleted bucket and its contents are gone immediately",
+        "rationale": "Soft delete also applies to bucket deletion, and a soft-deleted bucket can be restored during the window."
+      },
+      {
+        "id": "e",
+        "text": "Recovery is possible only if Object Versioning was on beforehand, because Cloud Storage has no other restore mechanism",
+        "rationale": "Soft delete is a separate recovery mechanism that needs no versioning and is enabled by default."
+      },
+      {
+        "id": "a",
+        "text": "Soft delete is on by default with a 7-day retention duration, so the deleted objects can still be restored",
+        "rationale": "Soft delete is enabled by default on compatible buckets with a 7-day retention period, and objects can be restored in that window."
+      },
+      {
+        "id": "b",
+        "text": "The soft delete retention duration can be set between 7 and 90 days, or soft delete can be disabled altogether",
+        "rationale": "The window is configurable from 7 to 90 days, and the feature can be turned off."
+      }
+    ],
+    "correct": [
+      "a",
+      "b"
+    ],
+    "difficulty": 1
+  },
+  {
+    "id": "q-provision-037",
+    "type": "multiple",
+    "domainId": "provision",
+    "concepts": [
+      "data-retention",
+      "data-lifecycle"
+    ],
+    "subObjective": "provision.2",
+    "sourceUrl": "https://docs.cloud.google.com/storage/docs/object-holds",
+    "lastVerified": "2026-10-01",
+    "prompt": "A lender must keep each loan document for 3 years after the loan closes, and the closing date is unknown when a document is uploaded. Which combination enforces this in Cloud Storage? Choose two.",
+    "choices": [
+      {
+        "id": "b",
+        "text": "Turn on a default event-based hold for the bucket and release each document's hold when its loan closes",
+        "rationale": "A default event-based hold is placed on every new object, and releasing it resets the object's time in the bucket, so the 3 years count from closing."
+      },
+      {
+        "id": "c",
+        "text": "Place a temporary hold on each document at upload and release it at closing, which restarts the 3-year clock",
+        "rationale": "Releasing a temporary hold does not affect the retention clock, so the period still counts from upload."
+      },
+      {
+        "id": "d",
+        "text": "Add a lifecycle Delete rule with an age of 1,095 days, which counts from the day each document is created",
+        "rationale": "Age counts from object creation, not from the closing event, and a lifecycle rule is not an enforcement control."
+      },
+      {
+        "id": "e",
+        "text": "Enable Object Versioning so that earlier versions of each loan document survive until the 3-year mark passes",
+        "rationale": "Versioning keeps prior versions but enforces no minimum age and does not tie retention to an event."
+      },
+      {
+        "id": "a",
+        "text": "Set a bucket retention policy of 3 years so that no object can be deleted or replaced before reaching that age",
+        "rationale": "The retention policy sets the minimum time an object must stay, and releasing an event-based hold restarts that clock."
+      }
+    ],
+    "correct": [
+      "a",
+      "b"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-038",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "object-lifecycle-management",
+      "storage-classes"
+    ],
+    "subObjective": "provision.2",
+    "sourceUrl": "https://docs.cloud.google.com/storage/docs/autoclass",
+    "lastVerified": "2026-10-01",
+    "examOnly": true,
+    "prompt": "A media team wants to enable Autoclass on the bucket whose lifecycle configuration is shown, so that class transitions become automatic. They still want objects deleted after seven years. What should they do first?",
+    "exhibit": {
+      "label": "Current lifecycle configuration of the bucket",
+      "format": "config",
+      "language": "json",
+      "content": "{\n  \"rule\": [\n    {\n      \"action\": { \"type\": \"SetStorageClass\", \"storageClass\": \"NEARLINE\" },\n      \"condition\": { \"age\": 30, \"matchesStorageClass\": [\"STANDARD\"] }\n    },\n    {\n      \"action\": { \"type\": \"SetStorageClass\", \"storageClass\": \"ARCHIVE\" },\n      \"condition\": { \"age\": 365, \"matchesStorageClass\": [\"NEARLINE\"] }\n    },\n    {\n      \"action\": { \"type\": \"Delete\" },\n      \"condition\": { \"age\": 2555 }\n    }\n  ]\n}"
+    },
+    "choices": [
+      {
+        "id": "c",
+        "text": "Keep all three rules, because Autoclass runs after lifecycle rules and overrides any transition that conflicts with them",
+        "rationale": "The two features cannot be combined on one bucket in this way, so there is no precedence order to rely on."
+      },
+      {
+        "id": "d",
+        "text": "Keep the rules and set Archive as the terminal class, which makes the Nearline matchesStorageClass condition compatible",
+        "rationale": "The terminal class changes where Autoclass stops transitioning; it does not lift the restriction on SetStorageClass rules."
+      },
+      {
+        "id": "a",
+        "text": "Remove the two SetStorageClass rules, which cannot coexist with Autoclass, and keep the Delete rule for the seven-year expiry",
+        "rationale": "A bucket cannot have Autoclass together with a SetStorageClass action or a matchesStorageClass condition, but Delete rules remain allowed."
+      },
+      {
+        "id": "b",
+        "text": "Remove all three rules, since Autoclass blocks any lifecycle configuration, and run a scheduled job to delete old objects",
+        "rationale": "Only SetStorageClass and matchesStorageClass are restricted; Delete rules can stay, so a custom deletion job is unnecessary."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 3
+  },
+  {
+    "id": "q-provision-039",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "storage-classes",
+      "cost-optimization"
+    ],
+    "caseStudyId": "altostrat-media",
+    "subObjective": "provision.2",
+    "sourceUrl": "https://docs.cloud.google.com/storage/docs/autoclass",
+    "lastVerified": "2026-10-01",
+    "prompt": "Altostrat Media must reduce storage costs for a growing library of video, audio and thumbnails while keeping content highly available. Which titles become popular again is unpredictable, and re-popular titles must not trigger retrieval or early-deletion surprises. Which configuration fits best?",
+    "choices": [
+      {
+        "id": "b",
+        "text": "Add lifecycle rules that move every object to Coldline after 90 days and to Archive after one year",
+        "rationale": "Age-based rules ignore access, so a title that turns popular again incurs retrieval fees and the minimum-duration rules of the colder classes."
+      },
+      {
+        "id": "c",
+        "text": "Keep the whole library in Standard and rely on Cloud CDN caching to reduce the cost of storing rarely viewed titles",
+        "rationale": "CDN caching lowers serving cost for popular content but does not reduce the storage price of cold objects."
+      },
+      {
+        "id": "d",
+        "text": "Move everything to Nearline on upload, which has a 30-day minimum duration and a lower storage price than Standard",
+        "rationale": "Nearline still bills retrieval fees on every read and early-deletion charges, so hot titles can cost more than in Standard."
+      },
+      {
+        "id": "a",
+        "text": "Enable Autoclass on the bucket with Archive as the terminal class, so each object follows its own access pattern",
+        "rationale": "Autoclass moves objects to colder classes after inactivity and back to Standard when accessed, without retrieval or early-deletion fees outside enablement charges."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "Objects smaller than 128 KiB, such as many thumbnails, are never transitioned and stay in Standard.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-040",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "storage-classes",
+      "storage-selection"
+    ],
+    "subObjective": "provision.2",
+    "sourceUrl": "https://docs.cloud.google.com/storage/docs/storage-classes",
+    "lastVerified": "2026-10-01",
+    "examOnly": true,
+    "prompt": "A pipeline writes intermediate files to a Cloud Storage bucket, reads them several times a day, and deletes them after 10 days. Which storage class is the most cost-appropriate?",
+    "choices": [
+      {
+        "id": "d",
+        "text": "Archive, because its 365-day minimum storage duration is waived when a lifecycle rule performs the deletion",
+        "rationale": "Early deletion is charged whether the delete comes from a user or a lifecycle rule."
+      },
+      {
+        "id": "a",
+        "text": "Standard, which has no minimum storage duration and no retrieval fees for frequently read, short-lived data",
+        "rationale": "Standard has no minimum duration and no retrieval fees, which is what short-lived, frequently read data needs."
+      },
+      {
+        "id": "b",
+        "text": "Nearline, because its 30-day minimum storage duration lets files be deleted early at no extra charge",
+        "rationale": "Deleting before the 30-day minimum incurs an early deletion charge, and every read also costs a retrieval fee."
+      },
+      {
+        "id": "c",
+        "text": "Coldline, since its lower storage price outweighs the cost of its 90-day minimum for files removed after 10 days",
+        "rationale": "A file removed after 10 days is billed as if stored for 90, and daily reads add retrieval fees."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 1
+  },
+  {
+    "id": "q-provision-041",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "storage-selection",
+      "ha-failover"
+    ],
+    "subObjective": "provision.2",
+    "sourceUrl": "https://docs.cloud.google.com/filestore/docs/service-tiers",
+    "lastVerified": "2026-10-01",
+    "prompt": "A fleet of GKE workloads spread over two zones needs a shared NFS file system for user uploads. The file system must stay available if one zone fails, and the team wants managed backups. Which Filestore choice fits?",
+    "choices": [
+      {
+        "id": "c",
+        "text": "A legacy Basic SSD instance, which is zonal and offers fixed performance, with a weekly backup schedule",
+        "rationale": "Basic tiers are zonal, so a zone failure takes the file system down, and they lack the snapshot and replication features of newer tiers."
+      },
+      {
+        "id": "d",
+        "text": "A VM in one zone exporting a Persistent Disk over NFS, using the node's zone as the failure domain",
+        "rationale": "A self-managed NFS server on one VM is bound to a single zone and adds the operations the team wants to avoid."
+      },
+      {
+        "id": "a",
+        "text": "A Zonal Filestore instance in one zone, because backups can restore the data quickly after a zone outage",
+        "rationale": "A zonal instance is lost with its zone; restoring from a backup is recovery after downtime, not continued availability."
+      },
+      {
+        "id": "b",
+        "text": "A Regional Filestore instance, which provides resilience against zone outages, with backups enabled",
+        "rationale": "The Regional tier is built for regional availability and resilience against zone outages, and current tiers support backups."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-042",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "ha-failover",
+      "storage-allocation"
+    ],
+    "subObjective": "provision.2",
+    "sourceUrl": "https://docs.cloud.google.com/compute/docs/disks/regional-persistent-disk",
+    "lastVerified": "2026-10-01",
+    "examOnly": true,
+    "prompt": "A stateful database VM runs on a machine series that regional Persistent Disk does not support (it supports only E2, N1, N2 and N2D). The team needs near-zero RPO across two zones in one region and can fail over by attaching storage to a VM in the second zone. Which storage should the architect choose?",
+    "choices": [
+      {
+        "id": "c",
+        "text": "A zonal Hyperdisk Balanced volume with a snapshot schedule every 15 minutes, stored in a second region",
+        "rationale": "Snapshots every 15 minutes mean up to 15 minutes of data loss, not near-zero RPO."
+      },
+      {
+        "id": "d",
+        "text": "Local SSD on the VM, with a replication agent that mirrors writes to a standby VM in the other zone",
+        "rationale": "Local SSD data is lost with the VM, and asynchronous agent replication adds its own RPO and operational burden."
+      },
+      {
+        "id": "e",
+        "text": "A zonal SSD Persistent Disk in the primary zone, attached in multi-writer mode to a standby VM in the other zone",
+        "rationale": "A zonal disk's data lives in one zone, so a zone failure removes it for the standby VM too."
+      },
+      {
+        "id": "a",
+        "text": "Hyperdisk Balanced High Availability, which replicates synchronously across two zones and supports more machine series",
+        "rationale": "It is the synchronously replicated, two-zone Hyperdisk option, supports additional machine series, and fails over by force-attaching in the replica zone."
+      },
+      {
+        "id": "b",
+        "text": "Regional Balanced Persistent Disk, attaching it to the VM even though that machine series is not on the documented supported list",
+        "rationale": "Regional Persistent Disk attaches only to E2, N1, N2 and N2D machine types, so this VM cannot use it."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 3
+  },
+  {
+    "id": "q-provision-043",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "backup-recovery",
+      "data-retention"
+    ],
+    "subObjective": "provision.2",
+    "sourceUrl": "https://docs.cloud.google.com/backup-disaster-recovery/docs/concepts/backup-dr",
+    "lastVerified": "2026-10-01",
+    "prompt": "A company keeps nightly Compute Engine disk snapshots in the same project as production. After a ransomware incident in which a compromised Owner account deleted resources, the CISO requires backups that attackers holding project Owner rights cannot delete before a minimum retention period ends. What should the architect do?",
+    "choices": [
+      {
+        "id": "b",
+        "text": "Copy the snapshots to a Standard Cloud Storage bucket in the same project and let only the security team delete them",
+        "rationale": "Permissions inside the same project can be changed by a compromised Owner, so the copies are not protected against deletion."
+      },
+      {
+        "id": "c",
+        "text": "Run the snapshot schedule hourly and keep each snapshot for 90 days in the same production project as the disks",
+        "rationale": "More frequent snapshots improve RPO, but they live in the same blast radius and can still be deleted by the attacker."
+      },
+      {
+        "id": "d",
+        "text": "Remove the Owner role from every human user and keep a single break-glass service account for emergencies",
+        "rationale": "That narrows who can delete but offers no technical guarantee: a compromised privileged identity can still remove the snapshots."
+      },
+      {
+        "id": "a",
+        "text": "Protect the workloads with Backup and DR plans that write to a backup vault with an enforced minimum retention",
+        "rationale": "Backup vaults are isolated storage with WORM enforcement, so backups cannot be modified or deleted until the vault retention timer expires."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-044",
+    "type": "multiple",
+    "domainId": "provision",
+    "concepts": [
+      "object-lifecycle-management",
+      "data-lifecycle"
+    ],
+    "subObjective": "provision.2",
+    "sourceUrl": "https://docs.cloud.google.com/storage/docs/lifecycle",
+    "lastVerified": "2026-10-01",
+    "prompt": "A bucket with Object Versioning accumulates noncurrent versions that raise storage cost. Which lifecycle capabilities can limit them? Choose two.",
+    "choices": [
+      {
+        "id": "d",
+        "text": "A Delete rule that removes objects during their retention period, because lifecycle actions override retention policies",
+        "rationale": "Delete does not take effect on an object under an unmet retention policy or an object hold."
+      },
+      {
+        "id": "e",
+        "text": "Lifecycle rules that run the instant conditions are met, so unwanted versions disappear within seconds of qualifying",
+        "rationale": "Cloud Storage applies lifecycle actions asynchronously, so there can be a lag after the conditions are satisfied."
+      },
+      {
+        "id": "a",
+        "text": "A Delete rule using the numNewerVersions condition, which removes a version once enough newer versions exist",
+        "rationale": "numNewerVersions lets a Delete rule cap how many versions are retained for each object."
+      },
+      {
+        "id": "b",
+        "text": "A Delete rule using the daysSinceNoncurrentTime condition, which removes a version a set time after it became noncurrent",
+        "rationale": "daysSinceNoncurrentTime ages noncurrent versions out from the moment they stopped being live."
+      },
+      {
+        "id": "c",
+        "text": "A SetStorageClass rule that moves noncurrent versions from Archive back to Standard to lower their storage price",
+        "rationale": "Transitions run only toward colder classes, and Standard has the highest storage price anyway."
+      }
+    ],
+    "correct": [
+      "a",
+      "b"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-045",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "instance-templates",
+      "managed-instance-groups"
+    ],
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/compute/docs/instance-templates",
+    "lastVerified": "2026-10-01",
+    "prompt": "A team runs a managed instance group of API servers from an instance template. They need to move the group from e2-standard-4 to e2-standard-8 machines. What is the correct way to change the machine type for the group?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Edit the machine type field on the existing instance template and let the group pick up the change",
+        "rationale": "Templates are immutable. There is no edit operation, so the group would never see a different machine type."
+      },
+      {
+        "id": "b",
+        "text": "Delete the group and build a new one, because a group's template can never be replaced after creation",
+        "rationale": "The premise is wrong. A MIG can be pointed at a new template with an update, so recreating the whole group is unnecessary and causes downtime."
+      },
+      {
+        "id": "c",
+        "text": "Create a new instance template with the larger machine type and apply it with a MIG update",
+        "rationale": "Instance templates cannot be modified after creation, so a new template applied through a rolling or selective MIG update is the supported path."
+      },
+      {
+        "id": "d",
+        "text": "Stop each running VM and change its machine type by hand so that the group adopts the new size",
+        "rationale": "Manual changes to individual VMs do not alter the group's target configuration, and the next recreation or autohealing event restores the template's machine type."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "Treat templates as versioned artifacts: create a new one, then roll it out with maxSurge/maxUnavailable settings that match your availability needs.",
+    "difficulty": 1,
+    "examOnly": true
+  },
+  {
+    "id": "q-provision-046",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "serverless",
+      "compute-selection"
+    ],
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/appengine/docs/the-appengine-environments",
+    "lastVerified": "2026-10-01",
+    "prompt": "A small team hosts a stateless web app in a runtime that App Engine standard supports. Traffic is near zero overnight and can jump tenfold within seconds during promotions. They want instances to start in seconds and to pay nothing for idle capacity. Which App Engine environment fits?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "The flexible environment, which always keeps at least one instance running",
+        "rationale": "Flexible cannot scale to zero. Its minimum of one instance is billed continuously, so idle hours are not free."
+      },
+      {
+        "id": "b",
+        "text": "The standard environment, but only after enabling SSH access and background processes",
+        "rationale": "Standard does not support SSH debugging or background processes. Those are flexible features, and they are not needed for this workload."
+      },
+      {
+        "id": "c",
+        "text": "The standard environment, which can scale to zero and starts instances in seconds",
+        "rationale": "Standard is built for sudden spikes and scales to zero, with startup measured in seconds, which matches the idle-overnight and burst profile."
+      },
+      {
+        "id": "d",
+        "text": "The flexible environment with a custom Dockerfile so that new instances start faster",
+        "rationale": "A custom runtime does not speed up flexible instances. They start in minutes, which is too slow for a tenfold spike in seconds."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "difficulty": 1,
+    "examOnly": true
+  },
+  {
+    "id": "q-provision-047",
+    "type": "multiple",
+    "domainId": "provision",
+    "concepts": [
+      "autoscaling",
+      "managed-instance-groups"
+    ],
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/compute/docs/autoscaler/predictive-autoscaling",
+    "lastVerified": "2026-10-01",
+    "prompt": "A regional MIG of order-processing VMs shows clear weekday-morning and daily load cycles. New VMs take about five minutes to boot and warm caches, so reactive autoscaling leaves users with slow responses at 08:00 each day. The group has used a CPU-utilization autoscaling policy for six weeks. Which two actions address the problem? (Choose two.)",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Enable predictive autoscaling in OPTIMIZE_AVAILABILITY mode on the existing CPU-based policy",
+        "rationale": "Predictive autoscaling forecasts load from the MIG's history (it needs about three days of CPU-based history and uses up to three weeks) and scales out ahead of recurring daily and weekly peaks."
+      },
+      {
+        "id": "b",
+        "text": "Add a custom queue-depth metric and base predictive autoscaling on that signal instead of CPU",
+        "rationale": "Predictive autoscaling works only with CPU utilization. Cloud Monitoring and load balancing signals are not supported."
+      },
+      {
+        "id": "c",
+        "text": "Set the initialization period to roughly five minutes so VMs are added further ahead of forecast load",
+        "rationale": "The initialization period tells the predictive autoscaler how long an application needs to become ready, so it scales out earlier by that margin."
+      },
+      {
+        "id": "d",
+        "text": "Rely on predictive autoscaling to cover the one-off quarter-end surge the group saw once last year",
+        "rationale": "The forecaster recognizes daily and weekly patterns. It does not predict monthly, annual or one-time events."
+      },
+      {
+        "id": "e",
+        "text": "Shorten the initialization period to ten seconds so new VMs count toward utilization immediately",
+        "rationale": "A very short period makes the autoscaler treat unready VMs as healthy capacity and removes the lead time, which worsens slow starts."
+      }
+    ],
+    "correct": [
+      "a",
+      "c"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-048",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "managed-instance-groups",
+      "instance-templates"
+    ],
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/compute/docs/instance-groups/rolling-out-updates-to-managed-instance-groups",
+    "lastVerified": "2026-10-01",
+    "prompt": "A regional MIG of 12 checkout VMs (4 per zone) must keep at least 12 serving VMs at all times, and quota allows temporary extra VMs. The last template rollout, run with the update policy in the exhibit, caused a capacity dip and errors. Which change lets the next rollout complete without ever dropping below 12 serving VMs?",
+    "exhibit": {
+      "label": "Update policy used for the last rollout",
+      "format": "config",
+      "language": "yaml",
+      "content": "# regional MIG, 3 zones, targetSize: 12\nupdatePolicy:\n  type: PROACTIVE\n  minimalAction: REPLACE\n  maxSurge:\n    fixed: 0\n  maxUnavailable:\n    fixed: 3\n"
+    },
+    "choices": [
+      {
+        "id": "a",
+        "text": "Set maxSurge to 3 and maxUnavailable to 0 so each old VM is removed only after its replacement is running",
+        "rationale": "With maxUnavailable at 0 and maxSurge above 0, Compute Engine creates a replacement first and deletes the old VM afterward. A surge of 3 is one extra VM per zone, matching the regional default."
+      },
+      {
+        "id": "b",
+        "text": "Keep maxSurge at 0 and lower maxUnavailable to 1 so only a single VM is replaced at a time",
+        "rationale": "With no surge, each replacement still takes a serving VM offline first. Capacity drops to 11, below the stated floor, just more slowly."
+      },
+      {
+        "id": "c",
+        "text": "Set minimalAction to REFRESH so existing VMs are updated without being replaced or restarted",
+        "rationale": "A new instance template requires replacing the VMs. If the needed action is more disruptive than the minimal action, Compute Engine performs the required action anyway."
+      },
+      {
+        "id": "d",
+        "text": "Change the update type to OPPORTUNISTIC so the group replaces VMs gradually in the background",
+        "rationale": "Opportunistic updates apply only when you act on specific VMs or when the group creates new VMs through resizing or autoscaling. Compute Engine does not push them out."
+      },
+      {
+        "id": "e",
+        "text": "Set both maxSurge and maxUnavailable to 0 so that no VM is ever taken offline during the update",
+        "rationale": "If both resolve to 0 the updater automatically sets maxUnavailable to 1 so the update can proceed, so a VM still goes offline and capacity falls to 11."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "id": "q-provision-049",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "gke",
+      "autoscaling",
+      "cost-optimization"
+    ],
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/kubernetes-engine/docs/concepts/cluster-autoscaler",
+    "lastVerified": "2026-10-01",
+    "prompt": "A platform team creates a regional GKE Standard cluster whose node pool spans three zones and enables autoscaling with --min-nodes=2 and --max-nodes=5, intending the whole pool to stay between 2 and 5 nodes. At night the pool never drops below 6 nodes and a cost alert fires. What explains this, and what should they change?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "The location policy is ANY, so enabling node auto-provisioning removes the per-zone floor and allows 2 nodes in total",
+        "rationale": "Location policy controls how capacity is spread across zones. Node auto-provisioning creates pools but does not turn a per-zone minimum into a total."
+      },
+      {
+        "id": "b",
+        "text": "Regional clusters ignore the minimum until the pool is resized by hand once, after which the autoscaler can go lower",
+        "rationale": "No such behavior exists. The autoscaler honors the configured limits, and the floor of 6 is the direct result of a per-zone minimum of 2."
+      },
+      {
+        "id": "c",
+        "text": "The balanced autoscaling profile blocks scale-down, so switching to optimize-utilization will bring the pool down to 2",
+        "rationale": "The profile changes how aggressively underused nodes are removed, but it cannot push a pool below its configured per-zone minimum."
+      },
+      {
+        "id": "d",
+        "text": "The limits apply per zone, so the pool floats between 6 and 15 nodes; use --total-min-nodes and --total-max-nodes",
+        "rationale": "--min-nodes and --max-nodes are per-zone limits. Across three zones they allow 6 to 15 nodes. The total flags (GKE 1.24 and later) bound the whole pool."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "explanation": "Remember that regional and multi-zonal node counts are multiplied by the number of zones unless you use the total-node flags.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-050",
+    "type": "multiple",
+    "domainId": "provision",
+    "concepts": [
+      "gke",
+      "blue-green"
+    ],
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/kubernetes-engine/docs/concepts/node-pool-upgrade-strategies",
+    "lastVerified": "2026-10-01",
+    "prompt": "A Standard GKE node pool runs ledger-reconciliation Pods that need up to two hours to drain gracefully. The team wants to validate workloads on upgraded nodes and keep a rollback path before committing to the new version. Which two statements describe the right approach? (Choose two.)",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Use autoscaled blue-green, which is the generally available default for long-running batch workloads",
+        "rationale": "Autoscaled blue-green is a Preview option, and surge remains the default strategy."
+      },
+      {
+        "id": "b",
+        "text": "Choose blue-green on an Autopilot cluster, where GKE lets each workload select its own upgrade strategy",
+        "rationale": "Autopilot clusters use surge upgrades and the strategy cannot be changed. Choosing a strategy is a Standard node-pool setting."
+      },
+      {
+        "id": "c",
+        "text": "Stay on surge upgrades with maxUnavailable at 0, because GKE waits as long as Pods need before deleting nodes",
+        "rationale": "Surge upgrades drain for up to one hour and then forcibly evict remaining Pods, so two-hour terminations would be cut short."
+      },
+      {
+        "id": "d",
+        "text": "Make sure quota covers roughly double the pool's nodes for the duration of the upgrade",
+        "rationale": "Standard blue-green creates a full replacement set of nodes before draining the old ones, so it temporarily needs about twice the capacity."
+      },
+      {
+        "id": "e",
+        "text": "Configure blue-green upgrades so the original nodes stay available for rollback during the soak period",
+        "rationale": "Blue-green keeps the existing (blue) nodes available while workloads are validated on the new (green) nodes, which gives the rollback path and suits graceful terminations longer than 60 minutes."
+      }
+    ],
+    "correct": [
+      "d",
+      "e"
+    ],
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "id": "q-provision-051",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "gke",
+      "spot-vms",
+      "autoscaling"
+    ],
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/kubernetes-engine/docs/concepts/about-custom-compute-classes",
+    "lastVerified": "2026-10-01",
+    "prompt": "A GKE Standard cluster runs fault-tolerant thumbnail workers. The team wants Pods on Spot VMs whenever capacity exists, on-demand VMs when Spot is unavailable, and a move back to Spot later with no manual work. The cluster autoscaler alone only prefers Spot when scaling up and cannot guarantee it. What should they configure?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Separate Spot and on-demand node pools, with a CronJob that shifts replicas from one pool to the other every night",
+        "rationale": "This is manual choreography on a fixed schedule. It does not react to Spot availability and adds operational work."
+      },
+      {
+        "id": "b",
+        "text": "A Spot-only node pool with the cluster autoscaler location policy set to ANY across all zones",
+        "rationale": "The ANY policy searches zones for capacity. It does not provide a fallback to on-demand VMs, so Pods stay pending during Spot shortages."
+      },
+      {
+        "id": "c",
+        "text": "The optimize-utilization autoscaling profile, so the autoscaler favors the cheapest node type first",
+        "rationale": "The profile affects how aggressively underused nodes are removed. It does not rank Spot above on-demand or provide fallback rules."
+      },
+      {
+        "id": "d",
+        "text": "A custom ComputeClass that lists Spot first, then on-demand, with active migration, chosen by the workload",
+        "rationale": "Priority rules give ordered fallback, and active migration lets GKE replace nodes with higher-priority hardware (Spot) once it becomes available again."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-052",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "gke",
+      "container-orchestration",
+      "hybrid-networking"
+    ],
+    "caseStudyId": "ehr-healthcare",
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/kubernetes-engine/fleet-management/docs",
+    "lastVerified": "2026-10-01",
+    "prompt": "EHR Healthcare is moving its containerized customer-facing apps to Google Cloud, but some Kubernetes clusters will stay in a colocation facility for years because of legacy insurer integrations. The platform team needs one consistent way to view, access and configure every cluster, including those outside Google Cloud, without giving cluster API servers public IP addresses. What should the architect propose?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Convert every cluster to Autopilot so that Google manages the clusters sitting in the colocation facility",
+        "rationale": "Autopilot is a GKE mode on Google Cloud. It does not take over clusters running in a colocation facility."
+      },
+      {
+        "id": "b",
+        "text": "Give each colocation cluster's API server a public IP and manage them all with separate kubectl contexts",
+        "rationale": "This breaks the no-public-IP requirement and keeps management fragmented, with a different context and configuration per cluster."
+      },
+      {
+        "id": "c",
+        "text": "Register all clusters in a fleet, attach external ones with the Connect Agent, and use Connect gateway and fleet config",
+        "rationale": "Fleets group clusters across projects and environments. The Connect Agent works through NATs and VPNs, so API servers need no public IPs, and Connect gateway gives consistent access."
+      },
+      {
+        "id": "d",
+        "text": "Run one large Standard cluster on Google Cloud and move every colocation workload into it immediately",
+        "rationale": "The stem says the colocation clusters must remain for years because of the legacy integrations, so an immediate consolidation is not an option."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-053",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "cloud-run",
+      "scalability"
+    ],
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/run/docs/configuring/max-instances",
+    "lastVerified": "2026-10-01",
+    "prompt": "A Cloud Run API on default autoscaling opens a small connection pool per instance to a Cloud SQL instance that allows 500 connections. Launch-day spikes scale the service to many instances and the database starts refusing connections. The team wants to protect the database while still serving as much traffic as it can handle. What should they do?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Raise minimum instances to the expected peak, so that no scale-out happens during the launch-day spike",
+        "rationale": "Pre-provisioning peak capacity still opens a pool per instance, can exceed the database limit anyway, and bills for idle instances."
+      },
+      {
+        "id": "b",
+        "text": "Set a service-level maximum instances value so that instances times pool size stays under the connection limit",
+        "rationale": "Maximum instances is the documented control for limiting connections to a backing service such as a database. A service-level value takes effect immediately."
+      },
+      {
+        "id": "c",
+        "text": "Configure the service to scale on memory utilization so that instances are added only when containers come under memory pressure",
+        "rationale": "Cloud Run does not support scaling on memory utilization. Its autoscaler uses CPU utilization and request concurrency."
+      },
+      {
+        "id": "d",
+        "text": "Raise the revision's maximum instances so traffic can spread across more containers with smaller pools",
+        "rationale": "More instances means more pools and more connections, which makes the exhaustion worse."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-054",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "cloud-run",
+      "autoscaling",
+      "performance-optimization"
+    ],
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/run/docs/about-concurrency",
+    "lastVerified": "2026-10-01",
+    "prompt": "A single-threaded Python image-rendering service runs on Cloud Run with 4 vCPUs per instance and maximum concurrent requests set to 80. In load tests, p99 latency passes 9 seconds while average CPU utilization stays near 25% and the autoscaler holds at three instances. What is the best change?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Raise maximum concurrency to 1,000 so that each instance absorbs far more of the incoming request load",
+        "rationale": "More concurrent requests per single-threaded instance deepens the queue on the one busy thread and raises latency further."
+      },
+      {
+        "id": "b",
+        "text": "Increase CPUs per instance to 8 so the rendering process has more CPU headroom while it handles requests",
+        "rationale": "A single thread cannot use extra cores, and a larger instance lowers average utilization even more, which keeps CPU-based scaling from firing."
+      },
+      {
+        "id": "c",
+        "text": "Set minimum instances to 10 so cold starts disappear and spare capacity is always warm and ready for new requests",
+        "rationale": "Latency here comes from queuing on busy threads, not cold starts. Ten always-on 4-vCPU instances only add cost while the scaling signal stays wrong."
+      },
+      {
+        "id": "d",
+        "text": "Cut CPUs per instance to fit the single thread and lower maximum concurrency so request load drives scale-out",
+        "rationale": "One busy thread on 4 vCPUs reads as about 25% average CPU, below the 60% target, so CPU scaling never triggers. Lower concurrency lets request throughput add instances."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "difficulty": 3
+  },
+  {
+    "id": "q-provision-055",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "cloud-run",
+      "serverless"
+    ],
+    "caseStudyId": "altostrat-media",
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/run/docs/create-jobs",
+    "lastVerified": "2026-10-01",
+    "prompt": "Altostrat's transcoding runs in an event-driven Cloud Run function triggered when a file lands in Cloud Storage. Feature-length documentaries take up to three hours to transcode, and the function is cut off long before that. The team wants to keep the event-driven trigger, avoid managing servers and process many files in parallel. What should they change?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Raise the event-driven function's timeout to three hours in its second-generation configuration settings",
+        "rationale": "Event-driven functions are limited to 9 minutes, so a three-hour value cannot be configured."
+      },
+      {
+        "id": "b",
+        "text": "Rewrite the transcoder as a Cloud Run service that the function calls and then waits on synchronously for each file",
+        "rationale": "A Cloud Run service request timeout can be raised to at most 60 minutes, so a three-hour request would still be cut off."
+      },
+      {
+        "id": "c",
+        "text": "Keep the function as a trigger that starts a Cloud Run job execution per file, with task timeouts up to 168 hours",
+        "rationale": "Jobs run to completion, allow task timeouts up to 7 days and support many parallel tasks. The function stays as a lightweight, event-driven launcher."
+      },
+      {
+        "id": "d",
+        "text": "Switch the function to an HTTP function and raise its timeout to the 60-minute maximum that it allows",
+        "rationale": "HTTP functions top out at 60 minutes, which is still shorter than a three-hour transcode."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "difficulty": 3
+  },
+  {
+    "id": "q-provision-056",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "batch",
+      "spot-vms",
+      "compute-selection"
+    ],
+    "caseStudyId": "knightmotives-automotive",
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/batch/docs/create-run-basic-job",
+    "lastVerified": "2026-10-01",
+    "prompt": "KnightMotives runs a nightly regression of its autonomous-driving simulator: about 5,000 independent scenarios of 15 to 40 minutes each, sharing no state. Failed scenarios can simply be rerun. The team does not want to operate a scheduler or cluster and wants the lowest compute cost. Which design fits best?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "A GKE Autopilot cluster running a hand-built queue consumer that pulls scenarios from Pub/Sub",
+        "rationale": "This means writing and operating a scheduler and a queue, and it pays regular per-Pod rates rather than Spot discounts."
+      },
+      {
+        "id": "b",
+        "text": "On-demand Compute Engine VMs that each pull scenarios from a Pub/Sub topic through a startup script",
+        "rationale": "It works but needs custom orchestration, retry logic and cleanup, and it uses the most expensive provisioning model."
+      },
+      {
+        "id": "c",
+        "text": "A stateful MIG of on-demand VMs that a Cloud Scheduler script resizes each evening and each morning",
+        "rationale": "A stateful MIG is built for per-VM identity, not stateless fan-out. It also leaves custom scheduling and on-demand pricing in place."
+      },
+      {
+        "id": "d",
+        "text": "A Batch job with one task per scenario, capped parallelism, Spot provisioning and a small retry count",
+        "rationale": "Batch provisions and tears down the VMs itself. SPOT provisioning cuts cost for restartable work, taskCount and parallelism fit independent scenarios, and maxRetryCount (0 to 10) reruns failures."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-057",
+    "type": "multiple",
+    "domainId": "provision",
+    "concepts": [
+      "sole-tenant-nodes",
+      "licensing",
+      "compute-provisioning"
+    ],
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/compute/docs/nodes/sole-tenant-nodes",
+    "lastVerified": "2026-10-01",
+    "prompt": "A company brings a database engine licensed per physical core to Compute Engine. The workload must stay highly available through host maintenance by using live migration, and auditors require a report of the physical cores consumed. Which two actions meet these needs? (Choose two.)",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Run on multi-tenant hosts under License Mobility, since per-core licenses never need dedicated hardware",
+        "rationale": "License Mobility applies to Microsoft applications. Licenses tied to physical cores generally require compliant dedicated hardware such as sole-tenant nodes."
+      },
+      {
+        "id": "b",
+        "text": "Enable the Cloud Logging API and analyze sole-tenant node usage data in BigQuery for physical core counts",
+        "rationale": "Logging data on node usage can be queried in BigQuery to report physical cores, which is the tracking Google recommends for per-core licenses."
+      },
+      {
+        "id": "c",
+        "text": "Create a node group with the migrate-within-node-group maintenance policy and reserve the holdback capacity it needs",
+        "rationale": "This policy live migrates VMs within a fixed set of physical servers, which limits the unique servers (and cores) used. Compute Engine reserves holdback nodes (1 per 20) for the migrations."
+      },
+      {
+        "id": "d",
+        "text": "Use restart-in-place, which keeps VMs on one server and live migrates them so availability is unaffected",
+        "rationale": "Restart-in-place stops VMs during host events and restarts them on the same server. That means downtime of up to about an hour and no live migration."
+      },
+      {
+        "id": "e",
+        "text": "Keep the Default maintenance policy, because VMs then live migrate only among a fixed set of physical servers",
+        "rationale": "The Default policy lets VMs migrate to any server in the group, so it is not suitable when physical core usage must be minimized."
+      }
+    ],
+    "correct": [
+      "b",
+      "c"
+    ],
+    "difficulty": 3
+  },
+  {
+    "id": "q-provision-058",
+    "type": "multiple",
+    "domainId": "provision",
+    "concepts": [
+      "vmware-engine",
+      "licensing",
+      "migration"
+    ],
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/vmware-engine/docs/concepts-private-cloud",
+    "lastVerified": "2026-10-01",
+    "prompt": "An enterprise is sizing Google Cloud VMware Engine private clouds for a lift-and-shift of vSphere workloads, some of which carry per-core licensing. Which two statements are accurate? (Choose two.)",
+    "choices": [
+      {
+        "id": "a",
+        "text": "The customer must patch ESXi hosts and replace failed bare-metal hardware in the private cloud",
+        "rationale": "Google manages the infrastructure layer of the VMware stack. Customers manage workloads through vCenter and NSX Manager."
+      },
+      {
+        "id": "b",
+        "text": "A standard private cloud needs at least three nodes per cluster and is the configuration that qualifies for the SLA",
+        "rationale": "Standard private clouds require a minimum of three nodes per cluster and are SLA-eligible. Single-node private clouds are not."
+      },
+      {
+        "id": "c",
+        "text": "Autoscale policies add and remove nodes in single-node private clouds as demand rises and falls",
+        "rationale": "Autoscaling is not available for single-node private clouds. Expanding to three or more nodes is the upgrade path."
+      },
+      {
+        "id": "d",
+        "text": "A single-node private cloud suits production because vSphere HA restarts its VMs on a spare host if one fails",
+        "rationale": "Single-node clouds have no vSphere HA or DRS, use FTT=0 storage that risks data loss, and are meant for proof of concept and testing."
+      },
+      {
+        "id": "e",
+        "text": "Custom core counts can lower the enabled cores per node to meet licensing limits without changing node pricing",
+        "rationale": "The service lets you reduce the cores available per node for licensing reasons, and the price of the node stays the same."
+      }
+    ],
+    "correct": [
+      "b",
+      "e"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-059",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "cloud-run",
+      "serverless"
+    ],
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/run/docs/create-jobs",
+    "lastVerified": "2026-10-01",
+    "prompt": "A containerized data-cleanup program runs for about 40 minutes each night, writes its results to Cloud Storage and then exits. It never listens for HTTP requests. The team wants a serverless option with no cluster to run. Which fits best?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "An App Engine flexible environment service",
+        "rationale": "Flexible keeps at least one instance running at all times and is meant for request-serving apps, not a nightly run-to-completion task."
+      },
+      {
+        "id": "b",
+        "text": "A Cloud Run job that a scheduler triggers each night",
+        "rationale": "Jobs execute tasks to completion and exit, with a default task timeout of 10 minutes that can be raised to 7 days. They suit scheduled batch work that serves no requests."
+      },
+      {
+        "id": "c",
+        "text": "A Cloud Run service with minimum instances set to 1",
+        "rationale": "A service is built to listen for requests. Holding an instance idle just to run a nightly program wastes money and fits the model poorly."
+      },
+      {
+        "id": "d",
+        "text": "An event-driven Cloud Run function started on a timer",
+        "rationale": "Event-driven functions are limited to 9 minutes, so a 40-minute run would be cut off."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "difficulty": 1,
+    "examOnly": true
+  },
+  {
+    "id": "q-provision-060",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "gke",
+      "ha-failover"
+    ],
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/kubernetes-engine/docs/concepts/regional-clusters",
+    "lastVerified": "2026-10-01",
+    "prompt": "A production GKE Standard cluster was created as a zonal cluster. During a zone outage the team could not reach the Kubernetes API, and they also see API unavailability during control plane upgrades. Which cluster type avoids both problems for new production clusters?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "A regional cluster, replicating the control plane across zones",
+        "rationale": "Regional clusters keep the API available through a zone failure and during control plane upgrades or resizes, and distribute nodes across zones by default."
+      },
+      {
+        "id": "b",
+        "text": "Two zonal clusters in the same zone, fronted by an internal load balancer",
+        "rationale": "Both control planes share the failure domain of that one zone, so a zone outage still removes API access."
+      },
+      {
+        "id": "c",
+        "text": "A zonal cluster with extra node pools placed in two more zones",
+        "rationale": "Extra node zones spread workloads, but the control plane still runs in one zone and remains a single point of failure."
+      },
+      {
+        "id": "d",
+        "text": "A zonal cluster with the cluster autoscaler enabled on every pool",
+        "rationale": "The autoscaler resizes node pools. It does nothing for control plane availability."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 1
+  },
+  {
+    "id": "q-provision-061",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "gemini-agent-platform",
+      "batch-inference"
+    ],
+    "subObjective": "provision.4",
+    "sourceUrl": "https://docs.cloud.google.com/vertex-ai/docs/predictions/get-predictions",
+    "lastVerified": "2026-10-01",
+    "prompt": "A retailer scores 40 million customer records every Sunday with a trained churn model on the Gemini Enterprise Agent Platform. Inputs live in BigQuery, results go back to BigQuery and nobody needs a prediction in real time. Which serving approach fits best?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Deploy the model to an online endpoint and call it once per record from a script",
+        "rationale": "Online inference is for low-latency, per-request predictions. Forty million individual calls add cost and complexity for a weekly job."
+      },
+      {
+        "id": "b",
+        "text": "Run the predictions interactively from a notebook cell each Sunday",
+        "rationale": "A manual notebook run is not repeatable or scalable, and it lacks the managed throughput and BigQuery integration of a batch job."
+      },
+      {
+        "id": "c",
+        "text": "A batch inference job that reads from BigQuery and needs no deployed endpoint",
+        "rationale": "Batch inference processes large datasets asynchronously, accepts BigQuery or Cloud Storage input and avoids endpoint management entirely."
+      },
+      {
+        "id": "d",
+        "text": "Keep an online endpoint with a high minimum replica count so the weekly run finishes fast",
+        "rationale": "Paying for replicas around the clock to serve one weekly burst is wasteful, and the job still needs a request loop."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "difficulty": 1
+  },
+  {
+    "id": "q-provision-062",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "gemini-agent-platform",
+      "canary",
+      "online-inference"
+    ],
+    "subObjective": "provision.4",
+    "sourceUrl": "https://docs.cloud.google.com/vertex-ai/docs/general/deployment",
+    "lastVerified": "2026-10-01",
+    "prompt": "A fraud model is served from an Agent Platform endpoint that mobile clients call at a fixed endpoint URL. The team has a retrained model and wants to send 10% of live traffic to it, compare outcomes and raise its share gradually without any client change. What should they do?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Deploy the new model to the same endpoint with a 10% traffic split, then raise the share gradually",
+        "rationale": "An endpoint can serve several deployed models with a configurable traffic split, so the URL stays the same and the new model takes more traffic step by step."
+      },
+      {
+        "id": "b",
+        "text": "Create a second endpoint and ask the clients to alternate between the two endpoint URLs",
+        "rationale": "That forces a client change and splits traffic in application code rather than in the endpoint."
+      },
+      {
+        "id": "c",
+        "text": "Undeploy the current model, deploy the new one, and roll back only if complaints arrive",
+        "rationale": "This switches 100% of traffic at once, with downtime risk, and gives no gradual comparison."
+      },
+      {
+        "id": "d",
+        "text": "Deploy the new model to a separate endpoint and repoint DNS to it once the first smoke tests have passed",
+        "rationale": "A DNS cutover is all-or-nothing and does not provide a controlled 10% sample of live traffic."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-063",
+    "type": "multiple",
+    "domainId": "provision",
+    "concepts": [
+      "gemini-agent-platform",
+      "model-registry"
+    ],
+    "subObjective": "provision.4",
+    "sourceUrl": "https://docs.cloud.google.com/vertex-ai/docs/model-registry/model-alias",
+    "lastVerified": "2026-10-01",
+    "prompt": "A team manages several versions of a recommendation model in the Agent Platform Model Registry and wants deployments to reference versions by name instead of by version ID. Which two statements about model version aliases are accurate? (Choose two.)",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Every model keeps exactly one default alias, and that version is used when no version is named",
+        "rationale": "The first version receives the default alias, one version must carry it at all times, and commands that omit a version use it."
+      },
+      {
+        "id": "b",
+        "text": "Alias names must be numeric so that they can be told apart from labels and from model names",
+        "rationale": "Aliases must be non-numerical and match a specific pattern, which is what distinguishes them from version IDs."
+      },
+      {
+        "id": "c",
+        "text": "Moving a custom alias such as production to another version lets deployments reference the model by name",
+        "rationale": "An alias is a mutable, named reference, similar to a Docker tag or Git branch, and can be moved from one version to another."
+      },
+      {
+        "id": "d",
+        "text": "One alias can point at several versions of the same model, so staging and production can share it",
+        "rationale": "An alias can be assigned to only one version per model at a time. Assigning it again removes it from the earlier version."
+      },
+      {
+        "id": "e",
+        "text": "Aliases and labels are interchangeable, so a label filter can select the version to deploy",
+        "rationale": "An alias is different from a label. Labels are metadata, while aliases are named pointers to a version."
+      }
+    ],
+    "correct": [
+      "a",
+      "c"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-064",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "gemini-agent-platform",
+      "autoscaling",
+      "gpu-tpu"
+    ],
+    "subObjective": "provision.4",
+    "sourceUrl": "https://docs.cloud.google.com/vertex-ai/docs/predictions/autoscaling",
+    "lastVerified": "2026-10-01",
+    "prompt": "The ranker-prod endpoint serves a GPU-backed model, with CPU-heavy tokenization and image decoding inside the serving container. Replicas climbed to the configured maximum during a sustained traffic rise, latency stayed flat and the bill jumped. No autoscaling metric is configured. Which change addresses the root cause?",
+    "exhibit": {
+      "label": "ranker-prod deployment and metrics",
+      "format": "metrics",
+      "content": "machine: a2-highgpu-1g (1 GPU)   minReplicaCount=2  maxReplicaCount=8   autoscalingMetricSpecs: (not set)\n\ntime   replicas  cpu_util  gpu_duty_cycle  p95_latency_ms  req/min/replica\n10:00  2         52%       31%             48              900\n10:20  4         74%       29%             46              880\n10:40  8         78%       27%             47              850\n11:00  8         81%       26%             49              840\n"
+    },
+    "choices": [
+      {
+        "id": "a",
+        "text": "Raise maxReplicaCount so that the endpoint can keep adding replicas until CPU usage falls below 60%",
+        "rationale": "That lets the cost climb further. The default rule keeps adding GPU replicas for a CPU-bound step while GPU duty cycle stays near 26 to 31%."
+      },
+      {
+        "id": "b",
+        "text": "Set minimum replicas to 0 so that the endpoint releases all of its replicas whenever traffic is quiet",
+        "rationale": "Scale to zero is a Preview feature, and it does not change which signal drives scale-out when traffic returns."
+      },
+      {
+        "id": "c",
+        "text": "Move the model to batch inference, which scales its replicas automatically as the load changes",
+        "rationale": "Batch inference nodes do not autoscale (they use a starting replica count), and the workload still needs real-time answers."
+      },
+      {
+        "id": "d",
+        "text": "Set autoscalingMetricSpecs to scale on GPU duty cycle or request count instead of the default rule",
+        "rationale": "By default the endpoint scales to keep the higher of CPU and GPU usage near 60%. Here CPU preprocessing is the higher number, so replicas grow while the GPUs sit mostly idle."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "difficulty": 3
+  },
+  {
+    "id": "q-provision-065",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "gemini-agent-platform",
+      "ml-pipelines"
+    ],
+    "subObjective": "provision.4",
+    "sourceUrl": "https://docs.cloud.google.com/vertex-ai/docs/pipelines/configure-caching",
+    "lastVerified": "2026-10-01",
+    "prompt": "A nightly retraining pipeline on Agent Platform Pipelines keeps reporting an unchanged model even though the source table is rebuilt every night. The team wants expensive steps skipped only when their inputs truly have not changed. Based on the run log in the exhibit, what is the best fix?",
+    "exhibit": {
+      "label": "Pipeline run log (pipeline name: churn-nightly)",
+      "format": "log",
+      "content": "2026-09-28  extract-features  inputs={sql: 'SELECT * FROM mart.features_latest'}  EXECUTED  34m12s\n2026-09-29  extract-features  inputs={sql: 'SELECT * FROM mart.features_latest'}  CACHED    0s\n2026-09-30  extract-features  inputs={sql: 'SELECT * FROM mart.features_latest'}  CACHED    0s\n2026-09-30  train-model       inputs={features: artifact b41}                     CACHED    0s\nnote: mart.features_latest rebuilt nightly; AUC identical to 4 decimals since 2026-09-28\n"
+    },
+    "choices": [
+      {
+        "id": "a",
+        "text": "Turn off caching for the whole pipeline job so every step reruns every night",
+        "rationale": "This fixes staleness but also reruns steps whose inputs have not changed, which defeats the cost goal."
+      },
+      {
+        "id": "b",
+        "text": "Delete the compiled pipeline template and compile it again, which clears the execution cache",
+        "rationale": "The cache lives in the ML metadata store and is keyed on step inputs and component specs. Recompiling the template does not clear it."
+      },
+      {
+        "id": "c",
+        "text": "Pass the run date or a snapshot ID into the extract step, or turn caching off for that task alone",
+        "rationale": "A step is skipped when its inputs and component spec match an earlier execution. The constant SQL string makes the cache key identical every night, so changing the input (or disabling caching for that task) fixes it while later steps still cache."
+      },
+      {
+        "id": "d",
+        "text": "Retrain with a deeper model, because identical AUC across runs means the current model is underfitting",
+        "rationale": "The identical metric is a symptom of reused cached outputs, not model capacity. The training step never saw new data."
+      },
+      {
+        "id": "e",
+        "text": "Wait for the cached result to expire, since execution cache entries have a 24-hour time to live",
+        "rationale": "Cached results have no time to live. They remain reusable until the entry is deleted from the metadata store."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "difficulty": 3
+  },
+  {
+    "id": "q-provision-066",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "gemini-agent-platform",
+      "gpu-tpu",
+      "compute-provisioning"
+    ],
+    "subObjective": "provision.4",
+    "sourceUrl": "https://docs.cloud.google.com/vertex-ai/docs/training/schedule-jobs-dws",
+    "lastVerified": "2026-10-01",
+    "prompt": "A research team trains a model with a custom training job on four A2 nodes with one A100 each. All nodes must start together, the job runs about 36 hours and has no hard start time. On-demand requests keep failing for lack of GPU capacity, and Spot VMs are ruled out because a preemption would waste progress. What should they configure?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Set the job's scheduling strategy to FLEX_START with a maximum wait so it starts when every GPU is available",
+        "rationale": "Dynamic Workload Scheduler (flex-start) queues GPU jobs until the requested resources are available, which suits multi-node jobs that cannot start until all nodes are ready."
+      },
+      {
+        "id": "b",
+        "text": "Request a larger on-demand GPU quota, since a quota increase reserves physical capacity in the region for you",
+        "rationale": "Quota is a permission ceiling, not reserved hardware. A bigger quota does not create capacity when the region is short of GPUs."
+      },
+      {
+        "id": "c",
+        "text": "Reduce the job to a single node and accept that training takes roughly four times longer",
+        "rationale": "This changes the training design to dodge a capacity problem and still needs one A100 to be available on demand."
+      },
+      {
+        "id": "d",
+        "text": "Wrap job submission in a retry loop that resubmits every few minutes until capacity appears",
+        "rationale": "A retry loop competes for capacity blindly, gives no all-nodes-at-once start guarantee and adds failure handling you would have to maintain."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-067",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "prebuilt-ai-apis",
+      "grounding"
+    ],
+    "caseStudyId": "cymbal-retail",
+    "subObjective": "provision.5",
+    "sourceUrl": "https://docs.cloud.google.com/vertex-ai/generative-ai/docs/grounding/overview",
+    "lastVerified": "2026-10-01",
+    "prompt": "Cymbal's virtual shopping agent must answer questions about current product details and return policies, and Cymbal wants every answer tied to its own catalog and policy documents so it can be traced to sources. Which technique on the Agent Platform addresses this directly?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Ground the model with Google Search so answers reflect public pages about similar products",
+        "rationale": "Google Search grounding draws on the public web, not Cymbal's private catalog or return policy."
+      },
+      {
+        "id": "b",
+        "text": "Ground the model with Agent Search or RAG Engine over the catalog and policy documents",
+        "rationale": "Grounding ties model output to verifiable data sources, reduces invented content and provides links to the supporting sources."
+      },
+      {
+        "id": "c",
+        "text": "Raise the model's output token limit so replies include more catalog detail",
+        "rationale": "A larger limit changes reply length only. It does not connect answers to Cymbal's data."
+      },
+      {
+        "id": "d",
+        "text": "Fine-tune the model on the current catalog again whenever a price or policy changes",
+        "rationale": "Repeated tuning is slow and costly for fast-changing facts, and it offers no source links for traceability."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "difficulty": 1
+  },
+  {
+    "id": "q-provision-068",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "prebuilt-ai-apis",
+      "cloud-first"
+    ],
+    "caseStudyId": "cymbal-retail",
+    "subObjective": "provision.5",
+    "sourceUrl": "https://docs.cloud.google.com/retail/docs/overview",
+    "lastVerified": "2026-10-01",
+    "prompt": "Cymbal launches AI Commerce Search on its product pages. The first A/B test shows no lift in conversion over the existing search, and the merchandising team proposes adding dozens of boost and bury rules. What should the architect have the team check first?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Cache each shopper's personalized results at the CDN to cut latency before the next test",
+        "rationale": "The documentation warns never to cache personalized results or return them to a different user."
+      },
+      {
+        "id": "b",
+        "text": "Replace the service with a custom ranking model trained on the very same events and catalog data",
+        "rationale": "That repeats the problem with more effort. If the underlying catalog and event data are flawed, a custom model inherits the flaws."
+      },
+      {
+        "id": "c",
+        "text": "Review catalog and user-event ingestion with the data quality dashboards, since relevance depends on that data",
+        "rationale": "Performance of AI Commerce Search is very sensitive to catalog and user-event data, and flawed data is more often the root cause of a flat A/B result than the service itself."
+      },
+      {
+        "id": "d",
+        "text": "Add the proposed rules now and rerun the test, since manual rules are how the service reaches parity",
+        "rationale": "Business rules should be applied only for specific, data-backed reasons. The goal is to let the AI ranking do its job, and new rules should be A/B tested."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-069",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "prebuilt-ai-apis",
+      "gemini-agent-platform"
+    ],
+    "caseStudyId": "altostrat-media",
+    "subObjective": "provision.5",
+    "sourceUrl": "https://docs.cloud.google.com/video-intelligence/docs/feature-explicit-content",
+    "lastVerified": "2026-10-01",
+    "prompt": "Altostrat's metadata pipeline calls the Video Intelligence API to flag explicit content in video. Leadership also wants concise summaries of videos and podcasts, richer metadata and an auditable explanation for each flag, all over media already in Cloud Storage. The Video Intelligence API is now deprecated, with shutdown in September 2027. What should the architect recommend?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Run Cloud Vision SafeSearch on extracted frames and skip the audio, summaries and extra metadata",
+        "rationale": "SafeSearch scores images only. It drops audio and does not produce summaries or reasoning."
+      },
+      {
+        "id": "b",
+        "text": "Train a custom video classifier for flags plus a separate model for each other required output",
+        "rationale": "This is a large build-and-maintain effort for tasks that prebuilt multimodal models already cover."
+      },
+      {
+        "id": "c",
+        "text": "Keep the Video Intelligence API for flags until shutdown and add a transcription workflow for summaries",
+        "rationale": "This leaves a deprecated dependency to migrate later and still yields no explanation for each flag."
+      },
+      {
+        "id": "d",
+        "text": "Move to Gemini multimodal models on the Agent Platform and prompt for summaries, metadata and reasoned flags",
+        "rationale": "Google recommends migrating from the deprecated API to Gemini models. One multimodal model can handle video and audio and return summaries, metadata and reasoned flags for review."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-070",
+    "type": "multiple",
+    "domainId": "provision",
+    "concepts": [
+      "prebuilt-ai-apis",
+      "document-ai",
+      "rag"
+    ],
+    "subObjective": "provision.5",
+    "sourceUrl": "https://docs.cloud.google.com/document-ai/docs/processors-list",
+    "lastVerified": "2026-10-01",
+    "prompt": "A health insurer wants a grounded assistant over 30,000 policy documents in PDF, DOCX and PPTX files that contain tables and lists. Retrieval quality has been poor because naive splitting breaks tables across chunks. Which two components should the architect use? (Choose two.)",
+    "choices": [
+      {
+        "id": "a",
+        "text": "RAG Engine on the Agent Platform, to index the chunks and supply retrieved context to Gemini",
+        "rationale": "RAG Engine handles ingestion, indexing into a corpus, retrieval and generation, which grounds answers in the insurer's documents."
+      },
+      {
+        "id": "b",
+        "text": "Fine-tune Gemini on all 30,000 documents so that no retrieval layer is needed at all",
+        "rationale": "Tuning bakes in static knowledge and gives no source traceability. Policy content changes, which retrieval handles better."
+      },
+      {
+        "id": "c",
+        "text": "Document AI Layout Parser, to extract text, tables and lists and create context-aware chunks",
+        "rationale": "Layout Parser supports PDF, DOCX and PPTX and produces context-aware chunks meant for retrieval in generative AI applications."
+      },
+      {
+        "id": "d",
+        "text": "Document AI Form Parser, which creates context-aware chunks that suit retrieval over such documents",
+        "rationale": "Form Parser extracts key-value pairs, checkboxes and tables. Chunking for retrieval is the Layout Parser's job."
+      },
+      {
+        "id": "e",
+        "text": "A Document AI Custom Classifier, to generate the embeddings used for similarity search",
+        "rationale": "A classifier assigns documents to classes. It does not generate embeddings or retrieve passages."
+      }
+    ],
+    "correct": [
+      "a",
+      "c"
+    ],
+    "difficulty": 2
   }
 ]
