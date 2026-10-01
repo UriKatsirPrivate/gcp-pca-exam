@@ -1,0 +1,70 @@
+{
+  "domainId": "security",
+  "takeaways": [
+    {
+      "title": "Pick the control by the verb in the requirement",
+      "body": "IAM answers who can call an API, Organization Policy answers what can be configured, VPC Service Controls answers where a request may come from or go to, and a deny policy answers what must never happen regardless of grants. If a scenario says project owners must not override it, it is Organization Policy at the org node (set it to deny, because external IPs are allowed by default); if valid stolen credentials must not exfiltrate data, it is a VPC-SC perimeter, which complements and never replaces IAM."
+    },
+    {
+      "title": "Design the hierarchy and roles for inheritance",
+      "body": "Put baselines at the organization or folder, separate prod from non-prod, and grant predefined roles to groups at the lowest node that works; basic roles are wrong in production. Enforce separation of duties with disjoint groups (deployers versus approvers, key admins versus key users, policy admins versus workload owners), and use Privileged Access Manager or conditional impersonation for temporary elevation."
+    },
+    {
+      "title": "No keys: impersonate inside Google Cloud, federate outside",
+      "body": "Replace service account key files with attached service accounts or impersonation (roles/iam.serviceAccountTokenCreator, scoped by a condition) inside Google Cloud, and Workload Identity Federation with an attribute condition and a pool per environment for GitHub, AWS, Azure, or on-prem. Replace bastions and public IPs with IAP TCP forwarding (allow 35.235.240.0/20) and close the backend so IAP cannot be bypassed."
+    },
+    {
+      "title": "Choose the key model by who must control the key",
+      "body": "Default Google-managed encryption already covers every byte at rest; move to CMEK only when you need rotation control, key-usage audit, or a kill switch, to Cloud HSM for FIPS 140-2 Level 3, and to Cloud EKM when key material must stay outside Google. Disable a key for a reversible revoke (destruction defaults to 30 days and is final afterwards), remember rotation does not re-encrypt old data, and keep key admins separate from key users."
+    },
+    {
+      "title": "Gate deployments and evidence, not just access",
+      "body": "Use Binary Authorization with attestors from the approved pipeline to block unattested images at deploy time (Artifact Analysis scanning alone only reports), and test policies in dry-run first. For audits, keep Admin Activity logs, enable Data Access logs for PHI and PII since they are off by default except BigQuery, and send an org-level aggregated sink to a restricted destination."
+    },
+    {
+      "title": "Compliance and AI: map the regime to the product that closes the gap",
+      "body": "Google's certifications cover its infrastructure, so you still need your own SOC 2, and signing the HIPAA BAA only permits covered services with your own CMEK, logging, and IAM. Use Sensitive Data Protection format-preserving tokenization with KMS-wrapped keys to shrink PCI scope, Assured Workloads plus gcp.resourceLocations when both data location and personnel access matter (the constraint alone is not a residency commitment), and Model Armor to screen prompts and responses of generative AI apps."
+    }
+  ],
+  "sources": [
+    "https://cloud.google.com/resource-manager/docs/cloud-platform-resource-hierarchy",
+    "https://cloud.google.com/iam/docs/roles-overview",
+    "https://cloud.google.com/iam/docs/using-iam-securely",
+    "https://cloud.google.com/iam/docs/conditions-overview",
+    "https://cloud.google.com/iam/docs/deny-overview",
+    "https://cloud.google.com/iam/docs/principal-access-boundary-policies",
+    "https://cloud.google.com/iam/docs/pam-overview",
+    "https://cloud.google.com/billing/docs/how-to/billing-access",
+    "https://cloud.google.com/resource-manager/docs/organization-policy/overview",
+    "https://cloud.google.com/resource-manager/docs/organization-policy/org-policy-constraints",
+    "https://cloud.google.com/resource-manager/docs/organization-policy/defining-locations",
+    "https://cloud.google.com/docs/security/encryption/default-encryption",
+    "https://cloud.google.com/kms/docs/cmek",
+    "https://cloud.google.com/kms/docs/key-states",
+    "https://cloud.google.com/kms/docs/key-rotation",
+    "https://cloud.google.com/kms/docs/protection-levels",
+    "https://cloud.google.com/kms/docs/resource-hierarchy",
+    "https://cloud.google.com/kms/docs/separation-of-duties",
+    "https://cloud.google.com/secret-manager/docs/overview",
+    "https://cloud.google.com/secret-manager/docs/best-practices",
+    "https://cloud.google.com/vpc-service-controls/docs/overview",
+    "https://cloud.google.com/vpc-service-controls/docs/ingress-egress-rules",
+    "https://cloud.google.com/firewall/docs/firewall-policies-overview",
+    "https://cloud.google.com/logging/docs/audit",
+    "https://cloud.google.com/logging/docs/export/aggregated_sinks",
+    "https://cloud.google.com/security-command-center/docs/security-command-center-overview",
+    "https://cloud.google.com/chrome-enterprise-premium/docs/overview",
+    "https://cloud.google.com/iap/docs/concepts-overview",
+    "https://cloud.google.com/iap/docs/using-tcp-forwarding",
+    "https://cloud.google.com/iam/docs/service-account-impersonation",
+    "https://cloud.google.com/iam/docs/workload-identity-federation",
+    "https://cloud.google.com/binary-authorization/docs/overview",
+    "https://cloud.google.com/artifact-analysis/docs/artifact-analysis",
+    "https://cloud.google.com/security/compliance/hipaa",
+    "https://cloud.google.com/architecture/framework/security/shared-responsibility-shared-fate",
+    "https://cloud.google.com/assured-workloads/docs/overview",
+    "https://cloud.google.com/sensitive-data-protection/docs/sensitive-data-protection-overview",
+    "https://cloud.google.com/sensitive-data-protection/docs/pseudonymization",
+    "https://cloud.google.com/model-armor/docs/overview"
+  ]
+}

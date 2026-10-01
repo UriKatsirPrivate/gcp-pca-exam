@@ -1,0 +1,85 @@
+{
+  "domainId": "provision",
+  "takeaways": [
+    {
+      "title": "Pick the connection pattern by who governs what",
+      "body": "Central network team plus app teams in their own projects means Shared VPC (same organization, subnet-level compute.networkUser). Peering is non-transitive and forbids overlapping ranges, so use Private Service Connect for one-way private access to a single service, and Network Connectivity Center for hub-and-spoke across many VPCs and sites."
+    },
+    {
+      "title": "A hybrid SLA comes from topology, not product",
+      "body": "99.99% on Dedicated or Partner Interconnect needs redundant connections or attachments across two metros in separate edge availability domains, two Cloud Routers, and global dynamic routing; a single connection never qualifies. Choose HA VPN (about 1 to 3 Gbps per tunnel) for fast starts and backup, and add MACsec or HA VPN over Interconnect when the private path must also be encrypted."
+    },
+    {
+      "title": "Match the load balancer and the control to the requirement",
+      "body": "Worldwide HTTP(S) with one anycast IP, URL routing and CDN is the global external Application LB; preserving client source IP or non-HTTP protocols points to a passthrough Network LB. Use hierarchical firewall policies for org or folder guardrails, Cloud Armor to block at the edge, and Cloud IDS only to detect, because it never blocks."
+    },
+    {
+      "title": "Storage compliance is a lock, cost is lifecycle",
+      "body": "WORM or 'nobody can shorten retention' means a retention policy plus Bucket Lock; versioning and soft delete (7 days by default) are safety nets, not compliance. For age-based cost use lifecycle rules (Nearline 30, Coldline 90, Archive 365 days minimum) when the pattern is known and Autoclass when it is not, never both for class changes."
+    },
+    {
+      "title": "Size the transfer and the backup by the deadline and the RPO",
+      "body": "If the network needs more than a week, use Transfer Appliance; use Storage Transfer Service for large online or cloud-to-cloud moves and gcloud storage for small ad hoc copies. Centralized, application-consistent backups with immutable vaults mean Backup and DR Service, plus Cloud SQL automated backups and PITR for databases."
+    },
+    {
+      "title": "Choose the compute and AI model with the least operations that meets the hard constraint",
+      "body": "Stateless scale-to-zero containers go to Cloud Run, hands-off Kubernetes to GKE Autopilot (Standard only for privileged or node-level needs), unchanged VMware to VMware Engine. Steady baselines get committed use discounts, interruptible batch gets Spot in a MIG, and guaranteed capacity (including scarce accelerators) needs a reservation or Flex-start; for ML, try prebuilt APIs, then Model Garden, then custom training on Pipelines."
+    }
+  ],
+  "sources": [
+    "https://cloud.google.com/vpc/docs/vpc",
+    "https://cloud.google.com/vpc/docs/shared-vpc",
+    "https://cloud.google.com/vpc/docs/vpc-peering",
+    "https://cloud.google.com/vpc/docs/private-service-connect",
+    "https://cloud.google.com/network-connectivity/docs/interconnect/concepts/dedicated-overview",
+    "https://cloud.google.com/network-connectivity/docs/interconnect/tutorials/dedicated-creating-9999-availability",
+    "https://cloud.google.com/network-connectivity/docs/vpn/concepts/overview",
+    "https://cloud.google.com/network-connectivity/docs/interconnect/concepts/partner-overview",
+    "https://cloud.google.com/network-connectivity/docs/interconnect/concepts/cci-overview",
+    "https://cloud.google.com/network-connectivity/docs/network-connectivity-center/concepts/overview",
+    "https://cloud.google.com/bigquery/docs/omni-introduction",
+    "https://cloud.google.com/load-balancing/docs/choosing-load-balancer",
+    "https://cloud.google.com/load-balancing/docs/application-load-balancer",
+    "https://cloud.google.com/firewall/docs/firewall-policies-overview",
+    "https://cloud.google.com/firewall/docs/firewall-policies-rule-eval-order",
+    "https://cloud.google.com/firewall/docs/firewalls",
+    "https://cloud.google.com/armor/docs/cloud-armor-overview",
+    "https://cloud.google.com/intrusion-detection-system/docs/overview",
+    "https://cloud.google.com/nat/docs/overview",
+    "https://cloud.google.com/vpc-service-controls/docs/overview",
+    "https://cloud.google.com/storage/docs/storage-classes",
+    "https://cloud.google.com/storage/docs/lifecycle",
+    "https://cloud.google.com/storage/docs/autoclass",
+    "https://cloud.google.com/storage/docs/bucket-lock",
+    "https://cloud.google.com/storage/docs/soft-delete",
+    "https://cloud.google.com/storage-transfer/docs/overview",
+    "https://cloud.google.com/transfer-appliance/docs/4.0/overview",
+    "https://cloud.google.com/backup-disaster-recovery/docs/concepts/backup-dr",
+    "https://cloud.google.com/compute/docs/disks/hyperdisks",
+    "https://cloud.google.com/compute/docs/disks/snapshots",
+    "https://cloud.google.com/filestore/docs/service-tiers",
+    "https://cloud.google.com/sql/docs/mysql/backup-recovery/backups",
+    "https://cloud.google.com/compute/docs/instances/spot",
+    "https://cloud.google.com/compute/docs/instances/committed-use-discounts-overview",
+    "https://cloud.google.com/compute/docs/instances/reservations-overview",
+    "https://cloud.google.com/compute/docs/nodes/sole-tenant-nodes",
+    "https://cloud.google.com/kubernetes-engine/docs/concepts/choose-cluster-mode",
+    "https://cloud.google.com/kubernetes-engine/docs/concepts/alias-ips",
+    "https://cloud.google.com/run/docs/overview/what-is-cloud-run",
+    "https://cloud.google.com/run/docs/configuring/vpc-direct-vpc",
+    "https://cloud.google.com/vmware-engine/docs/overview",
+    "https://cloud.google.com/migrate/virtual-machines/docs/5.0/concepts/overview",
+    "https://cloud.google.com/compute/docs/vm-manager",
+    "https://cloud.google.com/infrastructure-manager/docs/overview",
+    "https://cloud.google.com/config-connector/docs/overview",
+    "https://cloud.google.com/vertex-ai/docs/start/introduction-unified-platform",
+    "https://cloud.google.com/vertex-ai/docs/pipelines/introduction",
+    "https://cloud.google.com/ai-hypercomputer/docs/overview",
+    "https://cloud.google.com/ai-hypercomputer/docs/consumption-models",
+    "https://cloud.google.com/tpu/docs/intro-to-tpu",
+    "https://cloud.google.com/vertex-ai/docs/start/explore-models",
+    "https://cloud.google.com/vision/docs/features-list",
+    "https://cloud.google.com/document-ai/docs/overview",
+    "https://cloud.google.com/gemini/docs/cloud-assist/overview"
+  ]
+}

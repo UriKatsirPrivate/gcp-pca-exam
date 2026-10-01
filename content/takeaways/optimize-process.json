@@ -1,0 +1,78 @@
+{
+  "domainId": "optimize-process",
+  "takeaways": [
+    {
+      "title": "Match the DR tier to RTO and RPO, per workload",
+      "body": "Pick the cheapest of cold, warm or hot that meets both numbers, because smaller RTO and RPO cost more. A same-region standby such as Cloud SQL HA only covers a zonal failure; region loss with near-zero RPO needs multi-region active-active (for example Spanner multi-region behind a global external Application Load Balancer)."
+    },
+    {
+      "title": "Replication is not backup",
+      "body": "Replication copies corruption, bad deploys and ransomware, and cross-region Cloud SQL replicas and default Cloud Storage replication are asynchronous (12-hour default object RPO, 15 minutes with turbo replication on dual-region). Add PITR, which restores to a new instance, and immutable Backup and DR vaults, then rehearse failover to measure real RTO and RPO."
+    },
+    {
+      "title": "Ship through Build, Artifact Registry and Deploy with proportionate gates",
+      "body": "Build once in Cloud Build, store in Artifact Registry (Container Registry is shut down), and promote the same artifact with Cloud Deploy. Put approvals (requireApproval, roles/clouddeploy.approver) and Binary Authorization on production or regulated targets, and rely on automated tests, canary, verification and rollback elsewhere; DORA found heavyweight external approval boards do not lower change fail rates."
+    },
+    {
+      "title": "In an incident, mitigate first and correlate three signals",
+      "body": "Roll back or shift traffic when a deploy is the suspect, then use Monitoring (when), Logging and Audit Logs (what and who) and Trace (which hop) together. Alert on SLO burn with a fast (10x, 1 to 2 hours) and slow (2x, 24 hours) policy, and close with a blameless postmortem whose action items become tests or guardrails."
+    },
+    {
+      "title": "Pick the pricing lever by usage shape",
+      "body": "Commit the stable 24/7 baseline (flexible spend-based CUDs if the machine shape or region may change, resource-based if fixed), autoscale the variable tier on-demand, and run interruptible fault-tolerant batch on Spot. Remove idle and rightsize with Active Assist before committing, and never size commitments to peak."
+    },
+    {
+      "title": "Budgets notify, they do not cap; people drive change",
+      "body": "Billing budgets alert at thresholds (default 50, 90 and 100 percent) and Pub/Sub automation is delayed and can overshoot, so design for that. For adoption problems, engage stakeholders early, communicate the why, train, phase the rollout, and reduce operational burden with managed options such as Cloud Run or GKE Autopilot; use Service Catalog for governed self-service and ADRs to record decisions."
+    }
+  ],
+  "sources": [
+    "https://docs.cloud.google.com/architecture/architecture-decision-records",
+    "https://docs.cloud.google.com/architecture/disaster-recovery",
+    "https://docs.cloud.google.com/architecture/dr-scenarios-planning-guide",
+    "https://docs.cloud.google.com/architecture/framework/cost-optimization",
+    "https://docs.cloud.google.com/architecture/framework/operational-excellence",
+    "https://docs.cloud.google.com/architecture/framework/reliability/perform-testing-for-recovery-from-failures",
+    "https://docs.cloud.google.com/artifact-registry/docs/overview",
+    "https://docs.cloud.google.com/artifact-registry/docs/repositories/repo-locations",
+    "https://docs.cloud.google.com/artifact-registry/docs/transition/transition-from-gcr",
+    "https://docs.cloud.google.com/backup-disaster-recovery/docs/concepts/backup-dr",
+    "https://docs.cloud.google.com/billing/docs/how-to/budgets",
+    "https://docs.cloud.google.com/billing/docs/how-to/export-data-bigquery",
+    "https://docs.cloud.google.com/billing/docs/how-to/notify",
+    "https://docs.cloud.google.com/binary-authorization/docs/overview",
+    "https://docs.cloud.google.com/build/docs/configuring-builds/configure-build-step-order",
+    "https://docs.cloud.google.com/build/docs/overview",
+    "https://docs.cloud.google.com/compute/docs/instances/committed-use-discounts-overview",
+    "https://docs.cloud.google.com/compute/docs/instances/schedule-instance-start-stop",
+    "https://docs.cloud.google.com/compute/docs/instances/spot",
+    "https://docs.cloud.google.com/compute/docs/sustained-use-discounts",
+    "https://docs.cloud.google.com/deploy/docs/automation",
+    "https://docs.cloud.google.com/deploy/docs/deployment-strategies",
+    "https://docs.cloud.google.com/deploy/docs/overview",
+    "https://docs.cloud.google.com/deploy/docs/promote-release",
+    "https://docs.cloud.google.com/deploy/docs/verify-deployment",
+    "https://docs.cloud.google.com/docs/cuds",
+    "https://docs.cloud.google.com/docs/terraform/policy-validation/validate-policies",
+    "https://docs.cloud.google.com/error-reporting/docs/grouping-errors",
+    "https://docs.cloud.google.com/kubernetes-engine/docs/concepts/autopilot-overview",
+    "https://docs.cloud.google.com/load-balancing/docs/load-balancing-overview",
+    "https://docs.cloud.google.com/logging/docs/audit",
+    "https://docs.cloud.google.com/logging/docs/log-analytics",
+    "https://docs.cloud.google.com/monitoring/uptime-checks",
+    "https://docs.cloud.google.com/recommender/docs/whatis-activeassist",
+    "https://docs.cloud.google.com/run/docs/overview/what-is-cloud-run",
+    "https://docs.cloud.google.com/service-catalog/docs/overview",
+    "https://docs.cloud.google.com/spanner/docs/instance-configurations",
+    "https://docs.cloud.google.com/sql/docs/postgres/backup-recovery/pitr",
+    "https://docs.cloud.google.com/sql/docs/postgres/high-availability",
+    "https://docs.cloud.google.com/sql/docs/postgres/intro-to-cloud-sql-disaster-recovery",
+    "https://docs.cloud.google.com/stackdriver/docs/solutions/slo-monitoring/alerting-on-budget-burn-rate",
+    "https://docs.cloud.google.com/storage/docs/availability-durability",
+    "https://docs.cloud.google.com/storage/docs/storage-classes",
+    "https://docs.cloud.google.com/trace/docs/overview",
+    "https://dora.dev/capabilities/streamlining-change-approval/",
+    "https://dora.dev/guides/dora-metrics-four-keys/",
+    "https://sre.google/sre-book/postmortem-culture/"
+  ]
+}

@@ -1,0 +1,92 @@
+{
+  "domainId": "manage-impl",
+  "takeaways": [
+    {
+      "title": "Pick the purpose-built delivery service, and promote one artifact",
+      "body": "Cloud Build is CI (build, test, push to Artifact Registry); Cloud Deploy is CD (ordered targets, approvals, verify, canary, rollback). When a scenario says progressive delivery with one-click rollback, choose Cloud Deploy rather than scripting kubectl apply, and promote the same immutable image through every environment instead of rebuilding per environment."
+    },
+    {
+      "title": "Match the API requirement to the right tier and the right limiter",
+      "body": "A developer portal, per-app quotas, payload mediation, or monetization means Apigee; a simple OpenAPI front door for serverless backends is API Gateway, and Cloud Endpoints runs ESPv2 beside your own compute. Inside Apigee, use a Quota keyed per app or developer for business limits and SpikeArrest to smooth bursts, and authenticate at the proxy with VerifyAPIKey or OAuthV2 so only apps entitled to the API product get through."
+    },
+    {
+      "title": "Migration tool follows the workload type",
+      "body": "VMs use Migrate to Virtual Machines (replicate, test-clone, then a short cut-over), databases use Database Migration Service with continuous replication when downtime must be minimal, and objects use Storage Transfer Service (over about 1 TB online) or Transfer Appliance (poor connectivity). Scheduled warehouse and SaaS loads use BigQuery Data Transfer Service, and under 1 TB of files is a gcloud storage job."
+    },
+    {
+      "title": "Put capacity and speed questions on the right test layer",
+      "body": "Unit tests are the per-commit base of the pyramid; end-to-end tests are few and run after deploy, for example as a Cloud Deploy verify step. Questions about sustaining 10x traffic or finding the breaking point need load and stress tests with Locust, k6, or JMeter before launch, and infrastructure code is tested cheapest-first: validate, then per-module integration, then end-to-end in an isolated project."
+    },
+    {
+      "title": "Terraform: remote locked state, small states, no keys",
+      "body": "Store state in a Cloud Storage backend with locking and Object Versioning, never in Git or on laptops, and keep each state to well under 100 resources with separate directories and state per environment and shared logic in modules. Automation authenticates through Application Default Credentials using an attached or impersonated least-privilege service account, and runs plan on branches and apply only after review."
+    },
+    {
+      "title": "Identity for code is attached or federated, never a key file",
+      "body": "A VM, Cloud Run service, or build uses an attached user-managed service account and ADC; a GKE pod uses Workload Identity Federation for GKE with narrowly scoped roles. Downloaded service account keys, tokens pasted into variables, and the default service account with Owner are always the wrong option, and emulators, which do not enforce IAM, are for functional tests only."
+    }
+  ],
+  "sources": [
+    "https://cloud.google.com/api-gateway/docs/about-api-gateway",
+    "https://cloud.google.com/apigee/docs/api-platform/analytics/analytics-services-overview",
+    "https://cloud.google.com/apigee/docs/api-platform/develop/rate-limiting",
+    "https://cloud.google.com/apigee/docs/api-platform/fundamentals/understanding-apis-and-api-proxies",
+    "https://cloud.google.com/apigee/docs/api-platform/get-started/what-apigee",
+    "https://cloud.google.com/apigee/docs/api-platform/publish/portal/publish-apis",
+    "https://cloud.google.com/apigee/docs/api-platform/publish/what-api-product",
+    "https://cloud.google.com/apigee/docs/api-platform/reference/policies/quota-policy",
+    "https://cloud.google.com/apigee/docs/api-platform/reference/policies/spike-arrest-policy",
+    "https://cloud.google.com/apigee/docs/api-platform/reference/policies/verify-api-key-policy",
+    "https://cloud.google.com/apigee/docs/api-platform/reference/policies/xml-json-policy",
+    "https://cloud.google.com/apigee/docs/hybrid/latest/what-is-hybrid",
+    "https://cloud.google.com/apis/docs/client-libraries-explained",
+    "https://cloud.google.com/architecture/devops/devops-tech-test-automation",
+    "https://cloud.google.com/architecture/migration-to-gcp-getting-started",
+    "https://cloud.google.com/artifact-registry/docs/overview",
+    "https://cloud.google.com/bigquery/docs/dts-introduction",
+    "https://cloud.google.com/bigquery/docs/loading-data-cloud-storage-json",
+    "https://cloud.google.com/bigtable/docs/emulator",
+    "https://cloud.google.com/build/docs/build-config-file-schema",
+    "https://cloud.google.com/build/docs/overview",
+    "https://cloud.google.com/cloud-assist/overview",
+    "https://cloud.google.com/code/docs",
+    "https://cloud.google.com/compute/docs/instance-groups/rolling-out-updates-to-managed-instance-groups",
+    "https://cloud.google.com/config-connector/docs/overview",
+    "https://cloud.google.com/database-migration/docs/overview",
+    "https://cloud.google.com/deploy/docs/deployment-strategies/canary",
+    "https://cloud.google.com/deploy/docs/overview",
+    "https://cloud.google.com/deploy/docs/promote-release",
+    "https://cloud.google.com/deploy/docs/roll-back",
+    "https://cloud.google.com/deploy/docs/verify-deployment",
+    "https://cloud.google.com/docs/authentication/application-default-credentials",
+    "https://cloud.google.com/docs/authentication/best-practices-applications",
+    "https://cloud.google.com/docs/authentication/client-libraries",
+    "https://cloud.google.com/docs/terraform/authentication",
+    "https://cloud.google.com/docs/terraform/best-practices/general-style-structure",
+    "https://cloud.google.com/docs/terraform/best-practices/root-modules",
+    "https://cloud.google.com/docs/terraform/best-practices/testing",
+    "https://cloud.google.com/docs/terraform/resource-management/managing-infrastructure-as-code",
+    "https://cloud.google.com/docs/terraform/resource-management/store-state",
+    "https://cloud.google.com/docs/terraform/terraform-overview",
+    "https://cloud.google.com/endpoints/docs/openapi/about-cloud-endpoints",
+    "https://cloud.google.com/firestore/docs/emulator",
+    "https://cloud.google.com/infrastructure-manager/docs/overview",
+    "https://cloud.google.com/kubernetes-engine/docs/concepts/workload-identity",
+    "https://cloud.google.com/migrate/containers/docs/getting-started",
+    "https://cloud.google.com/migrate/virtual-machines/docs/5.0/concepts/lifecycle",
+    "https://cloud.google.com/pubsub/docs/emulator",
+    "https://cloud.google.com/run/docs/overview/what-is-cloud-run",
+    "https://cloud.google.com/run/docs/rollouts-rollbacks-traffic-migration",
+    "https://cloud.google.com/shell/docs/how-cloud-shell-works",
+    "https://cloud.google.com/shell/docs/limitations",
+    "https://cloud.google.com/spanner/docs/emulator",
+    "https://cloud.google.com/storage-transfer/docs/overview",
+    "https://cloud.google.com/storage-transfer/docs/transfer-options",
+    "https://cloud.google.com/storage/docs/gsutil",
+    "https://cloud.google.com/storage/docs/retry-strategy",
+    "https://cloud.google.com/storage/docs/transfer-options",
+    "https://cloud.google.com/transfer-appliance/docs/4.0/overview",
+    "https://cloud.google.com/workstations/docs/overview",
+    "https://developer.hashicorp.com/terraform/language/backend/gcs"
+  ]
+}

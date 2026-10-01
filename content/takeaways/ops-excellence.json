@@ -1,0 +1,67 @@
+{
+  "domainId": "ops-excellence",
+  "takeaways": [
+    {
+      "title": "Pick the automated, reversible, observable option",
+      "body": "When two answers both work, choose the one that removes manual toil, limits blast radius, and emits measurable signals. Toil (manual, repetitive, automatable, scales with the service) should stay under about 50% of an engineer's time, so replace console changes and SSH patching with IaC and Cloud Build/Cloud Deploy pipelines."
+    },
+    {
+      "title": "Match the symptom to the observability tool",
+      "body": "Slow request across services means Cloud Trace; hot code burning CPU or memory means Cloud Profiler; grouped exceptions mean Error Reporting; an alert on a business event in logs means a counter log-based metric. Log-based metrics only count entries received after creation, and Trace and Profiler data are kept 30 days."
+    },
+    {
+      "title": "Centralize audit logs with an organization aggregated sink",
+      "body": "For long-term, tamper-resistant audit retention, route filtered logs from an organization or folder sink into a dedicated, access-controlled bucket (locked retention), BigQuery or Cloud Storage outside the source projects. Do not rely on raising _Default retention (30 days default) project by project; _Required is fixed at 400 days and Admin Activity logs cannot be disabled."
+    },
+    {
+      "title": "Budget gone means freeze and fix, never retune the SLO",
+      "body": "An SLI is the measurement, an SLO the target, an SLA the contract with penalties. If releases have burned most of the error budget, halt risky launches and invest in reliability; raising the SLO, changing the SLI or ignoring the budget are all wrong."
+    },
+    {
+      "title": "Alert on burn rate with multiple windows",
+      "body": "Page on fast burn (for a 99.9% SLO, 14.4x over 1 hour confirmed by a 5-minute window consumes 2% of budget) and ticket on slow burn (1x over 3 days). Requiring both a long and a short window cuts false positives and speeds reset; alerting on single errors or raw causes creates noise."
+    },
+    {
+      "title": "Match release strategy to the constraint",
+      "body": "No two versions at once plus instant rollback means blue-green with a validated standby; production evidence with auto-promote or auto-rollback means Cloud Deploy canary plus verification and repair rollout; stateless MIG with zero downtime means a rolling update tuned with maxSurge and maxUnavailable. Mitigate live incidents first with declared roles, and treat chaos tests, load tests and pen tests as different tools (pen testing your own projects needs no Google approval)."
+    }
+  ],
+  "sources": [
+    "https://docs.cloud.google.com/architecture/framework/operational-excellence",
+    "https://docs.cloud.google.com/architecture/framework/operational-excellence/operational-readiness-and-performance-using-cloudops",
+    "https://docs.cloud.google.com/architecture/framework/operational-excellence/manage-incidents-and-problems",
+    "https://docs.cloud.google.com/architecture/framework/operational-excellence/automate-and-manage-change",
+    "https://docs.cloud.google.com/architecture/framework/operational-excellence/continuously-improve-and-innovate",
+    "https://docs.cloud.google.com/architecture/framework/reliability/perform-testing-for-recovery-from-failures",
+    "https://sre.google/sre-book/eliminating-toil/",
+    "https://sre.google/sre-book/postmortem-culture/",
+    "https://sre.google/sre-book/monitoring-distributed-systems/",
+    "https://sre.google/sre-book/service-level-objectives/",
+    "https://sre.google/sre-book/managing-incidents/",
+    "https://sre.google/workbook/alerting-on-slos/",
+    "https://sre.google/workbook/error-budget-policy/",
+    "https://sre.google/workbook/implementing-slos/",
+    "https://docs.cloud.google.com/monitoring/docs/monitoring-overview",
+    "https://docs.cloud.google.com/monitoring/alerts",
+    "https://docs.cloud.google.com/monitoring/alerts/concepts-indepth",
+    "https://docs.cloud.google.com/monitoring/uptime-checks",
+    "https://docs.cloud.google.com/logging/docs/routing/overview",
+    "https://docs.cloud.google.com/logging/docs/logs-based-metrics",
+    "https://docs.cloud.google.com/logging/docs/buckets",
+    "https://docs.cloud.google.com/logging/docs/audit",
+    "https://docs.cloud.google.com/logging/docs/export/aggregated_sinks",
+    "https://docs.cloud.google.com/trace/docs/overview",
+    "https://docs.cloud.google.com/profiler/docs/about-profiler",
+    "https://docs.cloud.google.com/error-reporting/docs/grouping-errors",
+    "https://docs.cloud.google.com/stackdriver/docs/solutions/slo-monitoring",
+    "https://docs.cloud.google.com/stackdriver/docs/solutions/slo-monitoring/alerting-on-budget-burn-rate",
+    "https://docs.cloud.google.com/deploy/docs/overview",
+    "https://docs.cloud.google.com/deploy/docs/deployment-strategies",
+    "https://docs.cloud.google.com/deploy/docs/verify-deployment",
+    "https://docs.cloud.google.com/deploy/docs/automation",
+    "https://docs.cloud.google.com/compute/docs/instance-groups/updating-migs",
+    "https://docs.cloud.google.com/run/docs/rollouts-rollbacks-traffic-migration",
+    "https://kubernetes.io/docs/concepts/workloads/controllers/deployment/",
+    "https://support.google.com/cloud/answer/6262505"
+  ]
+}

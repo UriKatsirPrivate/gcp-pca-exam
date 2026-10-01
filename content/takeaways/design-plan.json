@@ -1,0 +1,85 @@
+{
+  "domainId": "design-plan",
+  "takeaways": [
+    {
+      "title": "Quantify the requirement, then size resilience to it",
+      "body": "Turn every NFR into a number with a window (99.95% monthly, p95 under 500 ms, RPO 5 minutes) before choosing services; latency, availability and recoverability are non-functional even when worded as features. If an option adds redundancy beyond the stated target for a low-value or internal workload, the cost optimization pillar makes it wrong. When two designs both meet the target, pick the simpler, more managed, decoupled and stateless one."
+    },
+    {
+      "title": "HA is not DR: compare the copy interval to the RPO",
+      "body": "Zone failure is solved by a regional MIG with autohealing and autoscaling behind a load balancer, or Cloud SQL HA; region failure needs data and compute in another region. A nightly backup cannot meet a 5-minute RPO, so use continuous replication, PITR or multi-region Spanner instead of a faster restore. Tier the portfolio: active-active for tier 1, warm standby for tier 2, backup and restore for tier 3, and use immutable backup vaults for ransomware."
+    },
+    {
+      "title": "Default to the most managed compute that meets the control need",
+      "body": "New stateless container that should scale to zero is Cloud Run; Kubernetes-level control is GKE, and Autopilot is Google's recommendation unless you need privileges or configuration it disallows. Use Compute Engine only for lift-and-shift, custom OS, VM-bound licensing or special hardware. Use Spot for fault-tolerant, checkpointed batch and CUDs only for the steady baseline, never for peak capacity."
+    },
+    {
+      "title": "Choose the database and storage from consistency, scale and access pattern",
+      "body": "Global, strongly consistent relational with horizontal write scale is Spanner; regional MySQL, PostgreSQL or SQL Server is Cloud SQL; key-based wide-column throughput and time series is Bigtable; shared POSIX across VMs and GKE is Filestore. Cloud Storage cold classes differ in price and minimum duration (30, 90, 365 days), not latency, so rarely read multi-year data belongs in Archive with a lifecycle rule."
+    },
+    {
+      "title": "Pick the private-connectivity tool by IP overlap and direction",
+      "body": "Private Service Connect reaches a producer service or Google API through an internal endpoint and tolerates overlapping ranges; VPC Peering needs non-overlapping ranges and is not transitive; Cloud NAT is outbound-only. For global users, a global external Application Load Balancer gives one anycast IP and nearest-healthy-backend routing, with Cloud CDN for cacheable content. Use HA VPN to start quickly and Interconnect for sustained bandwidth and low latency."
+    },
+    {
+      "title": "Assess before you migrate, and match strategy and tooling to the workload",
+      "body": "Run discovery, dependency mapping and TCO in Migration Center first, move dependent apps in the same wave, and start with low-dependency workloads. Retire duplicated or unneeded apps, rehost for tight deadlines, and reserve refactor or rebuild for apps where agility pays. Use continuous Database Migration Service jobs for low-downtime cutover, Transfer Appliance when upload would take over a week, and sole-tenant nodes when BYOL requires dedicated hardware."
+    }
+  ],
+  "sources": [
+    "https://cloud.google.com/ai-hypercomputer/docs/overview",
+    "https://cloud.google.com/api-gateway/docs/about-api-gateway",
+    "https://cloud.google.com/apigee/docs/api-platform/get-started/what-apigee",
+    "https://cloud.google.com/architecture/dr-scenarios-planning-guide",
+    "https://cloud.google.com/architecture/framework",
+    "https://cloud.google.com/architecture/framework/cost-optimization",
+    "https://cloud.google.com/architecture/framework/reliability",
+    "https://cloud.google.com/architecture/framework/system-design",
+    "https://cloud.google.com/architecture/migration-to-gcp-assessing-and-discovering-your-workloads",
+    "https://cloud.google.com/architecture/migration-to-gcp-getting-started",
+    "https://cloud.google.com/backup-disaster-recovery/docs/concepts/backup-dr",
+    "https://cloud.google.com/bigtable/docs/overview",
+    "https://cloud.google.com/cdn/docs/overview",
+    "https://cloud.google.com/composer/docs/concepts/overview",
+    "https://cloud.google.com/compute/docs/autoscaler",
+    "https://cloud.google.com/compute/docs/disks/snapshots",
+    "https://cloud.google.com/compute/docs/instance-groups/autohealing-instances-in-migs",
+    "https://cloud.google.com/compute/docs/instance-groups/regional-migs",
+    "https://cloud.google.com/compute/docs/instances/apply-machine-type-recommendations-for-instances",
+    "https://cloud.google.com/compute/docs/instances/spot",
+    "https://cloud.google.com/compute/docs/instances/windows/ms-licensing",
+    "https://cloud.google.com/compute/docs/nodes/sole-tenant-nodes",
+    "https://cloud.google.com/data-fusion/docs/concepts/overview",
+    "https://cloud.google.com/database-migration/docs/overview",
+    "https://cloud.google.com/dataflow/docs/overview",
+    "https://cloud.google.com/datastream/docs/overview",
+    "https://cloud.google.com/docs/cuds",
+    "https://cloud.google.com/filestore/docs/service-tiers",
+    "https://cloud.google.com/firestore",
+    "https://cloud.google.com/gemini/docs/cloud-assist/overview",
+    "https://cloud.google.com/kubernetes-engine/docs/concepts/choose-cluster-mode",
+    "https://cloud.google.com/load-balancing/docs/load-balancing-overview",
+    "https://cloud.google.com/migration-center/docs/migration-center-overview",
+    "https://cloud.google.com/nat/docs/overview",
+    "https://cloud.google.com/network-connectivity/docs/how-to/choose-product",
+    "https://cloud.google.com/pubsub/docs/overview",
+    "https://cloud.google.com/run/docs/overview/what-is-cloud-run",
+    "https://cloud.google.com/security-command-center/docs/model-armor-overview",
+    "https://cloud.google.com/spanner/",
+    "https://cloud.google.com/spanner/docs/instance-configurations",
+    "https://cloud.google.com/sql/docs/introduction",
+    "https://cloud.google.com/sql/docs/mysql/backup-recovery/pitr",
+    "https://cloud.google.com/sql/docs/postgres/high-availability",
+    "https://cloud.google.com/stackdriver/docs/solutions/slo-monitoring",
+    "https://cloud.google.com/storage-transfer/docs/overview",
+    "https://cloud.google.com/storage/docs/availability-durability",
+    "https://cloud.google.com/storage/docs/lifecycle",
+    "https://cloud.google.com/storage/docs/storage-classes",
+    "https://cloud.google.com/transfer-appliance/docs/4.0/overview",
+    "https://cloud.google.com/vertex-ai/docs/start/introduction-unified-platform",
+    "https://cloud.google.com/vpc/docs/private-service-connect",
+    "https://cloud.google.com/vpc/docs/vpc",
+    "https://cloud.google.com/vpc/docs/vpc-peering",
+    "https://cloud.google.com/workflows/docs/overview"
+  ]
+}
