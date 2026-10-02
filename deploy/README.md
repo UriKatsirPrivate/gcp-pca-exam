@@ -128,6 +128,15 @@ npx auth secret --raw 2>/dev/null || openssl rand -base64 33 \
 
 ## (b) Deploy
 
+**Production (current): run `./deploy/deploy.sh`.** It bakes in the live values: project
+`landing-zone-demo-341118`, region **`me-west1`** (not the `us-central1` default in
+`cloudbuild.yaml` or the examples below), instance `pca-db`, service `pca-app`, runtime SA
+`pca-run@landing-zone-demo-341118.iam.gserviceaccount.com`. It uploads the local working tree,
+so commit and push first. Live URL: https://pca-app-hrqoscmbca-zf.a.run.app. After a deploy,
+smoke-test with a real Google sign-in (Auth.js/OAuth callback is the most fragile part).
+
+The generic form, if you need other values:
+
 From the project root:
 
 ```bash

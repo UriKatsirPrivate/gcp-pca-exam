@@ -27,6 +27,7 @@ Non-obvious things that will bite you if you don't know them.
 - Write migrations as **handcrafted additive SQL** under `prisma/migrations/` — Neon's shadow DB makes `prisma migrate dev` awkward. Apply locally with `npm run db:deploy`.
 
 ## Deploy
-- `gcloud builds submit --config deploy/cloudbuild.yaml` (build → push → migrate → deploy). **Use absolute paths** for the source and `--config`.
+- Run `./deploy/deploy.sh` (wraps `gcloud builds submit --config deploy/cloudbuild.yaml`: build → push → migrate → deploy). Prod is **`me-west1`**, project `landing-zone-demo-341118` — the `us-central1` default in `cloudbuild.yaml` is wrong for prod. The script uses absolute paths (required for the source and `--config`).
+- Before deploying: bump/verify deps with `npm audit` (prod advisories are what matter; `--force` would downgrade `prisma`, don't), run `npm run build`, push. After: real Google sign-in on the prod URL.
 - `_ADMIN_EMAILS` must be **space-separated**, not comma-separated (commas collide with gcloud's substitution/`--set-env-vars` delimiters); `resolveAccess` splits on whitespace too.
 - `migrate deploy` runs in the pipeline and applies committed migrations. **Never commit `.env`** — prod secrets/bootstrap admins live in Cloud Run env + Secret Manager.
