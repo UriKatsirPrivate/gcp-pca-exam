@@ -126,7 +126,7 @@ export function ProgressBar({
 }: {
   value: number; // 0..100
   className?: string;
-  tone?: "brand" | "success" | "warning" | "danger" | "neutral";
+  tone?: "brand" | "success" | "warning" | "danger" | "neutral" | "coursework";
 }) {
   const toneClass = {
     neutral: "bg-muted",
@@ -134,6 +134,7 @@ export function ProgressBar({
     success: "bg-success",
     warning: "bg-warning",
     danger: "bg-danger",
+    coursework: "bg-coursework",
   }[tone];
   return (
     <div className={cn("h-2 w-full overflow-hidden rounded-full bg-surface-2", className)}>

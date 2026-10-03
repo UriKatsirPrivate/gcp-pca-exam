@@ -9,7 +9,15 @@ import {
   RefreshCw,
   Sparkles,
 } from "lucide-react";
-import { Badge, Button, Card, CardBody, CardHeader, EmptyState } from "@/components/ui";
+import {
+  Badge,
+  Button,
+  ButtonLink,
+  Card,
+  CardBody,
+  CardHeader,
+  EmptyState,
+} from "@/components/ui";
 import { cn } from "@/lib/cn";
 
 type FeedbackKind = "pattern" | "tip" | "strength";
@@ -165,6 +173,16 @@ function InsightRow({ insight }: { insight: FeedbackInsightItem }) {
           ))}
         </div>
         <p className="text-sm leading-relaxed">{insight.message}</p>
+        {insight.kind === "pattern" && insight.concepts.length > 0 ? (
+          <ButtonLink
+            href={`/practice?concept=${encodeURIComponent(insight.concepts.join(","))}`}
+            variant="secondary"
+            size="sm"
+            className="mt-3"
+          >
+            Practice this
+          </ButtonLink>
+        ) : null}
       </div>
     </li>
   );

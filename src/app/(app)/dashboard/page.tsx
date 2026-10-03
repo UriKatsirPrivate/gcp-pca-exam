@@ -18,6 +18,7 @@ import { prisma } from "@/lib/prisma";
 import { getUserProgress } from "@/lib/progress";
 import { whatToFocusNext } from "@/lib/recommend";
 import { requireUser } from "@/lib/session";
+import { MIN_ITEMS_FOR_PROFICIENCY, canReportProficiency } from "@/lib/scoring";
 import {
   Badge,
   ButtonLink,
@@ -44,6 +45,13 @@ const PROFICIENCY_TONE: Record<Proficiency, Tone> = {
   novice: "danger",
 };
 
+/** Share of a domain's modules completed (0–100). */
+function courseworkPct(dp: { modulesDone: number; modulesTotal: number } | undefined) {
+  return dp && dp.modulesTotal > 0
+    ? Math.round((dp.modulesDone / dp.modulesTotal) * 100)
+    : 0;
+}
+
 function masteryTone(pct: number): "brand" | "success" | "warning" | "danger" {
   if (pct >= 85) return "success";
   if (pct >= 70) return "brand";
@@ -53,14 +61,30 @@ function masteryTone(pct: number): "brand" | "success" | "warning" | "danger" {
 
 export default async function DashboardPage() {
   const user = await requireUser();
-  const [progress, recentAttempts] = await Promise.all([
+  const [progress, recentAttempts, recentRuns, scoredRows] = await Promise.all([
     getUserProgress(user.id),
     prisma.quizAttempt.findMany({
       where: { userId: user.id },
-      orderBy: { createdAt: "asc" },
+      orderBy: { createdAt: "desc" },
       take: 20,
     }),
+    prisma.assessmentRun.findMany({
+      where: { userId: user.id },
+      orderBy: { takenAt: "desc" },
+      take: 20,
+    }),
+    // Distinct questions answered per domain, in any context.
+    prisma.answer.findMany({
+      where: { userId: user.id },
+      distinct: ["domainId", "questionId"],
+      select: { domainId: true },
+    }),
   ]);
+
+  const scoredByDomain = new Map<string, number>();
+  for (const r of scoredRows) {
+    scoredByDomain.set(r.domainId, (scoredByDomain.get(r.domainId) ?? 0) + 1);
+  }
 
   const focus = whatToFocusNext(progress);
   const firstName = (user.name ?? "").trim().split(/\s+/)[0] || "there";
@@ -70,17 +94,22 @@ export default async function DashboardPage() {
     return {
       domain: d.shortTitle,
       mastery: dp?.masteryPct ?? 0,
+      coursework: courseworkPct(dp),
       weight: d.weightPct,
     };
   });
 
-  const trendData = recentAttempts.map((a) => ({
-    label: a.createdAt.toLocaleDateString(undefined, {
-      month: "short",
-      day: "numeric",
-    }),
-    score: Math.round(a.scorePct),
-  }));
+  // Quiz attempts and diagnostic runs on one timeline (latest 20, oldest first).
+  const trendData = [
+    ...recentAttempts.map((a) => ({ at: a.createdAt, score: a.scorePct })),
+    ...recentRuns.map((r) => ({ at: r.takenAt, score: r.overallPct })),
+  ]
+    .sort((a, b) => a.at.getTime() - b.at.getTime())
+    .slice(-20)
+    .map((p) => ({
+      label: p.at.toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+      score: Math.round(p.score),
+    }));
 
   return (
     <div className="space-y-6">
@@ -157,8 +186,8 @@ export default async function DashboardPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader
-            title="Domain mastery"
-            subtitle="Estimated mastery per exam domain (0–100%)."
+            title="Domain mastery & coursework"
+            subtitle="Mastery is how you score; coursework is how much you've studied."
             icon={<Target className="h-5 w-5" />}
           />
           <CardBody>
@@ -235,7 +264,7 @@ export default async function DashboardPage() {
       <Card>
         <CardHeader
           title="Progress by domain"
-          subtitle="Mastery, proficiency, and module completion for each domain."
+          subtitle={`Mastery and module completion. A domain is only labelled with a proficiency band once ${MIN_ITEMS_FOR_PROFICIENCY} of its questions have been scored.`}
           icon={<BookOpen className="h-5 w-5" />}
         />
         <CardBody>
@@ -244,6 +273,7 @@ export default async function DashboardPage() {
               const dp = progress.perDomain[d.id];
               const masteryPct = dp?.masteryPct ?? 0;
               const proficiency = dp?.proficiency ?? "novice";
+              const scored = scoredByDomain.get(d.id) ?? 0;
               return (
                 <li
                   key={d.id}
@@ -257,9 +287,15 @@ export default async function DashboardPage() {
                       >
                         {d.shortTitle}
                       </Link>
-                      <Badge tone={PROFICIENCY_TONE[proficiency]}>
-                        {proficiency}
-                      </Badge>
+                      {canReportProficiency(scored) ? (
+                        <Badge tone={PROFICIENCY_TONE[proficiency]}>
+                          {proficiency}
+                        </Badge>
+                      ) : (
+                        <Badge tone="neutral">
+                          {scored}/{MIN_ITEMS_FOR_PROFICIENCY} scored
+                        </Badge>
+                      )}
                       <span className="text-xs text-muted">
                         {d.weightPct}% of exam
                       </span>
@@ -268,6 +304,11 @@ export default async function DashboardPage() {
                       value={masteryPct}
                       tone={masteryTone(masteryPct)}
                       className="mt-2"
+                    />
+                    <ProgressBar
+                      value={courseworkPct(dp)}
+                      tone="coursework"
+                      className="mt-1"
                     />
                   </div>
                   <div className="flex items-center gap-6 text-sm sm:justify-end">
@@ -287,18 +328,23 @@ export default async function DashboardPage() {
       </Card>
 
       {/* Score trend ------------------------------------------------------ */}
-      {trendData.length >= 2 ? (
-        <Card>
-          <CardHeader
-            title="Score trend"
-            subtitle="Your quiz scores over time."
-            icon={<TrendingUp className="h-5 w-5" />}
-          />
-          <CardBody>
+      <Card>
+        <CardHeader
+          title="Score trend"
+          subtitle="Your quiz and diagnostic scores over time."
+          icon={<TrendingUp className="h-5 w-5" />}
+        />
+        <CardBody>
+          {trendData.length >= 2 ? (
             <ScoreTrendChart data={trendData} />
-          </CardBody>
-        </Card>
-      ) : null}
+          ) : (
+            <EmptyState
+              title="Not enough scores yet"
+              body="Take a module quiz or retake the diagnostic and your score trend will appear here."
+            />
+          )}
+        </CardBody>
+      </Card>
 
       {/* Intelligent feedback -------------------------------------------- */}
       <FeedbackPanel />

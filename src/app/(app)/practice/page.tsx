@@ -24,10 +24,14 @@ const RECENT_ANSWER_LIMIT = 200;
 export default async function PracticePage({
   searchParams,
 }: {
-  searchParams: Promise<{ domain?: string }>;
+  searchParams: Promise<{ domain?: string; concept?: string }>;
 }) {
   const user = await requireUser();
-  const { domain } = await searchParams;
+  const { domain, concept } = await searchParams;
+  const requestedConcepts = (concept ?? "")
+    .split(",")
+    .map((c) => c.trim())
+    .filter(Boolean);
   const domainId: DomainId | null = DOMAIN_IDS.includes(domain as DomainId)
     ? (domain as DomainId)
     : null;
@@ -37,7 +41,12 @@ export default async function PracticePage({
   let subtitle = "Targeted practice from the concepts you miss most.";
   let weakConcepts: string[] = [];
 
-  if (domainId) {
+  if (requestedConcepts.length > 0) {
+    // Explicit concept practice, e.g. from a dashboard feedback card.
+    picked = getQuestionsByConcept(requestedConcepts, { limit: PRACTICE_SIZE });
+    heading = `Practice · ${requestedConcepts.join(", ")}`;
+    subtitle = "Questions tagged with this concept. Check each answer as you go.";
+  } else if (domainId) {
     // Explicit domain practice (also the fallback for users with no history).
     picked = shuffle(getQuestionsByDomain(domainId)).slice(0, PRACTICE_SIZE);
     heading = `Practice · ${getDomain(domainId).shortTitle}`;

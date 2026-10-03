@@ -4,7 +4,7 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  Cell,
+  Legend,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -14,14 +14,17 @@ import {
 export interface DomainMasteryDatum {
   domain: string;
   mastery: number;
+  /** Share of the domain's modules completed (0–100). */
+  coursework: number;
   weight: number;
 }
 
 const BRAND = "var(--color-brand-600, #2563eb)";
+const COURSEWORK = "var(--color-coursework, #c2714f)";
 
 export function DomainMasteryChart({ data }: { data: DomainMasteryDatum[] }) {
   return (
-    <ResponsiveContainer width="100%" height={300}>
+    <ResponsiveContainer width="100%" height={420}>
       <BarChart
         data={data}
         layout="vertical"
@@ -46,10 +49,10 @@ export function DomainMasteryChart({ data }: { data: DomainMasteryDatum[] }) {
         />
         <Tooltip
           cursor={{ fillOpacity: 0.06 }}
-          formatter={(value, _name, item) => [
-            `${value}% mastery`,
-            `${item?.payload?.domain} · ${item?.payload?.weight}% of exam`,
-          ]}
+          formatter={(value, name) => [`${value}%`, name]}
+          labelFormatter={(label, items) =>
+            `${label} · ${items?.[0]?.payload?.weight}% of exam`
+          }
           contentStyle={{
             borderRadius: 8,
             border: "1px solid var(--color-line, #e5e7eb)",
@@ -57,11 +60,28 @@ export function DomainMasteryChart({ data }: { data: DomainMasteryDatum[] }) {
             fontSize: 12,
           }}
         />
-        <Bar dataKey="mastery" radius={[0, 4, 4, 0]} maxBarSize={22}>
-          {data.map((d) => (
-            <Cell key={d.domain} fill={BRAND} />
-          ))}
-        </Bar>
+        <Legend
+          verticalAlign="top"
+          align="left"
+          iconType="square"
+          iconSize={10}
+          wrapperStyle={{ fontSize: 12, paddingBottom: 8 }}
+        />
+        <Bar
+          name="Mastery"
+          dataKey="mastery"
+          fill={BRAND}
+          radius={[0, 4, 4, 0]}
+          maxBarSize={14}
+          label={{ position: "right", fontSize: 10, formatter: (v: unknown) => `${v}%` }}
+        />
+        <Bar
+          name="Coursework"
+          dataKey="coursework"
+          fill={COURSEWORK}
+          radius={[0, 4, 4, 0]}
+          maxBarSize={14}
+        />
       </BarChart>
     </ResponsiveContainer>
   );
