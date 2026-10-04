@@ -15,7 +15,7 @@ export interface LLMProvider {
   complete(opts: LLMCompleteOptions): Promise<string>;
 }
 
-const HEAVY = process.env.LLM_MODEL_HEAVY ?? "claude-opus-4-8";
+const HEAVY = process.env.LLM_MODEL_HEAVY ?? "claude-sonnet-5-5";
 
 function extractText(content: Array<{ type: string; text?: string }>): string {
   return content
@@ -57,6 +57,9 @@ class VertexProvider implements LLMProvider {
       model: opts.model ?? HEAVY,
       max_tokens: opts.maxTokens ?? 1024,
       system: opts.system,
+      // Sonnet 5.5 thinks adaptively by default and thinking tokens count against
+      // max_tokens; low effort keeps these short coaching tips from being truncated.
+      output_config: { effort: "low" },
       messages: [{ role: "user", content: opts.prompt }],
     });
     return extractText(msg.content);
@@ -91,6 +94,9 @@ class AnthropicProvider implements LLMProvider {
       model: opts.model ?? HEAVY,
       max_tokens: opts.maxTokens ?? 1024,
       system: opts.system,
+      // Sonnet 5.5 thinks adaptively by default and thinking tokens count against
+      // max_tokens; low effort keeps these short coaching tips from being truncated.
+      output_config: { effort: "low" },
       messages: [{ role: "user", content: opts.prompt }],
     });
     return extractText(msg.content);

@@ -26,7 +26,7 @@ export interface FeedbackResult {
 }
 
 const RECENT_ANSWER_LIMIT = 200;
-const LLM_MAX_TOKENS = 700;
+const LLM_MAX_TOKENS = 2000;
 
 // Minimum gap between forced ("Refresh analysis") LLM regenerations per user.
 // A forced refresh inside this window is served from cache, so a user can't spin
