@@ -134,10 +134,13 @@ export async function generateFeedback(
         prompt,
         maxTokens: LLM_MAX_TOKENS,
       });
-      for (const message of parseLLMTips(raw)) {
+      for (const { message, concept } of parseLLMTips(raw)) {
         llmItems.push({
           kind: "tip",
-          concepts: weak.slice(0, 5),
+          // Chip the concept the tip targets; if the model didn't name a valid
+          // weak slug, fall back to the weakest few rather than showing none.
+          concepts:
+            concept && weak.includes(concept) ? [concept] : weak.slice(0, 5),
           message,
           source: "llm",
         });
@@ -190,11 +193,24 @@ function buildLLMPrompt(answers: AnswerLike[], weak: string[]): string {
     "",
     "Give 2-4 short, specific, encouraging coaching tips that target these weak areas and map to GCP best practices.",
     "Return ONE tip per line, plain text, no numbering, no markdown bullets. Keep each tip under 240 characters.",
+    "Start each line with the single weak concept it targets, copied exactly from the list above, in square brackets, e.g. `[concept-slug] Tip text`.",
   ].join("\n");
 }
 
-/** Defensively parse LLM output into 1..4 clean tip strings. */
-function parseLLMTips(raw: string): string[] {
+interface ParsedTip {
+  message: string;
+  /** Concept slug from a leading `[slug]` prefix; unvalidated. */
+  concept: string | null;
+}
+
+/** Splits a leading `[concept-slug]` prefix off a cleaned tip line. */
+function splitConcept(tip: string): ParsedTip {
+  const m = /^\[([^\]]+)\]\s*(.*)$/.exec(tip);
+  return m ? { concept: m[1].trim(), message: m[2].trim() } : { concept: null, message: tip };
+}
+
+/** Defensively parse LLM output into 1..4 clean tips, each with its target concept. */
+function parseLLMTips(raw: string): ParsedTip[] {
   if (!raw) return [];
 
   // Try JSON array of strings (or objects with a message/tip field) first.
@@ -218,7 +234,8 @@ function parseLLMTips(raw: string): string[] {
           return "";
         })
         .map(cleanTip)
-        .filter(Boolean);
+        .map(splitConcept)
+        .filter((t) => t.message);
       if (fromJson.length > 0) return fromJson.slice(0, 4);
     } catch {
       // fall through to line parsing
@@ -229,7 +246,8 @@ function parseLLMTips(raw: string): string[] {
   return trimmed
     .split(/\r?\n/)
     .map(cleanTip)
-    .filter(Boolean)
+    .map(splitConcept)
+    .filter((t) => t.message)
     .slice(0, 4);
 }
 

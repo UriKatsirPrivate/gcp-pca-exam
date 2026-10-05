@@ -115,6 +115,38 @@ export const moduleVideosSchema = z.record(z.string(), z.array(videoSchema));
 
 export type Video = z.infer<typeof videoSchema>;
 
+// One narrated segment: startSec is its offset in the module MP3, blockIndex
+// the element-child index it maps to in the rendered markdown container
+// (null = the module title). Written by scripts/generate-tts.ts.
+export const audioSegmentSchema = z.object({
+  blockIndex: z.number().int().min(0).nullable(),
+  startSec: z.number().min(0),
+});
+
+// One generated TTS narration per module. `object` is the GCS object path
+// under gs://$AUDIO_BUCKET/ (no bucket prefix). `segments` is optional so
+// manifests from before per-segment synthesis still validate — the UI falls
+// back to proportional auto-scroll and no highlighting without it.
+export const moduleAudioSchema = z.object({
+  object: z.string().min(1),
+  hash: z.string().min(1),
+  bytes: z.number().int().positive(),
+  estDurationSec: z.number().int().positive(),
+  segments: z.array(audioSegmentSchema).optional(),
+});
+
+// Generated audio manifest: content/audio/manifest.json (written by the
+// generate script; absent until it has run).
+export const audioManifestSchema = z.object({
+  model: z.string().min(1),
+  voice: z.string().min(1),
+  stylePrompt: z.string().min(1),
+  entries: z.record(z.string(), moduleAudioSchema),
+});
+
+export type AudioSegment = z.infer<typeof audioSegmentSchema>;
+export type ModuleAudio = z.infer<typeof moduleAudioSchema>;
+
 // Domain-level recap takeaways, authored in content/takeaways/<domainId>.json.
 export const takeawaySchema = z.object({
   title: z.string().min(1),

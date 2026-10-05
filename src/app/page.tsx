@@ -44,7 +44,14 @@ export default async function HomePage() {
 
       <section className="py-16 text-center sm:py-24">
         <p className="mb-3 text-sm font-medium text-brand-600">
-          Google Cloud · Professional Cloud Architect
+          <a
+            href="https://cloud.google.com/learn/certification/cloud-architect"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:underline"
+          >
+            Google Cloud · Professional Cloud Architect
+          </a>
         </p>
         <h1 className="mx-auto max-w-3xl text-4xl font-bold tracking-tight sm:text-5xl">
           Pass the PCA exam with a plan built around your weak spots.

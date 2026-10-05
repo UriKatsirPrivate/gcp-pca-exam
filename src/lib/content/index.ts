@@ -2,6 +2,7 @@ import "server-only";
 import fs from "node:fs";
 import path from "node:path";
 import {
+  audioManifestSchema,
   caseStudySchema,
   domainTakeawaysSchema,
   moduleSchema,
@@ -14,6 +15,7 @@ import {
   type DomainId,
   type DomainTakeaways,
   type Module,
+  type ModuleAudio,
   type Question,
   type Quiz,
   type Video,
@@ -49,6 +51,7 @@ interface ContentStore {
   modulesByDomain: Map<DomainId, Module[]>;
   questionsByDomain: Map<DomainId, Question[]>;
   videosByModule: Map<string, Video[]>;
+  audioByModule: Map<string, ModuleAudio>;
   takeawaysByDomain: Map<DomainId, DomainTakeaways>;
   examTipsByDomain: Map<DomainId, ExamTipGroup[]>;
 }
@@ -126,6 +129,17 @@ function build(): ContentStore {
     }
   }
 
+  // Generated per-module TTS audio: content/audio/manifest.json (optional;
+  // absent until the generate script has run)
+  const audioByModule = new Map<string, ModuleAudio>();
+  const audioFile = path.join(CONTENT_DIR, "audio", "manifest.json");
+  if (fs.existsSync(audioFile)) {
+    const manifest = audioManifestSchema.parse(readJson(audioFile));
+    for (const [moduleId, entry] of Object.entries(manifest.entries)) {
+      audioByModule.set(moduleId, entry);
+    }
+  }
+
   // Domain recap takeaways: content/takeaways/<domainId>.json (optional per domain)
   const takeawaysByDomain = new Map<DomainId, DomainTakeaways>();
   for (const domainId of DOMAIN_IDS) {
@@ -188,6 +202,7 @@ function build(): ContentStore {
     modulesByDomain,
     questionsByDomain,
     videosByModule,
+    audioByModule,
     takeawaysByDomain,
     examTipsByDomain,
   };
@@ -267,6 +282,11 @@ export function getModuleVideos(moduleId: string): Video[] {
   // `?.` guards against a stale cached store (e.g. a dev server that built the
   // store before this field existed); degrades to "no videos" instead of a 500.
   return store().videosByModule?.get(moduleId) ?? [];
+}
+export function getModuleAudio(moduleId: string): ModuleAudio | null {
+  // `?.` guards against a stale cached store (e.g. a dev server that built the
+  // store before this field existed); degrades to "no audio" instead of a 500.
+  return store().audioByModule?.get(moduleId) ?? null;
 }
 
 /** In-place Fisher–Yates shuffle. */

@@ -14,6 +14,7 @@ REGION="${REGION:-me-west1}"
 INSTANCE="${INSTANCE:-pca-db}"
 SERVICE="${SERVICE:-pca-app}"
 DB_NAME="${DB_NAME:-pca}"
+AUDIO_BUCKET="${AUDIO_BUCKET:-${PROJECT_ID}-pca-audio}"   # module narration MP3s (private; served via /api/audio)
 RUN_SA="pca-run@${PROJECT_ID}.iam.gserviceaccount.com"
 DB_IAM_USER="pca-run@${PROJECT_ID}.iam"   # run SA email without ".gserviceaccount.com"
 
@@ -22,4 +23,4 @@ DB_IAM_USER="pca-run@${PROJECT_ID}.iam"   # run SA email without ".gserviceaccou
 exec gcloud builds submit "$ROOT" \
   --project "$PROJECT_ID" \
   --config "$ROOT/deploy/cloudbuild.yaml" \
-  --substitutions="_REGION=${REGION},_INSTANCE_CONNECTION_NAME=${PROJECT_ID}:${REGION}:${INSTANCE},_SERVICE=${SERVICE},_DB_NAME=${DB_NAME},_RUN_SA_EMAIL=${RUN_SA},_DB_IAM_USER=${DB_IAM_USER},_ANTHROPIC_VERTEX_PROJECT_ID=${PROJECT_ID}"
+  --substitutions="_REGION=${REGION},_INSTANCE_CONNECTION_NAME=${PROJECT_ID}:${REGION}:${INSTANCE},_SERVICE=${SERVICE},_DB_NAME=${DB_NAME},_RUN_SA_EMAIL=${RUN_SA},_DB_IAM_USER=${DB_IAM_USER},_ANTHROPIC_VERTEX_PROJECT_ID=${PROJECT_ID},_AUDIO_BUCKET=${AUDIO_BUCKET}"

@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowRight, ChevronLeft, Clock } from "lucide-react";
 import {
   getDomain,
   getModule,
+  getModuleAudio,
   getModuleVideos,
   getModules,
   getQuestions,
@@ -13,6 +14,7 @@ import {
 import { DOMAIN_IDS, type DomainId } from "@/lib/content/schema";
 import { getUserProgress } from "@/lib/progress";
 import { requireUser } from "@/lib/session";
+import { AudioPlayer } from "@/components/AudioPlayer";
 import { Markdown } from "@/components/Markdown";
 import { Mermaid } from "@/components/Mermaid";
 import { Badge } from "@/components/ui";
@@ -41,6 +43,9 @@ export default async function ModulePage({
   const initialStatus = progress.moduleStatusById[m.id] ?? "todo";
 
   const d = getDomain(domainId);
+  // AUDIO_BUCKET unset/empty = audio feature hidden (see .env.example) — the
+  // route 503s without it, so don't render the player on manifest presence alone.
+  const audio = process.env.AUDIO_BUCKET ? getModuleAudio(m.id) : null;
 
   // Prev/Next within the ordered domain module list.
   const siblings = getModules(domainId);
@@ -78,9 +83,17 @@ export default async function ModulePage({
           </div>
         </header>
 
-        <div className="prose-content">
-          <Markdown>{m.bodyMarkdown}</Markdown>
-        </div>
+        {audio ? (
+          <AudioPlayer
+            src={`/api/audio/${m.id}`}
+            moduleId={m.id}
+            estDurationSec={audio.estDurationSec}
+            bodyId="module-body"
+            segments={audio.segments}
+          />
+        ) : null}
+
+        <Markdown id="module-body">{m.bodyMarkdown}</Markdown>
 
         {m.diagrams.length > 0 ? (
           <div className="mt-8 space-y-6">

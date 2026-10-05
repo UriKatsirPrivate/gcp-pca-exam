@@ -99,6 +99,15 @@ body {
   margin-top: 1.4em;
   margin-bottom: 0.5em;
 }
+/* Block currently being narrated by the TTS player (see AudioPlayer). The
+   spread shadow pads the tint beyond the block box without shifting layout. */
+.prose-content .tts-active {
+  background: color-mix(in srgb, var(--brand-600) 10%, transparent);
+  box-shadow: 0 0 0 10px color-mix(in srgb, var(--brand-600) 10%, transparent);
+  border-radius: 2px;
+  transition: background-color 0.4s ease, box-shadow 0.4s ease;
+}
+
 .prose-content h1 { font-size: 1.6rem; }
 .prose-content h2 { font-size: 1.3rem; }
 .prose-content h3 { font-size: 1.1rem; }

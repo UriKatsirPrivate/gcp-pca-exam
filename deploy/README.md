@@ -220,3 +220,34 @@ Notes:
   rejects it. It must equal a redirect URI registered on the OAuth client.
 - For "Login with Google", also pass `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET`.
 ```
+
+## (f) Module narration (Gemini-TTS)
+
+Modules are narrated offline by a maintainer; the pipeline only serves the
+result. MP3s live in a **private** bucket (`$PROJECT-pca-audio`, same region as
+the service) and are streamed through the auth-gated `/api/audio/<moduleId>`
+route (domain-gate re-check, `Range` support). Playback never counts toward
+module completion.
+
+```bash
+BUCKET=$PROJECT-pca-audio
+gcloud storage buckets create gs://$BUCKET --location me-west1 \
+  --uniform-bucket-level-access --public-access-prevention
+gcloud storage buckets add-iam-policy-binding gs://$BUCKET \
+  --member="serviceAccount:pca-run@$PROJECT.iam.gserviceaccount.com" \
+  --role=roles/storage.objectViewer
+
+AUDIO_BUCKET=$BUCKET npm run tts:generate                       # all stale/missing modules
+AUDIO_BUCKET=$BUCKET npm run tts:generate -- --module <id>      # one module
+npm run tts:check                                               # offline staleness check
+```
+
+- `content/audio/manifest.json` is committed; `deploy.sh` passes `_AUDIO_BUCKET`
+  (default `$PROJECT_ID-pca-audio`). Empty hides the player.
+- Every synthesized request is transcribed back (Gemini Flash) and re-rolled if
+  the style prompt leaked into the speech (~1 in 50 requests).
+- The manifest hash covers speakable text + model + voice + style prompt:
+  editing a module, or `STYLE_PROMPT` in `scripts/lib/tts-synthesis.ts`, makes
+  its narration stale. `prebuild` reports staleness without blocking, and a
+  `PostToolUse` hook warns after edits under `content/modules/`.
+- Synthesis needs ADC with the Text-to-Speech and Vertex AI APIs enabled.

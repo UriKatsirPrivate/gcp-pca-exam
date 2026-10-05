@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "input=$(cat); f=$(printf '%s' \"$input\" | jq -r '.tool_input.file_path // .tool_response.filePath // empty'); case \"$f\" in content/modules/*|*/content/modules/*) ;; *) exit 0 ;; esac; cwd=$(printf '%s' \"$input\" | jq -r '.cwd // empty'); [ -n \"$cwd\" ] || cwd=\"$PWD\"; out=$(cd \"$cwd\" && npm run -s tts:check -- --quiet 2>&1); code=$?; if [ \"$code\" -ne 0 ]; then reason=$(printf '%s' \"$out\" | tail -5); jq -nc --arg r \"$reason\" '{systemMessage: (\"Narration stale — \" + $r)}'; fi; exit 0",
+            "timeout": 30,
+            "statusMessage": "Checking narration freshness"
+          }
+        ]
+      }
+    ]
+  }
+}
