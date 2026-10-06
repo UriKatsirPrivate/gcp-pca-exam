@@ -347,7 +347,8 @@ export default async function DashboardPage() {
       </Card>
 
       {/* Intelligent feedback -------------------------------------------- */}
-      <FeedbackPanel />
+      {/* Keyed on answered-question count so a progress reset remounts and refetches. */}
+      <FeedbackPanel key={scoredRows.length} />
 
       {/* Quick links ------------------------------------------------------ */}
       <div className="grid gap-6 sm:grid-cols-2">

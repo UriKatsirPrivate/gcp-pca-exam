@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
+import { clearFeedbackCache } from "@/lib/feedback";
 
 /**
  * Wipe all of the current user's learning progress, keeping their account
@@ -22,6 +23,8 @@ export async function resetProgress(): Promise<void> {
     prisma.examRun.deleteMany(where),
     prisma.feedbackInsight.deleteMany(where),
   ]);
+
+  clearFeedbackCache(user.id);
 
   revalidatePath("/dashboard");
   revalidatePath("/learn");

@@ -49,6 +49,11 @@ const globalForFeedback = globalThis as unknown as {
 const feedbackCache: Map<string, FeedbackCacheEntry> = (globalForFeedback.feedbackCache ??=
   new Map());
 
+/** Drop a user's cached feedback (e.g. after a progress reset). */
+export function clearFeedbackCache(userId: string): void {
+  feedbackCache.delete(userId);
+}
+
 /** Stable ordering: patterns first, tips in the middle, strengths last. */
 const KIND_ORDER: Record<FeedbackKind, number> = {
   pattern: 0,

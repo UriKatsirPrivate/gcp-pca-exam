@@ -1,41 +1,34 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { Moon, Sun } from "lucide-react";
 
-export function ThemeToggle() {
-  const [mounted, setMounted] = useState(false);
-  const [isDark, setIsDark] = useState(false);
+// The theme lives in the <html> class list (set by the pre-hydration script and
+// by toggle()), so read it as an external store. The server snapshot is "light",
+// and React re-renders with the real value after hydration — no mismatch.
+function subscribe(onChange: () => void) {
+  const observer = new MutationObserver(onChange);
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["class"],
+  });
+  return () => observer.disconnect();
+}
 
-  useEffect(() => {
-    setIsDark(document.documentElement.classList.contains("dark"));
-    setMounted(true);
-  }, []);
+const getSnapshot = () => document.documentElement.classList.contains("dark");
+const getServerSnapshot = () => false;
+
+export function ThemeToggle() {
+  const isDark = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   function toggle() {
     const next = !isDark;
     document.documentElement.classList.toggle("dark", next);
     localStorage.setItem("theme", next ? "dark" : "light");
-    setIsDark(next);
   }
 
   const className =
     "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm text-muted hover:bg-surface-2 hover:text-foreground";
-
-  // Render a stable placeholder until mounted to avoid a hydration mismatch
-  // (server has no access to localStorage / prefers-color-scheme).
-  if (!mounted) {
-    return (
-      <button
-        type="button"
-        className={className}
-        title="Toggle theme"
-        aria-label="Toggle theme"
-      >
-        <Moon size={16} />
-      </button>
-    );
-  }
 
   return (
     <button
