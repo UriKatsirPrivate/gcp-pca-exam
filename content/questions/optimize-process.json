@@ -535,13 +535,13 @@
     "caseStudyId": "ehr-healthcare",
     "subObjective": "optimize-process.1",
     "sourceUrl": "https://docs.cloud.google.com/architecture/dr-scenarios-for-applications",
-    "lastVerified": "2026-10-01",
-    "prompt": "EHR Healthcare runs clinical applications where extended downtime can affect patient care, so leadership mandates that core services keep running through the loss of an entire region with near-zero data loss. Which Google Cloud architecture best satisfies this business-continuity requirement?",
+    "lastVerified": "2026-10-08",
+    "prompt": "EHR Healthcare runs clinical applications where extended downtime can affect patient care, so leadership mandates that core services keep running through the loss of an entire region with minimal data loss and no manual failover. Which Google Cloud architecture best satisfies this business-continuity requirement?",
     "choices": [
       {
         "id": "a",
-        "text": "Active-active deployment across two or more regions with synchronous data replication and global load balancing",
-        "rationale": "A hot pattern runs both sites serving traffic, so there is no failover step; synchronous replication keeps data loss near zero and a global load balancer routes around the failed region."
+        "text": "Active-active deployment across two or more regions with replicated data and global load balancing in front",
+        "rationale": "A hot pattern runs resources in production mode in every site and serves traffic from all of them, so no failover step is needed. Replication keeps data loss minimal and a global load balancer routes around a failed region."
       },
       {
         "id": "b",
@@ -574,14 +574,14 @@
     ],
     "caseStudyId": "cymbal-retail",
     "subObjective": "optimize-process.2",
-    "sourceUrl": "https://docs.cloud.google.com/compute/docs/instances/schedule-instance-start-stop",
-    "lastVerified": "2026-10-01",
+    "sourceUrl": "https://docs.cloud.google.com/kubernetes-engine/docs/concepts/cluster-autoscaler",
+    "lastVerified": "2026-10-08",
     "prompt": "Cymbal Retail discovers that several development-environment GKE clusters and Compute Engine VMs run 24/7 but are only used during business hours, and many nodes sit at under 10% CPU. Which set of actions provides the most immediate, low-risk cost optimization?",
     "choices": [
       {
         "id": "a",
-        "text": "Schedule dev VMs and clusters to stop off-hours, and apply rightsizing recommendations to the idle nodes",
-        "rationale": "Stopping non-production compute outside working hours and downsizing under-used nodes removes idle spend without architectural change; stopped VMs still bill for disks and static IPs, so the saving is on compute only."
+        "text": "Stop dev VMs on a schedule, shrink dev GKE node pools off-hours, and rightsize the idle nodes",
+        "rationale": "Compute Engine instance schedules stop VMs automatically outside working hours, and fewer GKE nodes (autoscaling down or resizing node pools) removes idle cluster spend. Rightsizing trims under-used nodes. Stopped VMs still bill for disks and static IPs, and a Standard cluster always keeps at least one node for system Pods, so GKE savings come from shrinking pools, not stopping the cluster."
       },
       {
         "id": "b",
@@ -603,7 +603,8 @@
       "a"
     ],
     "difficulty": 2,
-    "examOnly": true
+    "examOnly": true,
+    "explanation": "VM start/stop schedules come from Compute Engine instance schedules, which cover VM instances only. For GKE, the cluster autoscaler removes underutilized nodes but never automatically scales a Standard cluster to zero nodes, so the saving comes from shrinking node pools."
   },
   {
     "id": "q-optimize-process-016",
@@ -617,33 +618,33 @@
     "caseStudyId": "altostrat-media",
     "subObjective": "optimize-process.1",
     "sourceUrl": "https://docs.cloud.google.com/deploy/docs/automation",
-    "lastVerified": "2026-10-01",
+    "lastVerified": "2026-10-08",
     "prompt": "Altostrat Media wants to mature its software delivery from manual, error-prone releases toward reliable, frequent deployments. Which practices align with a healthy SDLC and safe change management on Google Cloud? Choose three.",
     "choices": [
       {
         "id": "a",
-        "text": "Automate build, test, and deploy with Cloud Build and Cloud Deploy, adding approval gates on the production target",
-        "rationale": "Automation removes manual error, and a required approval on the production target adds controlled change management."
+        "text": "Automate build and deploy with Cloud Build and Cloud Deploy, with requireApproval set on the production target",
+        "rationale": "Automation removes manual error, and requireApproval on the production target makes every promotion into production a controlled, recorded change."
       },
       {
         "id": "b",
-        "text": "Use canary rollouts with automated rollback so that a bad change reaches only a small share of users",
-        "rationale": "Cloud Deploy canary phases limit exposure, and a repair automation rule can retry and then roll back to the last successful release."
+        "text": "Use canary rollouts with a Cloud Deploy repair rule that rolls back to the last successful release on failure",
+        "rationale": "Cloud Deploy canary phases limit exposure, and its repair automation rule can retry a failed rollout and then create a rollback rollout to the most recent successful release."
       },
       {
         "id": "c",
-        "text": "Keep an audit trail and require code review and merge approval before anything can be released",
+        "text": "Require code review and merge approval before anything is released, and keep the release history for audit",
         "rationale": "Reviews and approvals give accountability and traceability for every change."
       },
       {
         "id": "d",
-        "text": "Let any engineer push hotfixes directly to production without review during business hours to move faster",
-        "rationale": "Unreviewed manual pushes are the error-prone behavior the company is trying to eliminate."
+        "text": "Allow engineers to hotfix production directly with kubectl from a laptop when the pipeline is slow, filing a ticket afterwards",
+        "rationale": "Direct pushes bypass the pipeline, approvals and release record, and a ticket filed afterwards is paperwork, not review before the change reaches users."
       },
       {
         "id": "e",
-        "text": "Turn monitoring off while releases run so that expected error spikes do not generate alert noise",
-        "rationale": "Release windows are when risk is highest, so disabling monitoring removes the signal needed to detect and roll back a bad change."
+        "text": "Mute alerting policies while releases run so that expected error spikes do not page anyone, then re-enable them afterwards",
+        "rationale": "Release windows are when risk is highest, so muting alerts removes the signal needed to detect a bad change and trigger a rollback."
       }
     ],
     "correct": [
@@ -745,8 +746,8 @@
     "caseStudyId": "knightmotives-automotive",
     "subObjective": "optimize-process.1",
     "sourceUrl": "https://docs.cloud.google.com/spanner/docs/instance-configurations",
-    "lastVerified": "2026-10-01",
-    "prompt": "KnightMotives Automotive runs a connected-vehicle telemetry platform on Google Cloud. Leadership sets an RPO of seconds and an RTO of a few minutes for the ingestion and serving tiers, and wants the architecture to also accelerate root-cause analysis when failovers occur. Which combination of design choices best satisfies these objectives? Choose three.",
+    "lastVerified": "2026-10-08",
+    "prompt": "KnightMotives Automotive runs a connected-vehicle telemetry platform on Google Cloud. Leadership sets an RPO of near zero and an RTO of a few minutes for the ingestion and serving tiers, and wants the architecture to also accelerate root-cause analysis when failovers occur. Which combination of design choices best satisfies these objectives? Choose three.",
     "choices": [
       {
         "id": "a",
@@ -765,13 +766,13 @@
       },
       {
         "id": "d",
-        "text": "Run a single-region deployment and copy hourly database exports to a bucket in a second region for restores",
-        "rationale": "Hourly exports mean up to an hour of data loss and a slow restore, far outside an RPO of seconds and an RTO of minutes."
+        "text": "Run a single-region deployment with an asynchronous cross-region Cloud SQL replica that engineers promote manually following a runbook",
+        "rationale": "Cross-region replication is asynchronous, so recent committed transactions can be lost in a regional failover, and promotion is a manual step, so neither a near-zero RPO nor a few-minute RTO is met."
       },
       {
         "id": "e",
-        "text": "Start disaster recovery only after an on-call engineer has confirmed the outage by phone, to avoid false positives",
-        "rationale": "A mandatory manual confirmation adds human latency that blows a few-minute RTO; traffic rerouting must be automated, with human judgment reserved for declaring a full disaster."
+        "text": "Keep a warm standby region but have the on-call lead confirm the outage by phone and approve each failover before traffic is moved",
+        "rationale": "A mandatory manual confirmation adds human latency that blows a few-minute RTO. Traffic rerouting must be automated, with human judgment reserved for declaring a full disaster."
       }
     ],
     "correct": [
@@ -1153,8 +1154,8 @@
     "caseStudyId": "altostrat-media",
     "subObjective": "optimize-process.1",
     "sourceUrl": "https://docs.cloud.google.com/deploy/docs/overview",
-    "lastVerified": "2026-10-01",
-    "prompt": "Altostrat Media runs its content platform on GKE and also runs Kubernetes on-premises for ingestion and archival workflows. Release engineers use different scripts for each environment, and leadership wants one centrally managed delivery flow for containers. Which design fits best?",
+    "lastVerified": "2026-10-08",
+    "prompt": "Altostrat Media is standardizing on Kubernetes both on GKE, where its content platform runs, and on-premises, where its legacy ingestion and archival systems are being modernized. Release engineers use different scripts for each environment, and leadership wants one centrally managed delivery flow for containers. Which design fits best?",
     "choices": [
       {
         "id": "a",
@@ -1869,7 +1870,8 @@
       "b"
     ],
     "explanation": "Optimize usage before committing: the order matters because resource-based commitments cannot be canceled.",
-    "difficulty": 3
+    "difficulty": 3,
+    "examOnly": true
   },
   {
     "id": "q-optimize-process-046",
@@ -1965,28 +1967,28 @@
     "caseStudyId": "knightmotives-automotive",
     "subObjective": "optimize-process.2",
     "sourceUrl": "https://docs.cloud.google.com/architecture/framework/operational-excellence/continuously-improve-and-innovate",
-    "lastVerified": "2026-10-01",
+    "lastVerified": "2026-10-08",
     "prompt": "KnightMotives lists employee upskilling and better communication between business and technical teams among its priorities as it moves the dealer build-to-order system to Google Cloud. The platform engineers know the mainframe and on-premises stack but have no cloud-native experience, and business owners say engineering speaks a different language. Which plan best serves both priorities?",
     "choices": [
       {
         "id": "a",
-        "text": "Have business owners write detailed requirements up front and hand them to engineering, with later changes reviewed in a quarterly board",
-        "rationale": "A one-way handoff with slow change review widens the gap between business and technical teams and cannot adapt as the dealer needs evolve."
+        "text": "Send engineers on Google Cloud training, but have business owners write detailed requirements up front, with changes reviewed in a quarterly board",
+        "rationale": "Training helps, but a one-way handoff with slow quarterly change review leaves the communication gap open and cannot adapt as dealer needs evolve."
       },
       {
         "id": "b",
-        "text": "Train engineers on the real migration work with Google Cloud learning paths, and hold regular retrospectives with business owners",
-        "rationale": "Learning on the actual migration builds skills where they are needed, and recurring retrospectives and stakeholder feedback close the communication gap."
+        "text": "Train engineers on the real migration work with Google Cloud learning paths, and hold regular retrospectives with business owners on progress and blockers",
+        "rationale": "Learning on the actual migration builds skills where they are needed, and recurring retrospectives and stakeholder feedback meetings close the communication gap."
       },
       {
         "id": "c",
-        "text": "Send all engineers to a one-time cloud certification course and postpone every migration task until the whole team has passed",
-        "rationale": "Delaying all work until certification postpones value and skips hands-on practice; the communication gap with business owners is not addressed either."
+        "text": "Run a certification program for the whole team and start migration tasks only after everyone has passed, with monthly status reports to the business",
+        "rationale": "Delaying all work postpones value and skips hands-on practice, and one-way status reports do not create the regular two-way feedback that closes the business and technical gap."
       },
       {
         "id": "d",
-        "text": "Hire an experienced contractor team to build and run the new platform while the existing engineers stay on the mainframe until it is retired",
-        "rationale": "Outsourcing the whole platform leaves in-house staff without cloud skills, so upskilling stalls and knowledge leaves with the contractors."
+        "text": "Hire an experienced contractor team to build and run the new platform, with monthly business reviews, while existing engineers stay on the mainframe",
+        "rationale": "Outsourcing the whole platform leaves in-house staff without cloud skills, so upskilling stalls and knowledge leaves with the contractors, even though the business reviews improve visibility."
       }
     ],
     "correct": [
@@ -2301,7 +2303,8 @@
       "d"
     ],
     "explanation": "DORA's metrics measure delivery throughput and stability together, and the research finds speed and stability go together.",
-    "difficulty": 1
+    "difficulty": 1,
+    "examOnly": true
   },
   {
     "id": "q-optimize-process-056",
@@ -2497,28 +2500,28 @@
     "caseStudyId": "ehr-healthcare",
     "subObjective": "optimize-process.1",
     "sourceUrl": "https://docs.cloud.google.com/architecture/framework/operational-excellence/automate-and-manage-change",
-    "lastVerified": "2026-10-01",
+    "lastVerified": "2026-10-08",
     "prompt": "EHR Healthcare's leadership cites outages caused by misconfiguration and the burden of managing similar-but-separate environments. As the company stands up dev, staging, and production environments on Google Cloud, which process change best addresses this?",
     "choices": [
       {
         "id": "a",
-        "text": "Define each environment in Terraform under version control, apply it through CI/CD, and reuse modules with per-environment variables",
-        "rationale": "Infrastructure as code with version control and automated pipelines gives consistent, repeatable, reviewable environments and an easy rollback path."
+        "text": "Define each environment as Terraform code in version control and apply it only through a tested CI/CD pipeline",
+        "rationale": "Infrastructure as code in version control gives consistent, repeatable environments with reviewable history and easy rollback, and a pipeline with automated tests catches errors before they reach production."
       },
       {
         "id": "b",
-        "text": "Clone the production project's settings through the console and tweak each copy until its application works as expected",
-        "rationale": "Console cloning and ad hoc tweaks leave no reviewable record, so environments drift and differences are untraceable."
+        "text": "Clone the production project's settings in the console for each new environment, then run a quarterly audit to find any drift",
+        "rationale": "Cloning by hand leaves no reviewable record, and a periodic audit finds drift only after the fact, long after a misconfiguration could have caused an outage."
       },
       {
         "id": "c",
-        "text": "Document the build as a detailed runbook and have the on-call engineer follow it by hand each time an environment is created for a team",
-        "rationale": "Manual runbooks reintroduce human error and drift between environments, which is the source of the misconfiguration outages."
+        "text": "Document the build as a detailed runbook and have a second engineer review each manual setup against it before go-live",
+        "rationale": "Review catches some mistakes, but every setup is still manual, so human error and drift between environments continue. It checks the symptom instead of removing the source of the outages."
       },
       {
         "id": "d",
-        "text": "Give each regional team its own tooling and templates so that environments can evolve independently to suit local needs",
-        "rationale": "Separate templates multiply the number of similar-but-different environments instead of consolidating them."
+        "text": "Let each regional team keep its own Terraform modules and state so that environments evolve independently to suit local needs",
+        "rationale": "Separate modules and state per team multiply the similar-but-different environments instead of consolidating them, even though each team uses Terraform."
       }
     ],
     "correct": [
@@ -2526,5 +2529,215 @@
     ],
     "explanation": "Version-controlled infrastructure as code applied by pipelines is how consistency and safe change are enforced.",
     "difficulty": 2
+  },
+  {
+    "id": "q-optimize-process-071",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "kpi-roi",
+      "testing-validation"
+    ],
+    "caseStudyId": "cymbal-retail",
+    "subObjective": "optimize-process.2",
+    "sourceUrl": "https://docs.cloud.google.com/retail/docs/a-b-testing",
+    "lastVerified": "2026-10-08",
+    "prompt": "Cymbal's finance team will fund the move from its custom relational-database search to AI Commerce Search only if it shows a measured lift in conversion and revenue first. The existing search returns nothing for many natural-language queries. Which validation approach produces credible evidence?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Run a concurrent split of visitors between the old search and AI Commerce Search, tag every user event with the visitor's experiment ID, and compare revenue per search visit.",
+        "rationale": "A concurrent split with a segregated control isolates the effect of the new search. Experiment IDs on user events are what let the metrics be attributed per group, and statistical significance is judged from confidence intervals."
+      },
+      {
+        "id": "b",
+        "text": "Switch all traffic to AI Commerce Search for a month and compare revenue with the previous month's results from the old search, then present the measured lift to the finance team.",
+        "rationale": "A before-and-after comparison has no control group, so seasonality, promotions and catalog changes are all mixed into the measured lift. It cannot show that the new search caused the change."
+      },
+      {
+        "id": "c",
+        "text": "Show AI Commerce Search results in the control group whenever the old search returns nothing, so that no shopper in the test meets an empty results page or a dead end in the session.",
+        "rationale": "If the control solution returns no result, Google advises not providing one from AI Commerce Search in the control pages. Doing so contaminates the control group and skews the test results."
+      },
+      {
+        "id": "d",
+        "text": "Add a toggle so shoppers can switch between the old and new search whenever they like, and compare how many clicks each version receives overall during the test period.",
+        "rationale": "Users should not move between the control and experiment groups, especially within a session. Self-selection also biases the groups, and raw click counts do not measure revenue per visit."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "Evidence for an investment case comes from a clean, concurrent A/B test with strictly separated groups, experiment IDs on user events, and business metrics such as revenue per search visit.",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "id": "q-optimize-process-111",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "cost-resource-optimization",
+      "budgets-alerts"
+    ],
+    "subObjective": "optimize-process.2",
+    "sourceUrl": "https://docs.cloud.google.com/billing/docs/how-to/export-data-bigquery-tables/standard-usage",
+    "lastVerified": "2026-10-08",
+    "prompt": "Halden Games runs twelve product teams across five shared projects and exports Cloud Billing data to BigQuery. A query grouped on the team label assigns 38% of last quarter's cost to no team, because most VMs and buckets were never labeled. Yesterday the platform lead applied the team label to every existing resource and expects last quarter's report to be complete now. Finance also wants each team alerted at 90% of its own monthly spend. What should the architect do?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Wait for the export to refresh, since labeling rewrites existing rows and moves last quarter's cost to each team, then scope one budget per team to that team's resource label.",
+        "rationale": "Label cost data only shows usage from the date the label was applied to the resource, so earlier export rows stay unattributed however long you wait. The per-team budget idea is sound, but the premise about rewriting history is the misconception."
+      },
+      {
+        "id": "b",
+        "text": "Label the five shared projects with team names, since project labels propagate to child resources and cover past usage, then scope each team's budget to its project label.",
+        "rationale": "Labels on a project do not propagate to the resources inside it, and five shared projects cannot map to twelve teams anyway. Project labels also cannot be used as a budget scope, only resource labels can."
+      },
+      {
+        "id": "c",
+        "text": "Report last quarter's unlabeled cost by project, because label data starts when a label is applied; require the label in provisioning templates and scope team budgets to it.",
+        "rationale": "Label-based cost only covers usage after the label was applied, so history has to be reported another way, such as by project. Requiring the label at creation makes future attribution complete, and a budget can be scoped to a single resource label per team."
+      },
+      {
+        "id": "d",
+        "text": "Create a second export in a US multi-region dataset to backfill history against today's labels, and alert each team from one billing-account budget over the five shared projects.",
+        "rationale": "Multi-region backfill only reaches back to the start of the previous month, and label cost data still counts usage only from the day each label was applied. One budget over shared projects also alerts on their combined spend, not on each team's own."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "Cost attribution by label is forward-looking: fix the provisioning path so every resource is labeled at creation, use project-level reporting for the unlabeled past, and scope per-team budgets to the resource label.",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "id": "q-optimize-process-112",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "ci-cd",
+      "serverless"
+    ],
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://docs.cloud.google.com/run/docs/rollouts-rollbacks-traffic-migration",
+    "lastVerified": "2026-10-08",
+    "prompt": "Fernwood Ticketing runs its booking API on Cloud Run. The next release changes how seat holds are encoded, so clients must never be answered by two versions in parallel. The team wants the release checked against production data before any customer reaches it, and wants a way back that takes seconds without rebuilding anything. Which release approach fits?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Deploy the revision with no traffic and a tag, test it at the tag URL, then send all traffic to it at once; roll back by pointing all traffic at the earlier revision.",
+        "rationale": "A tagged revision with no traffic can be tested at its own URL against production dependencies while customers stay on the old version. Moving 100% of traffic is a single step, and rollback is the same step pointed at the previous revision."
+      },
+      {
+        "id": "b",
+        "text": "Run a Cloud Deploy canary pipeline with 10%, 50% and 100% phases, and watch the error rate between phases before advancing each time to the next, larger share of traffic.",
+        "rationale": "A canary deliberately splits live traffic between old and new revisions during the phases, which breaks the requirement that clients never see two versions in parallel, and customers reach the new code before it is validated."
+      },
+      {
+        "id": "c",
+        "text": "Deploy normally so the new revision serves immediately, run the checks against the live service URL, and redeploy the earlier container image if any of them fail.",
+        "rationale": "A normal deploy serves the new revision to customers right away, so validation happens after exposure. Rolling back by redeploying an image is slower than re-pointing traffic at a revision that already exists."
+      },
+      {
+        "id": "d",
+        "text": "Create a second Cloud Run service for the new version, check it at its own URL, then update every client's base URL to point at it during a scheduled change window.",
+        "rationale": "Validation before exposure works, but the cutover and any rollback now require changing every client, which cannot happen in seconds and cannot be coordinated for all clients at the same instant."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "Cloud Run revisions give blue/green behavior natively: deploy without traffic, test through a tag, shift traffic all at once, and keep the old revision as the instant rollback target.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-optimize-process-113",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "iac-terraform",
+      "infrastructure-as-code"
+    ],
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://docs.cloud.google.com/infrastructure-manager/docs/overview",
+    "lastVerified": "2026-10-08",
+    "prompt": "Quillon Freight's platform team builds its project baselines with Deployment Manager templates, a service Google has deprecated. The team wants to move to Terraform kept in a Git repository, with a preview of every change reviewed before it is applied, and wants Google Cloud to keep each deployment's state and revision history instead of a state bucket and runners the team operates. Which choice fits?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Keep the templates on Deployment Manager through its extended support window, since it already previews changes and the templates run unchanged.",
+        "rationale": "Deployment Manager is deprecated, with support ended and the service scheduled to shut down in 2027; Google recommends migrating to Infrastructure Manager. It also does not meet the requirement to use Terraform."
+      },
+      {
+        "id": "b",
+        "text": "Publish the Terraform as Service Catalog solutions and let each team deploy its own baseline from the shared catalog, with approved versions only.",
+        "rationale": "Service Catalog curates and shares approved solutions for users to deploy, with Terraform configurations supplied as a zip file in Cloud Storage. It is not a Git-driven preview-then-apply workflow with managed state."
+      },
+      {
+        "id": "c",
+        "text": "Run Terraform from Cloud Build triggers on the repository, with a Cloud Storage backend bucket and state locking that the team creates and secures.",
+        "rationale": "This works and is common, but the team would build and operate the state bucket, locking and pipeline itself, which is exactly what the requirement says to avoid."
+      },
+      {
+        "id": "d",
+        "text": "Use Infrastructure Manager to deploy the repository's Terraform, with previews before applying and state and revisions stored per deployment.",
+        "rationale": "Infrastructure Manager runs Terraform from Git or Cloud Storage in a Google-owned Cloud Build job, offers previews, and stores state and revisions for every deployment. It replaces Deployment Manager for infrastructure."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "explanation": "Infrastructure Manager is the managed Terraform deployment service and the recommended successor to Deployment Manager; Service Catalog is a curation layer and Cloud Build is a DIY pipeline.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-optimize-process-114",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "business-continuity",
+      "disaster-recovery",
+      "testing-validation"
+    ],
+    "subObjective": "optimize-process.2",
+    "sourceUrl": "https://docs.cloud.google.com/architecture/dr-scenarios-planning-guide",
+    "lastVerified": "2026-10-08",
+    "exhibit": {
+      "label": "Marlow Pay failover drill, warm DR region",
+      "format": "table",
+      "content": "| Area | Observation |\n|---|---|\n| Recovery time | Platform serving from the DR region after 38 min (target RTO 60 min) |\n| Access | Only the 2 engineers who built the DR project could sign in; on-call engineers got permission denied |\n| Runbook | Step 7 says \"restore the ledger from the latest backup\"; 3 engineers ran 3 different procedures |\n| Dependencies | The fraud-scoring software refused to start at the DR site: its license is tied to primary-region hosts |\n| Communication | No one was named to approve the customer status message; it went out after 50 min |"
+    },
+    "prompt": "Marlow Pay's payments platform finished its first warm-region failover drill inside the recovery target. The exhibit lists what the team observed. Which follow-up best prepares the company for a real regional outage?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Record the drill as passed because 38 minutes beat the 60-minute target, and repeat it at the next annual review, since the other issues were operator errors",
+        "rationale": "Meeting the infrastructure RTO hid problems that would have stalled a real event: access, runbook, licensing and communication all failed. Continuity covers people, process and dependencies, not only the time the platform took to come up."
+      },
+      {
+        "id": "b",
+        "text": "Fix the access, runbook, licensing and communication gaps, then repeat the drill with the real on-call staff following the runbook exactly as it is written down",
+        "rationale": "The plan needs users who can sign in to the DR environment, concrete unambiguous runbook steps, software that is licensed to run at the recovery site, and an owner for customer messaging. Retesting with the real responders proves the fixes."
+      },
+      {
+        "id": "c",
+        "text": "Move the platform to a hot standby in a third region so that the failover finishes in a few minutes during the next real event or drill",
+        "rationale": "A faster standby would not have fixed any observed failure: the blocked sign-ins, ambiguous runbook, unlicensed software and unowned message would all recur. It adds cost for a target that was already met."
+      },
+      {
+        "id": "d",
+        "text": "Name the two engineers who built the DR project as the only recovery team and add background prose to each runbook step to explain the reasoning",
+        "rationale": "Limiting recovery to two people creates a single point of failure, and prose does not fix an ambiguous step; the runbook needs specific commands so any trained responder gets the same result."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "Business continuity is wider than DR infrastructure: a drill is only passed when the people, runbook, dependencies and communications work as well as the platform does.",
+    "difficulty": 3,
+    "examOnly": true
   }
 ]

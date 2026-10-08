@@ -12,6 +12,12 @@
  * list is part of the lesson and is never taken away.
  *
  * Run: npx tsx scripts/assign-exam-holdout.ts [--target 80] [--dry]
+ *        [--keep-existing] [--prefer ids.json]
+ *
+ * Selection is otherwise file order within each difficulty, so items appended
+ * to a bank never reach the holdout once its quota is full. `--keep-existing`
+ * ranks items already `examOnly` first (so growing the target never swaps
+ * them out); `--prefer` ranks the ids in a JSON array next (new items).
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -21,6 +27,12 @@ import type { DomainId } from "../src/lib/content/schema";
 const args = process.argv.slice(2);
 const DRY = args.includes("--dry");
 const TARGET = args.includes("--target") ? Number(args[args.indexOf("--target") + 1]) : 140;
+const KEEP = args.includes("--keep-existing");
+const PREFER = new Set<string>(
+  args.includes("--prefer")
+    ? (JSON.parse(fs.readFileSync(args[args.indexOf("--prefer") + 1], "utf8")) as string[])
+    : [],
+);
 
 const ROOT = path.join(process.cwd(), "content");
 const QDIR = path.join(ROOT, "questions");
@@ -67,7 +79,8 @@ for (const [file, items] of files) {
   const quota = want.get(domainId) ?? 0;
 
   // Spread the holdout across difficulty so a form built from it is not all easy.
-  const eligible = items.filter((q) => !referenced.has(q.id));
+  const rank = (q: Item) => (KEEP && q.examOnly ? 0 : PREFER.has(q.id) ? 1 : 2);
+  const eligible = items.filter((q) => !referenced.has(q.id)).sort((a, b) => rank(a) - rank(b));
   const byDifficulty = new Map<number, Item[]>();
   for (const q of eligible) {
     const b = byDifficulty.get(q.difficulty) ?? [];

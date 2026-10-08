@@ -342,9 +342,9 @@
     ],
     "caseStudyId": "knightmotives-automotive",
     "subObjective": "manage-impl.1",
-    "sourceUrl": "https://cloud.google.com/migrate/virtual-machines/docs/5.0/concepts/lifecycle",
-    "lastVerified": "2026-10-01",
-    "prompt": "KnightMotives Automotive must migrate a fleet of on-premises VMware virtual machines to Compute Engine with minimal downtime, testing the migrated VMs before cut-over. Which Google Cloud tool is designed for this lift-and-shift VM migration?",
+    "sourceUrl": "https://docs.cloud.google.com/migrate/virtual-machines/docs/5.0/concepts/lifecycle",
+    "lastVerified": "2026-10-08",
+    "prompt": "You are advising KnightMotives Automotive's operations team on moving the build-to-order servers, which run as virtual machines on VMware vSphere in a company data center, to Compute Engine with minimal downtime. The team must be able to test each migrated VM before cut-over. Which Google Cloud tool is designed for this lift-and-shift VM migration?",
     "choices": [
       {
         "id": "a",
@@ -716,33 +716,33 @@
     "caseStudyId": "cymbal-retail",
     "subObjective": "manage-impl.1",
     "sourceUrl": "https://cloud.google.com/storage-transfer/docs/overview",
-    "lastVerified": "2026-10-01",
-    "prompt": "Cymbal Retail is planning multiple migrations to Google Cloud. Match the workload to the right tool. Which pairings are correct? Choose two.",
+    "lastVerified": "2026-10-08",
+    "prompt": "Cymbal Retail is planning migrations off its on-premises data center. Match the workload to the right tool. Which pairings are correct? Choose two.",
     "choices": [
       {
         "id": "a",
-        "text": "Migrating a self-managed PostgreSQL database to Cloud SQL with minimal downtime: Database Migration Service with replication.",
-        "rationale": "Database Migration Service migrates databases into Cloud SQL and AlloyDB for PostgreSQL, handling the initial snapshot and ongoing replication so cut-over downtime stays small."
+        "text": "Moving the MySQL catalog database to Cloud SQL with minimal downtime: Database Migration Service with continuous replication.",
+        "rationale": "Database Migration Service migrates MySQL into Cloud SQL, and a continuous migration follows the initial dump with change data capture, so cut-over downtime is roughly the replication delay at promotion."
       },
       {
         "id": "b",
-        "text": "Moving 200 TB of archival files from an on-premises NAS to Cloud Storage: Storage Transfer Service, or Transfer Appliance offline.",
-        "rationale": "Storage Transfer Service moves on-premises file data into Cloud Storage at scale and is optimized for transfers above 1 TiB. Transfer Appliance covers the offline, ship-the-hardware case."
+        "text": "Moving 200 TB of archived supplier files from an on-premises NFS share to Cloud Storage: Storage Transfer Service with agents.",
+        "rationale": "Storage Transfer Service moves on-premises file data into Cloud Storage through agents on the file system, and it is optimized for transfers above 1 TiB. Transfers can also run on a recurring schedule."
       },
       {
         "id": "c",
-        "text": "Migrating a running on-premises PostgreSQL database while keeping a continuous replication stream going: Storage Transfer Service.",
+        "text": "Moving the running SQL Server catalog database while a continuous replication stream keeps changes flowing: Storage Transfer Service.",
         "rationale": "Storage Transfer Service moves objects and files, not live relational databases with ongoing change capture."
       },
       {
         "id": "d",
-        "text": "Bulk-loading terabytes of archival files from on-premises storage into Cloud Storage: Database Migration Service.",
+        "text": "Bulk-loading terabytes of archived supplier files from on-premises storage into Cloud Storage: Database Migration Service.",
         "rationale": "Database Migration Service targets database engines, not file or object data."
       },
       {
         "id": "e",
-        "text": "Migrating on-premises VMware virtual machines to Compute Engine and testing clones: BigQuery Data Transfer Service.",
-        "rationale": "VMware VM migration uses Migrate to Virtual Machines. BigQuery Data Transfer Service only schedules loads into BigQuery."
+        "text": "Copying supplier files from an on-premises NFS share into Cloud Storage as the files change: Datastream.",
+        "rationale": "Datastream captures and replicates changes from operational databases. It does not copy files from an NFS share; file movement uses Storage Transfer Service."
       }
     ],
     "correct": [
@@ -842,14 +842,14 @@
     ],
     "caseStudyId": "ehr-healthcare",
     "subObjective": "manage-impl.1",
-    "sourceUrl": "https://cloud.google.com/deploy/docs/overview",
-    "lastVerified": "2026-10-01",
+    "sourceUrl": "https://docs.cloud.google.com/deploy/docs/overview",
+    "lastVerified": "2026-10-08",
     "prompt": "EHR Healthcare is adopting continuous deployment for its containerized patient-portal services. Compliance requires a named approver before any release reaches production, but dev and staging should receive each release automatically once the previous stage succeeds. How should the Cloud Deploy delivery pipeline be configured?",
     "choices": [
       {
         "id": "a",
         "text": "Define dev, staging, and prod targets in one pipeline, automate promotion through staging, and set requireApproval on the prod target.",
-        "rationale": "A single pipeline keeps one promotion sequence. Automation can promote a release after a successful rollout, and requireApproval on the prod target makes Cloud Deploy wait for an approver and emits a Pub/Sub message that a ticketing system can consume."
+        "rationale": "A single pipeline keeps one promotion sequence. Promotion automation can advance a release after a successful rollout, and requireApproval on the prod target makes Cloud Deploy wait for an approver and emits a Pub/Sub message that a ticketing system can consume."
       },
       {
         "id": "b",
@@ -1389,19 +1389,19 @@
     ],
     "caseStudyId": "knightmotives-automotive",
     "subObjective": "manage-impl.1",
-    "sourceUrl": "https://cloud.google.com/deploy/docs/verify-deployment",
-    "lastVerified": "2026-10-01",
+    "sourceUrl": "https://docs.cloud.google.com/deploy/docs/verify-deployment",
+    "lastVerified": "2026-10-08",
     "prompt": "KnightMotives' online build-and-order system is unreliable and dealers are frustrated, so every release must be low risk. The team deploys with Cloud Deploy. Which two pipeline settings most reduce the risk of a bad release reaching all dealers? Choose two.",
     "choices": [
       {
         "id": "a",
-        "text": "Define one target that serves dev, staging, and prod so that a single rollout updates every environment together.",
-        "rationale": "A target can be used only once in a delivery pipeline, and updating every environment at once removes the staged progression that catches problems early."
+        "text": "Define one shared target for dev, staging and prod and vary each environment with Skaffold profiles, so a single rollout updates them all",
+        "rationale": "A given target can be used only once in a delivery pipeline, and updating every environment in one rollout removes the staged progression that catches problems before dealers see them."
       },
       {
         "id": "b",
-        "text": "Turn on automatic promotion from dev straight to prod to shorten the time that fixes spend waiting in staging.",
-        "rationale": "Skipping staging removes a validation stage, so defects would reach production faster instead of being caught earlier."
+        "text": "Turn on automatic promotion from dev straight to prod once dev verification passes, so that fixes reach dealers sooner",
+        "rationale": "Dev verification does not exercise staging data or traffic, so skipping staging removes a validation stage and defects would reach production faster instead of being caught earlier."
       },
       {
         "id": "c",
@@ -1410,8 +1410,8 @@
       },
       {
         "id": "d",
-        "text": "Deploy to all production targets in parallel so that every region receives the release at the same moment.",
-        "rationale": "Parallel deployment is supported but maximizes blast radius when the release is faulty, which is the opposite of what the team wants."
+        "text": "Deploy to all production targets in parallel after staging passes, so that every region receives the release at the same moment",
+        "rationale": "Parallel deployment is supported, but it exposes every region at once if a defect slipped past staging. A canary limits the audience before the rollout widens, which is what the team wants."
       },
       {
         "id": "e",
@@ -1606,8 +1606,8 @@
     ],
     "caseStudyId": "ehr-healthcare",
     "subObjective": "manage-impl.2",
-    "sourceUrl": "https://cloud.google.com/docs/terraform/best-practices/root-modules",
-    "lastVerified": "2026-10-01",
+    "sourceUrl": "https://docs.cloud.google.com/docs/terraform/best-practices/root-modules",
+    "lastVerified": "2026-10-08",
     "prompt": "EHR Healthcare must provision new, consistent environments on demand and has suffered outages from misconfiguration across similar-but-separate environments. The team uses Terraform. Which structure follows Google's recommendations?",
     "choices": [
       {
@@ -1880,7 +1880,8 @@
     "correct": [
       "c"
     ],
-    "difficulty": 1
+    "difficulty": 1,
+    "examOnly": true
   },
   {
     "id": "q-manage-impl-046",
@@ -2090,5 +2091,173 @@
       "d"
     ],
     "difficulty": 2
+  },
+  {
+    "id": "q-manage-impl-081",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": [
+      "apigee",
+      "api-management",
+      "secure-apis"
+    ],
+    "caseStudyId": "knightmotives-automotive",
+    "subObjective": "manage-impl.2",
+    "sourceUrl": "https://docs.cloud.google.com/apigee/docs/api-platform/reference/policies/quota-policy",
+    "lastVerified": "2026-10-08",
+    "prompt": "KnightMotives' outdated ERP, which stays on-premises for now, holds dealer promotions and discounts. Leadership wants to expose a promotions API to about 400 dealers' existing sales tools and to third-party tool vendors without modifying the ERP. The ERP can sustain only a few dozen requests per second and cannot issue or revoke credentials. Dealers have no budget for new equipment, so their tools will call over the internet. The business needs self-service onboarding, a different monthly call allowance for each partner tier, and protection of the ERP from bursts. Which design fits?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Publish the API through Apigee proxies that reach the ERP over the hybrid link, with API products, per-tier quotas, spike arrest and a developer portal",
+        "rationale": "Apigee's proxy layer fronts an unchanged backend and supplies credentials, Quota policies that can differ by API product, app or developer, and SpikeArrest against sudden bursts. Quota enforces partner contracts while SpikeArrest protects the backend, and a portal covers onboarding."
+      },
+      {
+        "id": "b",
+        "text": "Expose the ERP through an external Application Load Balancer with a hybrid network endpoint group and Cloud Armor rate limiting keyed on a partner header",
+        "rationale": "This throttles requests per key and keeps the ERP off the internet, but it has no notion of API products, contractual call allowances per tier, credential issuance or a developer onboarding portal, so the team would build them."
+      },
+      {
+        "id": "c",
+        "text": "Wrap the ERP in a Cloud Run service that caps its maximum instances and concurrency, and have each dealer tool call that service with IAM authentication",
+        "rationale": "Capping instances and concurrency limits load, but not per partner, and IAM invoker authentication needs Google identities that third-party dealer tools do not have. It also provides no allowances per tier and no onboarding."
+      },
+      {
+        "id": "d",
+        "text": "Replicate the promotion tables into BigQuery on a schedule and grant each dealer tool read access to them through per-dealer IAM roles",
+        "rationale": "A copy would shield the ERP, but promotions would be stale between loads, existing dealer tools would need Google identities and BigQuery integration, and there would still be no per-tier allowances or onboarding portal."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 3,
+    "explanation": "An API management layer lets legacy backends stay unchanged while adding credentials, tiered quotas, burst protection and onboarding.",
+    "examOnly": true
+  },
+  {
+    "id": "q-manage-impl-132",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": [
+      "migration-tooling"
+    ],
+    "subObjective": "manage-impl.1",
+    "sourceUrl": "https://docs.cloud.google.com/transfer-appliance/docs/4.0/overview",
+    "lastVerified": "2026-10-08",
+    "prompt": "Brightwave Genomics keeps hundreds of terabytes of sequencing archives on an on-premises NAS and must land them in Cloud Storage this quarter. The site shares a modest internet uplink with clinical staff, and the network team estimates that uploading over it would take many months. Security requires the data to be protected with an encryption key the company controls in Cloud KMS. Which approach fits best?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Install Storage Transfer Service agents next to the NAS and let the scheduled job run over the existing internet uplink until it finishes",
+        "rationale": "Storage Transfer Service is a good online tool for on-premises data, but it still moves bytes over the same shared uplink. The stem says that path takes many months, so the deadline is missed."
+      },
+      {
+        "id": "b",
+        "text": "Order a Transfer Appliance, copy the archives onto it locally, ship it back, and let Google load the data into your bucket",
+        "rationale": "Correct. Transfer Appliance is the offline option when a network upload would take more than about a week. Data is encrypted on the device, customer-managed Cloud KMS keys are supported, and Google uploads the data into your Cloud Storage bucket."
+      },
+      {
+        "id": "c",
+        "text": "Order a Dedicated Interconnect circuit and run parallel gcloud storage copy jobs once the new link has been provisioned and tested",
+        "rationale": "A faster link can move data, but provisioning a circuit is its own lead-time project and a recurring cost, which is out of proportion for a one-time bulk move. It is the common reflex of fixing bandwidth instead of switching to an offline transfer."
+      },
+      {
+        "id": "d",
+        "text": "Replicate the NAS with Migrate to Virtual Machines, which copies disks continuously and can then place the files in Cloud Storage",
+        "rationale": "Migrate to Virtual Machines replicates VM disks into Compute Engine for lift-and-shift cut-over. It is not a bulk file-transfer tool and does not write file archives into a bucket."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "Choose the transfer tool by the arithmetic of data volume against available bandwidth: when an online upload would take more than about a week, an offline Transfer Appliance shipment is the designed path.",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "id": "q-manage-impl-133",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": [
+      "api-client-libraries",
+      "programmatic-access"
+    ],
+    "subObjective": "manage-impl.2",
+    "sourceUrl": "https://docs.cloud.google.com/storage/docs/paginate-results",
+    "lastVerified": "2026-10-08",
+    "prompt": "A compliance script at Cymbal Audit counts the objects in a Cloud Storage bucket by calling the JSON API list method directly over HTTP. The team knows the bucket holds far more objects than the script reports, and no errors or retries appear in the logs. The exhibit shows what the script receives and prints. What should you recommend?",
+    "exhibit": {
+      "label": "inventory.py output",
+      "format": "log",
+      "content": "GET https://storage.googleapis.com/storage/v1/b/cymbal-audit-archive/o?maxResults=500\n200 OK\n{\n  \"kind\": \"storage#objects\",\n  \"nextPageToken\": \"CiRhdWRpdC8yMDI2LzA0L3NoYXJkLTAwNDI=\",\n  \"items\": [ ...500 entries... ]\n}\n\nobjects_counted = 500"
+    },
+    "choices": [
+      {
+        "id": "a",
+        "text": "Raise the maxResults value in the request so that the whole bucket is returned in a single response and no token is issued",
+        "rationale": "maxResults only sets the size of each page. Listing a large bucket still comes back in pages, and the returned token is the signal that more results remain, so a bigger page does not replace the loop."
+      },
+      {
+        "id": "b",
+        "text": "Request a higher read quota for the project, since the service is silently truncating results once the quota has been reached",
+        "rationale": "Hitting a quota produces explicit errors such as a 429 response, not a successful 200 with partial data. Truncation here is normal pagination, so quota is the wrong diagnosis."
+      },
+      {
+        "id": "c",
+        "text": "Resend the request with pageToken set to the returned nextPageToken until none comes back, or use a client library iterator",
+        "rationale": "Correct. A nextPageToken in the response means the listing is incomplete. The script must keep requesting pages until the token is absent. Client libraries paginate by default and return an iterator that does this."
+      },
+      {
+        "id": "d",
+        "text": "Wrap the list call in exponential backoff and retry it until the full set arrives, because the partial reply is a transient server fault",
+        "rationale": "Backoff is the right tool for transient errors. A 200 response with a token is a complete, healthy reply to that page. Retrying the same request just returns the same first page again."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "Distinguish errors from pagination: success status with a next-page token means the caller must fetch more pages, whereas quota and transient faults show up as error codes.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-manage-impl-134",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": [
+      "migration-tooling",
+      "app-infra-deployment"
+    ],
+    "subObjective": "manage-impl.1",
+    "sourceUrl": "https://docs.cloud.google.com/migrate/containers/docs/planning-best-practices",
+    "lastVerified": "2026-10-08",
+    "prompt": "Altitude Freight runs two VMware VMs it wants off its data center. One hosts a Tomcat web tier that the platform team wants running on GKE without any code rewrite. The other runs a licensed analytics package that is tied to a hardware ID and depends on a kernel-mode NFS driver, and it must keep working unchanged. What migration plan should you advise?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Run the fit assessment on both VMs, containerize the Tomcat tier with Migrate to Containers, and rehost the analytics VM with Migrate to Virtual Machines",
+        "rationale": "Correct. Tomcat middleware is a good fit for Migrate to Containers. Kernel drivers and hardware-tied licenses are listed as poor fits for containers, so that VM is better lifted to Compute Engine with Migrate to Virtual Machines."
+      },
+      {
+        "id": "b",
+        "text": "Containerize both VMs with Migrate to Containers, because it accepts VMware sources, and fix any failures that appear during GKE testing",
+        "rationale": "Supported sources do not mean every workload is a fit. Special kernel drivers and hardware-ID licensing are called out as poor fits, so skipping the assessment just moves the failure to test time."
+      },
+      {
+        "id": "c",
+        "text": "Rehost both VMs on Compute Engine with Migrate to Virtual Machines now, and leave any containerization for a later refactoring project",
+        "rationale": "This is safe for the analytics VM but ignores the stated goal for the web tier. A purpose-built tool already containerizes a good-fit Tomcat tier without a rewrite, so deferring it is unnecessary."
+      },
+      {
+        "id": "d",
+        "text": "Rewrite both applications as microservices before moving anything, since only code written natively for containers can run on GKE",
+        "rationale": "This is the myth that containers need a rewrite. Migrate to Containers modernizes existing VM workloads into containers without changing application code, so a rewrite first adds cost and delay."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "Assess each VM's container fit first. Good-fit middleware goes to containers on GKE, and workloads that depend on kernel drivers or hardware-bound licenses are rehosted as VMs.",
+    "difficulty": 3
   }
 ]

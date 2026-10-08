@@ -1127,7 +1127,7 @@
     "caseStudyId": "knightmotives-automotive",
     "subObjective": "security.1",
     "sourceUrl": "https://docs.cloud.google.com/kms/docs/ekm",
-    "lastVerified": "2026-10-01",
+    "lastVerified": "2026-10-08",
     "prompt": "KnightMotives Automotive will analyze EU drivers' telemetry in BigQuery as part of its data-monetization plan. The CISO and EU counsel require that key material never reside in Google's infrastructure, stays under KnightMotives' exclusive control, and that every key use by Google systems arrives with a stated reason that KnightMotives can approve or deny. Which design meets this, and what must the team accept?",
     "choices": [
       {
@@ -1143,7 +1143,7 @@
       {
         "id": "c",
         "text": "Customer-supplied keys sent by the ingestion service on every operation, accepting that the key must be held and transmitted each time.",
-        "rationale": "CSEK does not cover the managed-key requirements of an analytics platform: tools like Dataflow and Storage Transfer Service cannot handle such objects. It also gives no per-use justification flow."
+        "rationale": "CSEK is a Cloud Storage feature, and BigQuery and BigLake tables do not support customer-supplied keys, so it cannot protect the BigQuery analytics data at all. It also gives no per-use justification flow, and Dataflow and Storage Transfer Service cannot handle objects encrypted that way."
       },
       {
         "id": "d",
@@ -2115,34 +2115,34 @@
     "caseStudyId": "cymbal-retail",
     "subObjective": "security.2",
     "sourceUrl": "https://docs.cloud.google.com/model-armor/configure-floor-settings",
-    "lastVerified": "2026-10-01",
-    "prompt": "Cymbal Retail's product teams each build gen AI agents in their own projects. The central security team wants a baseline screening every Gemini call across the organization without each team opting in, and wants any template teams create to be no weaker than that baseline. Which approach fits?",
+    "lastVerified": "2026-10-08",
+    "prompt": "Cymbal Retail's product teams each build gen AI agents in their own projects. The central security team wants a baseline screening Gemini calls across the organization without each team opting in. It also wants any template a team creates to be no less strict than the floor settings in effect, and wants only the security team to be able to change those floor settings. Which approach fits?",
     "choices": [
       {
         "id": "a",
-        "text": "Publish a recommended Model Armor template and ask each team to reference it in its calls, with a quarterly review.",
+        "text": "Publish a recommended Model Armor template and ask each team to reference it in its calls, with a quarterly review of how teams comply.",
         "rationale": "A published template is voluntary; any team that forgets to reference it sends unscreened prompts and nothing blocks weaker templates."
       },
       {
         "id": "b",
-        "text": "Place a Cloud Armor WAF policy in front of each agent's web frontend with the OWASP rule set enabled.",
+        "text": "Place a Cloud Armor WAF policy in front of each agent's web frontend with the OWASP rule set enabled for every project that hosts an agent.",
         "rationale": "A WAF inspects HTTP traffic patterns; it does not evaluate prompts and responses for injection, jailbreaks or leaked data."
       },
       {
         "id": "c",
-        "text": "Give each project owner full control of Model Armor settings so thresholds match each team's false-positive rate.",
-        "rationale": "Letting every team decide independently gives no common baseline, and a team can simply choose lax thresholds."
+        "text": "Give each project owner full control of Model Armor settings so that thresholds match each team's false-positive rate and release schedule.",
+        "rationale": "Settings lower in the resource hierarchy take precedence, so letting every project owner edit floor settings gives no common baseline, and a team could loosen or disable it."
       },
       {
         "id": "d",
-        "text": "Set Model Armor floor settings at the organization level; templates in child projects cannot be less restrictive.",
-        "rationale": "Correct: floor settings apply inline to Agent Platform and Gemini Enterprise calls, and template creation is validated against them."
+        "text": "Set organization-level floor settings with enforcement enabled, and grant the Floor Setting Admin role only to the security team.",
+        "rationale": "Floor settings set at the organization apply to everything within it, and Model Armor will not create or update a template that is less strict than the floor settings. Because settings lower in the hierarchy take precedence, restricting who holds the floor-settings admin role is what keeps the baseline from being loosened."
       }
     ],
     "correct": [
       "d"
     ],
-    "explanation": "Floor settings can be set at organization, folder or project level; settings lower in the hierarchy take precedence, so pair them with IAM controls over who may change them.",
+    "explanation": "Floor settings can be set at organization, folder or project level; settings lower in the hierarchy take precedence, and enforcement of template conformance is controlled by a flag that defaults to false. Pair floor settings with IAM limits on who may change them.",
     "difficulty": 2
   },
   {
@@ -2959,5 +2959,707 @@
     ],
     "explanation": "Compliance monitoring is detective: it reports findings and pass rates, and remediation remains manual.",
     "difficulty": 1
+  },
+  {
+    "id": "q-security-071",
+    "type": "single",
+    "domainId": "security",
+    "concepts": [
+      "model-armor",
+      "prompt-injection"
+    ],
+    "caseStudyId": "altostrat-media",
+    "subObjective": "security.2",
+    "sourceUrl": "https://docs.cloud.google.com/model-armor/overview",
+    "lastVerified": "2026-10-08",
+    "prompt": "Altostrat Media is launching a customer-facing support chatbot on a Gemini model behind a Cloud Run service. Red-team testing shows that users can type instructions such as \"ignore your previous rules\" to manipulate the bot, and that it occasionally returns hateful language. The security team wants one centrally managed control that screens both prompts and responses and does not depend on the underlying model. What should the architect choose?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Model Armor, with a template enabling prompt injection and jailbreak detection and responsible AI filters on prompts and responses",
+        "rationale": "Model Armor screens LLM prompts and responses, is model-agnostic, and offers prompt injection and jailbreak detection plus responsible AI filters such as hate speech, managed through templates and floor settings."
+      },
+      {
+        "id": "b",
+        "text": "Cloud Armor in front of the service, with preconfigured WAF rules enabled to block malicious request patterns before the app",
+        "rationale": "Cloud Armor WAF rules target web attacks such as SQL injection and cross-site scripting, not manipulation of an LLM through natural-language text, and it does not screen what the model returns."
+      },
+      {
+        "id": "c",
+        "text": "Sensitive Data Protection inspection on every prompt and response, redacting any findings before text reaches the model or user",
+        "rationale": "Sensitive Data Protection discovers and de-identifies data such as PII and credentials. It does not detect injection attempts or hateful content, so both red-team failures would remain."
+      },
+      {
+        "id": "d",
+        "text": "A detailed system instruction telling the model to refuse manipulation attempts and never produce hateful language, versioned in Git",
+        "rationale": "The instruction lives in the same context the attacker is manipulating, is configured per application rather than as central policy, and gives no independent screening of prompts or responses."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "Content-level AI threats need a content-aware screen on both the input and output paths. Network and data-loss controls address different risks.",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "id": "q-security-081",
+    "type": "multiple",
+    "domainId": "security",
+    "concepts": [
+      "sensitive-data-protection",
+      "pii",
+      "data-retention"
+    ],
+    "caseStudyId": "cymbal-retail",
+    "subObjective": "security.3",
+    "sourceUrl": "https://docs.cloud.google.com/dialogflow/cx/docs/concept/security-settings",
+    "lastVerified": "2026-10-08",
+    "prompt": "Cymbal's virtual shopping agent on Conversational Agents (Dialogflow CX) sometimes collects card details and delivery addresses, and the conversations flow into Cloud Logging and conversation history. Compliance requires that card numbers and personal data are redacted before they are written to logs, that Cymbal's own team decides what counts as sensitive, and that stored conversation data is kept for at most 90 days. Which two actions meet these requirements? Choose two.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Create Sensitive Data Protection templates for card and personal infoTypes, grant the Dialogflow service identity access, and attach them in the agent's security settings.",
+        "rationale": "Security settings apply Sensitive Data Protection templates between Dialogflow CX and Cloud Logging, so data is redacted before publication. Cymbal defines the infoTypes, and the service identity needs template reader access."
+      },
+      {
+        "id": "b",
+        "text": "Rely on the default inspect template in the security settings, which already detects the common sensitive types without any configuration work.",
+        "rationale": "The default template enables only some infoType detectors and can be unreliable. Google recommends creating your own template so that Cymbal controls what counts as sensitive."
+      },
+      {
+        "id": "c",
+        "text": "Set a 90-day retention window in the same security settings, which is below the default 365-day limit, so persisted conversation data is purged on schedule.",
+        "rationale": "Retention is configured in security settings and must be lower than the default 365-day TTL. A 90-day window satisfies the maximum storage period for the persisted conversation data."
+      },
+      {
+        "id": "d",
+        "text": "Send logs to BigQuery through a log sink and run a nightly Sensitive Data Protection job that redacts the exported tables for analysts, auditors and reporting.",
+        "rationale": "Redacting downstream leaves raw card numbers in the original log entries and in the interval before the job runs. Redaction must happen at the source, before data reaches Cloud Logging."
+      },
+      {
+        "id": "e",
+        "text": "Mark only the card number parameter with Redact in logs and treat the other parts of each conversation as non-sensitive, since delivery data is public.",
+        "rationale": "Parameter redaction covers only the parameters flagged and nothing else. Delivery addresses and personal details elsewhere in the conversation would reach the logs unredacted."
+      }
+    ],
+    "correct": [
+      "a",
+      "c"
+    ],
+    "explanation": "Redaction and retention are both configured in the agent's security settings. Use your own Sensitive Data Protection templates rather than the default, and set the retention window explicitly.",
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "id": "q-security-091",
+    "type": "single",
+    "domainId": "security",
+    "concepts": [
+      "iam",
+      "workforce-identity-federation"
+    ],
+    "caseStudyId": "ehr-healthcare",
+    "subObjective": "security.1",
+    "sourceUrl": "https://docs.cloud.google.com/iam/docs/workforce-identity-federation",
+    "lastVerified": "2026-10-08",
+    "prompt": "EHR Healthcare manages employees and contractors in on-premises Microsoft Active Directory, with AD FS already deployed as the identity provider. The security team wants these users to sign in to the Google Cloud console and the gcloud CLI with their AD credentials and to receive access through AD group membership. They do not want to create, or keep synchronized, a second set of user accounts in Google. What should the architect set up?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Cloud Identity with Google Cloud Directory Sync copying AD users and groups into Google accounts, plus SAML single sign-on to AD FS",
+        "rationale": "This is the classic federation pattern and it works, but it provisions and maintains a Google-managed identity for every user, which is exactly the second set of accounts the team wants to avoid."
+      },
+      {
+        "id": "b",
+        "text": "Workforce Identity Federation, with a workforce identity pool whose provider trusts AD FS and IAM roles granted to mapped AD groups on folders",
+        "rationale": "Workforce Identity Federation is sync-less: users authenticate at the external identity provider, AD FS is a supported one, and attribute mapping exposes group membership to IAM allow policies, so no Google-managed user accounts are created."
+      },
+      {
+        "id": "c",
+        "text": "Workload Identity Federation, with a workload identity pool and provider for AD FS so that each employee signs in as a federated principal",
+        "rationale": "Workload Identity Federation lets non-human workloads, such as pipelines running elsewhere, call Google Cloud APIs. Employee sign-in is the job of Workforce Identity Federation. The names are similar but the use cases differ."
+      },
+      {
+        "id": "d",
+        "text": "Managed Service for Microsoft Active Directory with a forest trust to the on-premises domain, used as the identity store for Google Cloud",
+        "rationale": "Managed Microsoft AD runs domain controllers for AD-aware workloads on Google Cloud. IAM still authenticates people with Google identities, so a forest trust does not give AD users console or gcloud access."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "When the existing identity provider must stay the single source of truth and no Google-side accounts are wanted, Workforce Identity Federation replaces directory synchronization. Directory sync with Cloud Identity remains valid when Google identities are acceptable.",
+    "difficulty": 1,
+    "examOnly": true
+  },
+  {
+    "id": "q-security-092",
+    "type": "single",
+    "domainId": "security",
+    "concepts": [
+      "sensitive-data-protection",
+      "de-identification",
+      "bigquery"
+    ],
+    "caseStudyId": "ehr-healthcare",
+    "subObjective": "security.2",
+    "sourceUrl": "https://docs.cloud.google.com/sensitive-data-protection/docs/pseudonymization",
+    "lastVerified": "2026-10-08",
+    "prompt": "EHR Healthcare loads insurer claim files into BigQuery every night. Analysts must count claims per patient and join each night's load to clinical tables on the patient ID, but must never see real identifiers. Compliance also requires that only a privileged backend service, acting on a legal request, can map a token back to the patient. The team will de-identify the patient ID column with Sensitive Data Protection. Which transformation meets all of these requirements?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Cryptographic hashing with HMAC-SHA-256 and a Cloud KMS-wrapped key, applied to the patient ID column in each nightly load",
+        "rationale": "Keyed hashing is consistent across loads, so it supports the joins. It is one-way, so the privileged service could never recover the patient for the legal request."
+      },
+      {
+        "id": "b",
+        "text": "Deterministic encryption with AES-SIV, using one Cloud KMS-wrapped key that every nightly load shares",
+        "rationale": "The same key and input always give the same token, so joins and per-patient counts work across loads and tables. Whoever holds access to the KMS key can reverse tokens, and that access can be limited to the privileged service."
+      },
+      {
+        "id": "c",
+        "text": "Tokenization with a transient key that Sensitive Data Protection generates and discards for each de-identification request",
+        "rationale": "A transient key keeps tokens consistent only within one API request, so each night's tokens differ and cannot be joined. Because the key is discarded, re-identification is impossible too."
+      },
+      {
+        "id": "d",
+        "text": "Character masking that replaces all but the last four characters of each patient ID with an asterisk",
+        "rationale": "Masking does not create a token: different patients share the same last four characters, so counts and joins merge people, and the original ID cannot be recovered from what remains."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "Pick the pseudonymization method from two properties: referential integrity (same input, same token) and reversibility. Deterministic encryption and format-preserving encryption give both, hashing gives only the first, and a transient key gives neither across requests.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-security-101",
+    "type": "multiple",
+    "domainId": "security",
+    "concepts": [
+      "gdpr",
+      "data-sovereignty",
+      "org-policy",
+      "sensitive-data-protection"
+    ],
+    "caseStudyId": "knightmotives-automotive",
+    "subObjective": "security.3",
+    "sourceUrl": "https://docs.cloud.google.com/resource-manager/docs/organization-policy/defining-locations",
+    "lastVerified": "2026-10-08",
+    "prompt": "KnightMotives Automotive plans to analyse European drivers' telemetry in BigQuery and to share a subset with commercial partners. EU counsel sets two requirements. First, a preventive control so that no team can create new datasets or buckets for this data outside the EU. Second, direct identifiers such as driver name and vehicle identification number must be pseudonymized before partners can query the shared tables. Which two actions together meet both requirements? Choose two.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Apply the resource locations organization policy constraint with the in:eu-locations value group to the folder holding the telemetry projects",
+        "rationale": "The gcp.resourceLocations constraint stops supported services, including BigQuery and Cloud Storage, from creating new resources outside the allowed locations, which makes it a preventive control. It is not applied retroactively to resources that already exist."
+      },
+      {
+        "id": "b",
+        "text": "Run Sensitive Data Protection de-identification on the identifier columns with tokenization or redaction before publishing the shared tables",
+        "rationale": "De-identification transforms the sensitive values themselves, for example by redaction, masking or tokenization, so partners never see clear identifiers. Inspection alone would only report where identifiers are and would leave the data unchanged."
+      },
+      {
+        "id": "c",
+        "text": "Put the telemetry projects inside a VPC Service Controls perimeter so that the data cannot be copied to projects or buckets outside the perimeter",
+        "rationale": "A perimeter limits access paths and exfiltration between projects. It does not restrict the location where a dataset is created, and it does not change identifier values in the tables that partners can query."
+      },
+      {
+        "id": "d",
+        "text": "Create log-based alerts for dataset creation outside the EU and have an engineer delete each such dataset after it is flagged",
+        "rationale": "This control is detective rather than preventive. The out-of-region dataset already exists, and may already hold data, before anyone reacts, but the requirement is to stop its creation in the first place."
+      },
+      {
+        "id": "e",
+        "text": "Encrypt every dataset with Cloud KMS keys located in an EU region, so that the data stays in Europe and identifiers are unreadable to partners",
+        "rationale": "A key's location does not decide where a dataset can be created. Encryption at rest with CMEK is also transparent to authorized readers, so partners with access would still query the identifiers in clear text."
+      }
+    ],
+    "correct": [
+      "a",
+      "b"
+    ],
+    "difficulty": 2,
+    "explanation": "Meet a residency requirement with a preventive location constraint, and meet a pseudonymization requirement by transforming the data; access perimeters and key location address neither.",
+    "examOnly": true
+  },
+  {
+    "id": "q-security-102",
+    "type": "single",
+    "domainId": "security",
+    "concepts": [
+      "audit-logs",
+      "gemini-agent-platform",
+      "compliance-monitoring"
+    ],
+    "caseStudyId": "altostrat-media",
+    "subObjective": "security.2",
+    "sourceUrl": "https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/capabilities/request-response-logging",
+    "lastVerified": "2026-10-08",
+    "prompt": "Altostrat Media's moderation service on Cloud Run asks a Gemini model on the Agent Platform to judge uploaded videos, passing Cloud Storage URIs and returning a verdict with reasoning. Auditors now require that, for any decision in the past 12 months, Altostrat can show which service identity called the model, the prompt, and the reasoning the model returned. The record must not depend on the moderation code itself. The exhibit shows the current state. What should the architect do?",
+    "exhibit": {
+      "label": "Current logging state",
+      "format": "table",
+      "content": "Control                                            | State\nAdmin Activity audit logs (Agent Platform API)     | On (default)\nData Access audit logs (Agent Platform API)        | Not enabled\nRequest-response logging for the Gemini model      | Off\nCloud Run application logs                         | Request ID and final verdict only"
+    },
+    "choices": [
+      {
+        "id": "a",
+        "text": "Keep the current setup, since the Admin Activity audit logs that are already on record each model call along with its caller",
+        "rationale": "Admin Activity logs record API calls that modify the configuration or metadata of resources. Inference calls that read or process user data fall under Data Access logs, which the exhibit shows are not enabled."
+      },
+      {
+        "id": "b",
+        "text": "Enable Data Access audit logs for the Agent Platform API and log all Gemini requests and responses to BigQuery, kept 12 months",
+        "rationale": "Data Access logs are off by default and show who made calls. Request-response logging writes the request and response payloads for Gemini models to BigQuery at a chosen sampling rate, so a rate of 1 captures every decision, independent of app code."
+      },
+      {
+        "id": "c",
+        "text": "Have the Cloud Run service write each prompt and model reply to its application logs and extend log bucket retention to 12 months",
+        "rationale": "This record is produced by the very code under audit, so a bug or code change can silently drop or alter entries. It also does not capture the platform-level caller identity of the model request."
+      },
+      {
+        "id": "d",
+        "text": "Replace Gemini with a custom classifier and turn on Vertex Explainable AI feature attributions to explain each moderation verdict",
+        "rationale": "Feature attributions cover AutoML and custom-trained models, not Gemini calls, and the service is deprecated: access ends on or after March 16, 2027. A new model build also is not needed to log existing calls."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "Auditable AI needs platform-level records of who called the model and what was sent and returned. Audit logs cover the caller, while request-response logging captures the payloads. At the time of verification, request-response logging was a Pre-GA feature and has a 10 MB row limit in BigQuery, so confirm its release stage against your compliance policy.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-security-103",
+    "type": "single",
+    "domainId": "security",
+    "concepts": [
+      "workforce-identity-federation",
+      "iam"
+    ],
+    "caseStudyId": "altostrat-media",
+    "subObjective": "security.1",
+    "sourceUrl": "https://docs.cloud.google.com/iam/docs/workforce-identity-federation",
+    "lastVerified": "2026-10-08",
+    "prompt": "Altostrat Media employees sign in with Google Identity. Freelance editors at partner studios must open the Google Cloud console to review rough cuts and download files from one Cloud Storage review bucket. The studios authenticate with their own corporate OpenID Connect identity provider, and Altostrat does not want to create or administer Google accounts for people it does not employ. When a freelancer is removed at the studio, Altostrat should not need to take any action. What should the architect set up?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Workforce Identity Federation with a pool that trusts the studio's OIDC provider, granting the bucket role to the studio's mapped group",
+        "rationale": "Workforce Identity Federation accepts any OIDC or SAML 2.0 provider without requiring Google accounts. Users reach the console through federated sign-in, and roles go to a principal set for a mapped group, so removal at the studio ends access."
+      },
+      {
+        "id": "b",
+        "text": "Cloud Identity accounts for each freelancer, with the studio's user directory synchronized by Google Cloud Directory Sync",
+        "rationale": "This creates the Google-managed accounts Altostrat wants to avoid, makes Altostrat administer them, and removal at the studio would not propagate until the synchronization runs and the account is suspended."
+      },
+      {
+        "id": "c",
+        "text": "Workload Identity Federation with a workload identity pool for the studio's provider, so each freelancer signs in as a federated principal",
+        "rationale": "Workload Identity Federation is for applications and pipelines outside Google Cloud calling APIs. Human sign-in to the console is the purpose of Workforce Identity Federation, though the names are easy to confuse."
+      },
+      {
+        "id": "d",
+        "text": "One service account per studio with a downloaded key stored in the studio's password manager and rotated when a freelancer leaves",
+        "rationale": "Long-lived keys are shared credentials that give no per-person identity or audit trail, require Altostrat to act on every departure, and do not provide console sign-in through the studio's identity provider."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "For external people who already have an identity provider, federate that provider with Workforce Identity Federation instead of creating Google accounts, and grant roles to mapped groups so the provider stays the source of truth. Employees on Google Identity are unaffected.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-security-122",
+    "type": "multiple",
+    "domainId": "security",
+    "concepts": [
+      "iam"
+    ],
+    "caseStudyId": "ehr-healthcare",
+    "subObjective": "security.1",
+    "sourceUrl": "https://docs.cloud.google.com/architecture/identity/federating-gcp-with-active-directory-introduction",
+    "lastVerified": "2026-10-08",
+    "prompt": "EHR Healthcare's staff are managed in on-premises Microsoft Active Directory with AD FS deployed. Analysts also need Google identities, because IAM roles are granted to Google Groups and reports are shared through Google accounts. Security requires that Active Directory remain the only system that stores passwords and enforces MFA, that AD groups drive group membership in Google, and that joiners and leavers flow through without manual admin-console work. Choose two actions.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Run Google Cloud Directory Sync on a schedule, using LDAP queries to provision AD users and groups into Cloud Identity one way",
+        "rationale": "Directory Sync reads the directory over LDAP and uses the Directory API to add, modify or delete users and groups on a schedule. Changes flow from Active Directory to Cloud Identity, which covers the joiner and leaver requirement."
+      },
+      {
+        "id": "b",
+        "text": "Configure SAML single sign-on in Cloud Identity with AD FS, so that AD authenticates users and keeps enforcing its password and MFA policy",
+        "rationale": "With SAML SSO, Cloud Identity delegates authentication to AD FS, so credentials and MFA stay in Active Directory. SSO handles sign-in only and needs the accounts to exist already, which is why it pairs with provisioning."
+      },
+      {
+        "id": "c",
+        "text": "Enable two-way synchronization in Google Cloud Directory Sync so that group edits made in Cloud Identity are written back to AD",
+        "rationale": "Provisioning is one way only. Changes in Active Directory replicate to Cloud Identity but not the other way around, and writing back would also break the rule that AD is the source of truth for groups."
+      },
+      {
+        "id": "d",
+        "text": "Configure SAML single sign-on alone and let each user's first successful sign-in create the Cloud Identity account and its group memberships",
+        "rationale": "SSO does not provision anything: a sign-on succeeds only if the user was provisioned beforehand. Without a directory sync there is no account to sign in to and no AD-driven group membership."
+      },
+      {
+        "id": "e",
+        "text": "Have each user choose a separate Google password at onboarding and enforce MFA in Cloud Identity, leaving AD for on-premises systems only",
+        "rationale": "This creates a second credential store with its own MFA policy, which is the opposite of keeping Active Directory as the only place that holds passwords and enforces MFA. Leavers would also keep working Google passwords."
+      }
+    ],
+    "correct": [
+      "a",
+      "b"
+    ],
+    "explanation": "Federating Cloud Identity with Active Directory takes two cooperating parts: scheduled one-way provisioning of users and groups, and SAML single sign-on that sends authentication back to AD FS. Neither part works well without the other. When no Google-side accounts are wanted at all, Workforce Identity Federation is the alternative.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-security-132",
+    "type": "multiple",
+    "domainId": "security",
+    "concepts": [
+      "audit-logs",
+      "cloud-logging",
+      "compliance-monitoring"
+    ],
+    "caseStudyId": "knightmotives-automotive",
+    "subObjective": "security.1",
+    "sourceUrl": "https://docs.cloud.google.com/logging/docs/audit/configure-data-access",
+    "lastVerified": "2026-10-08",
+    "prompt": "KnightMotives suffered another breach: an attacker with a stolen service account key read telemetry exports from a Cloud Storage bucket. The exhibit summarizes what investigators found. Leadership wants the organization to be ready for the next incident, so that investigators can tell which principal read which objects, and so that this evidence survives even if a project owner is compromised. Which two actions together meet the goal? Choose two.",
+    "exhibit": {
+      "label": "Investigation notes for the affected project",
+      "format": "log",
+      "content": "Admin Activity audit log : 14 entries, including storage.setIamPermissions on the telemetry bucket\nStorage Data Access audit log: no entries (no audit configuration set for Cloud Storage)\nLog storage                  : _Default log bucket in the same project, default retention, editable by project owners\nConclusion                   : cannot establish which objects were read, or by whom"
+    },
+    "choices": [
+      {
+        "id": "a",
+        "text": "Enable DATA_READ and DATA_WRITE audit logs for Cloud Storage in the organization-level audit configuration, so existing and new projects inherit them",
+        "rationale": "Data Access audit logs for Cloud Storage are off by default, and they are the entries that record object reads. Configured at the organization, they apply to all current and future projects and child projects cannot turn them off."
+      },
+      {
+        "id": "b",
+        "text": "Route audit logs from the whole organization through an aggregated sink into a security-project log bucket with a locked retention policy",
+        "rationale": "An aggregated sink copies the entries out of every project into a separate project that workload owners do not control. A locked bucket retention policy is irreversible, so evidence cannot be shortened or the bucket removed before entries meet it."
+      },
+      {
+        "id": "c",
+        "text": "Rely on the Admin Activity audit logs that are always written, because they record which principals read the objects as well as who changed permissions",
+        "rationale": "Admin Activity logs cover calls that modify configuration or metadata, such as changing bucket permissions. Reads of user-provided data are recorded only in Data Access logs, which is why the exhibit shows nothing about object reads."
+      },
+      {
+        "id": "d",
+        "text": "Raise the retention of the _Default log bucket in every project to several years, so that read activity is kept long enough for any later investigation",
+        "rationale": "Longer retention only keeps entries that were written, and the read entries never existed. Project owners can also change the retention of these buckets, so the evidence stays within reach of a compromised owner."
+      },
+      {
+        "id": "e",
+        "text": "Enable Data Access audit logs only in the breached project, then extend the same configuration to the other projects after a later review",
+        "rationale": "Logs for the breached project would help only with that incident. Every other project and each new one stays blind to object reads until someone reconfigures it, whereas an organization-level setting closes the gap at once."
+      }
+    ],
+    "correct": [
+      "a",
+      "b"
+    ],
+    "difficulty": 3,
+    "explanation": "Forensic readiness needs two things: the missing Data Access entries must be generated everywhere, and they must be copied to storage that a compromised project owner cannot alter."
+  },
+  {
+    "id": "q-security-133",
+    "type": "single",
+    "domainId": "security",
+    "concepts": [
+      "iam",
+      "separation-of-duties",
+      "shared-responsibility"
+    ],
+    "caseStudyId": "knightmotives-automotive",
+    "subObjective": "security.1",
+    "sourceUrl": "https://docs.cloud.google.com/architecture/blueprints/security-foundations/authentication-authorization",
+    "lastVerified": "2026-10-08",
+    "prompt": "After repeated breaches, KnightMotives is rolling out mandatory security awareness training. The security lead also wants a technical control that still protects the organization when a person is fooled by a convincing phishing page. Employees sign in through SSO with MFA enforced at the corporate identity provider. A phished Cloud Identity super admin credential is rated the highest-impact scenario. Which control best addresses it?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Enforce 2-Step Verification with security keys on super admin accounts in Cloud Identity itself, where they authenticate directly",
+        "rationale": "Super admins bypass the organization's SSO settings, so their protection must be configured in Cloud Identity. Security keys are phishing-resistant: a fake page cannot relay them, which is why the foundations guidance recommends them for super admins."
+      },
+      {
+        "id": "b",
+        "text": "Rely on the MFA already enforced at the corporate identity provider, since every sign-in to Cloud Identity is redirected there for verification first",
+        "rationale": "Super admin accounts are deliberately excluded from SSO so that they can still reach the console if SSO is misconfigured or down. Their sign-in never passes through the provider's MFA, so that control does not protect them."
+      },
+      {
+        "id": "c",
+        "text": "Enforce 2-Step Verification with codes sent by SMS for the super admin accounts, since a one-time code defeats a stolen password",
+        "rationale": "A one-time code defeats a password reused elsewhere but not a live phishing page, which can ask for the code and replay it at once. Only phishing-resistant factors such as security keys check where the sign-in happens."
+      },
+      {
+        "id": "d",
+        "text": "Require super admins to use longer passphrases that are rotated every month, and report the training completion rate to the board",
+        "rationale": "A phished credential is typed into the attacker's page by the user, so length and rotation add no protection against it. Rotation adds nothing when the attacker uses the credential immediately."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 1,
+    "explanation": "Super admin accounts sit outside SSO, so their phishing protection is a security key configured in Cloud Identity. Training lowers the odds of being fooled and a phishing-resistant factor limits the damage when it still happens.",
+    "examOnly": true
+  },
+  {
+    "id": "q-security-152",
+    "type": "single",
+    "domainId": "security",
+    "concepts": [
+      "iap",
+      "iam",
+      "firewall"
+    ],
+    "caseStudyId": "altostrat-media",
+    "subObjective": "security.1",
+    "sourceUrl": "https://docs.cloud.google.com/iap/docs/using-tcp-forwarding",
+    "lastVerified": "2026-10-08",
+    "prompt": "Altostrat Media has retired the public bastion host and removed external IPs from the VMs that run its legacy ingest and archive tooling. Developers must still reach SSH and an internal admin console on those VMs, with access decided per user. After the cutover, tunneled sessions cannot connect. Using the exhibit, which change completes an IAP-based design without leaving the ports reachable from the internet?",
+    "exhibit": {
+      "label": "Network and IAM state for project altostrat-ingest",
+      "format": "config",
+      "language": "yaml",
+      "content": "firewall_rules:           # network: ingest-vpc\n  - name: allow-ssh-from-bastion\n    direction: INGRESS\n    priority: 1000\n    source_ranges: [198.51.100.7/32]   # retired bastion public IP\n    allowed: [tcp:22]\n    target_tags: [ingest-vm]\n  - name: allow-internal\n    direction: INGRESS\n    priority: 65534\n    source_ranges: [10.20.0.0/16]\n    allowed: [all]\niam_bindings:\n  - group:ingest-devs@altostrat.example: roles/iap.tunnelResourceAccessor\n  - group:ingest-devs@altostrat.example: roles/compute.osLogin\nvm:\n  name: ingest-vm-01\n  tags: [ingest-vm]\n  external_ip: none\n  metadata: {enable-oslogin: \"TRUE\"}\n  admin_console_port: 8443"
+    },
+    "choices": [
+      {
+        "id": "a",
+        "text": "Add an ingress allow rule for tcp:22 and tcp:8443 from 35.235.240.0/20 to the ingest-vm tag, and delete the stale bastion rule.",
+        "rationale": "IAP TCP forwarding reaches the VM from Google's 35.235.240.0/20 range, so the VPC needs an ingress rule for that range on each forwarded port. The only SSH rule trusts the retired bastion's address, and nothing admits the console port. Deleting the stale rule removes a dead trust relationship."
+      },
+      {
+        "id": "b",
+        "text": "Set the bastion rule's source range to 0.0.0.0/0 and add tcp:8443, because tunneled traffic can arrive from any address.",
+        "rationale": "IAP traffic arrives from one documented range, not from any address. Opening the ports to every source would make them reachable from the internet and defeat per-user, identity-aware access."
+      },
+      {
+        "id": "c",
+        "text": "Create a Cloud NAT gateway on ingest-vpc so that the IAP tunnel can reach the VMs' internal addresses through the new path.",
+        "rationale": "Cloud NAT handles outbound connections for VMs that lack external IPs. It does not carry inbound IAP connections, so the firewall would still drop the tunnel traffic."
+      },
+      {
+        "id": "d",
+        "text": "Grant the developer group roles/compute.instanceAdmin.v1 on the project, since the tunnel and OS Login roles alone are not enough.",
+        "rationale": "The exhibit already grants the tunnel role and the OS Login role, which are what the IAP and SSH flow need. A broader administrator role adds privilege, and no IAM role can open a path that the firewall blocks."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 3
+  },
+  {
+    "id": "q-security-153",
+    "type": "single",
+    "domainId": "security",
+    "concepts": [
+      "private-service-connect",
+      "vpc-service-controls"
+    ],
+    "subObjective": "security.2",
+    "sourceUrl": "https://docs.cloud.google.com/gemini-enterprise-agent-platform/machine-learning/predictions/private-service-connect",
+    "lastVerified": "2026-10-08",
+    "prompt": "Lumen Credit serves a custom-trained credit-risk model from Vertex AI online inference. Three internal applications call it, each in its own project and VPC network, and the network team will not create VPC peering connections for this. Security requires that requests reach the model over private IP addresses in each application's VPC, that only those three projects can send requests, and that the serving project stays inside a VPC Service Controls perimeter. Which endpoint design meets these requirements?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "A dedicated private endpoint on Private Service Connect, with the three projects in its allowlist and a forwarding rule in each VPC.",
+        "rationale": "Private Service Connect serves inference to multiple consumer projects and VPC networks without public IPs, public internet access, or peered ranges. The project allowlist limits who can send requests, and the private endpoint supports the perimeter."
+      },
+      {
+        "id": "b",
+        "text": "A private services access endpoint, with the serving project's network peered to Google's service network and the three VPCs routed to it.",
+        "rationale": "Private services access depends on VPC peering, which the network team has ruled out. It also binds all private endpoints in a project to a single network, so it fits several separate consumer VPCs poorly."
+      },
+      {
+        "id": "c",
+        "text": "A dedicated public endpoint, which Google recommends for serving, with only the three applications' service accounts granted invoker roles.",
+        "rationale": "Dedicated public endpoints isolate traffic from other users but remain public endpoints, so requests do not arrive over private addresses in each VPC. VPC Service Controls is not supported on them either."
+      },
+      {
+        "id": "d",
+        "text": "A shared public endpoint kept inside the perimeter, with ingress rules that admit only the three applications' projects and identities.",
+        "rationale": "A perimeter controls who may call the service, but it does not change the endpoint type. This remains a public endpoint, so the requirement to reach the model over private IP addresses in each VPC is not met."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 3
+  },
+  {
+    "id": "q-security-154",
+    "type": "single",
+    "domainId": "security",
+    "concepts": [
+      "kms-cmek",
+      "cloud-hsm",
+      "cloud-ekm"
+    ],
+    "subObjective": "security.1",
+    "sourceUrl": "https://docs.cloud.google.com/kms/docs/protection-levels",
+    "lastVerified": "2026-10-08",
+    "prompt": "Meridian Pay processes card payments on Google Cloud. Auditors require that the keys protecting its BigQuery datasets and Cloud Storage buckets be generated and used inside FIPS 140-2 Level 3 validated hardware. The security team wants Google to operate that hardware, with rotation and access handled through Cloud KMS, and sees no need to hold key material outside Google. Which key configuration should the architect choose?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Cloud KMS keys at the software protection level as CMEK, because the cryptographic module behind them is FIPS validated.",
+        "rationale": "Software keys use a FIPS 140-3 Level 1 validated module. That suits workloads with no higher validation requirement, but it does not satisfy a Level 3 hardware mandate."
+      },
+      {
+        "id": "b",
+        "text": "Cloud EKM keys held in an external key manager and reached over a VPC network, for the strongest possible key custody.",
+        "rationale": "External keys are warranted when key material must live outside Google. Nothing here needs that, and it adds dependence on a partner system whose availability Google cannot control, at the highest cost."
+      },
+      {
+        "id": "c",
+        "text": "Cloud KMS keys at the HSM protection level, used as CMEK on BigQuery and Cloud Storage, with Google operating the HSMs.",
+        "rationale": "Cloud HSM generates and uses keys in FIPS 140-2 Level 3 validated HSMs that Google operates. Keys work with CMEK integrations and Cloud KMS rotation and IAM, which matches every stated requirement."
+      },
+      {
+        "id": "d",
+        "text": "Single-tenant Cloud HSM keys, with the security team creating and administering its own dedicated HSM instance for the keys.",
+        "rationale": "A single-tenant instance adds cryptographic isolation, but the customer must create and administer it. The team asked for Google to operate the hardware and has no isolation requirement, so this adds cost and effort without need."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-security-155",
+    "type": "single",
+    "domainId": "security",
+    "concepts": [
+      "shared-responsibility",
+      "pii"
+    ],
+    "subObjective": "security.3",
+    "sourceUrl": "https://cloud.google.com/security/compliance/data-processing-addendum-privacy-mapping",
+    "lastVerified": "2026-10-08",
+    "prompt": "BrightLeaf is launching a reading app for children aged 6 to 12, with learner profiles in Firestore and analytics in BigQuery. Its counsel asks the architect who owns and controls the children's data once it is on Google Cloud, and who is accountable for obtaining parental consent under COPPA. Which answer should the architect give, and what should the design include?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "BrightLeaf owns the data; Google processes it per the contract. Consent is BrightLeaf's duty, so build consent and deletion flows into the app.",
+        "rationale": "Google's commitments are that customer data is the customer's and is processed only per the agreement. Its privacy mapping lists minors' consent as a customer responsibility based on its own business operations, so the app must handle consent and deletion."
+      },
+      {
+        "id": "b",
+        "text": "Google becomes controller of the stored profiles, so its published compliance reports already cover consent and the app needs no consent flow.",
+        "rationale": "Under the Cloud Data Processing Addendum Google is a processor and the customer is a controller or processor. Compliance reports describe Google's controls and do not transfer the customer's consent duties."
+      },
+      {
+        "id": "c",
+        "text": "Google owns the data once uploaded, so encrypt it with CMEK to stop Google from processing the profiles, and treat that as the COPPA control.",
+        "rationale": "Ownership never passes to Google, so the premise is wrong. CMEK protects data at rest and does not capture parental consent, which COPPA requires from the operator of the service."
+      },
+      {
+        "id": "d",
+        "text": "Keep all children's data in a US region, because COPPA is satisfied by storing the data in the country where the law was enacted.",
+        "rationale": "COPPA concerns consent for collecting children's personal information, not where the data sits. Region choice helps with residency rules, but it creates no consent and shifts no responsibility."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-security-156",
+    "type": "single",
+    "domainId": "security",
+    "concepts": [
+      "model-armor",
+      "prompt-injection",
+      "resource-hierarchy"
+    ],
+    "subObjective": "security.2",
+    "sourceUrl": "https://docs.cloud.google.com/security-command-center/docs/model_armor_floor_settings",
+    "lastVerified": "2026-10-08",
+    "prompt": "Northwind Freight lets each product team ship its own generative AI features. An internal review found one team screening prompts with a home-grown regex filter, another screening only model responses, and a third doing no screening at all. The security lead wants to apply the Secure AI Framework element \"harmonize platform-level controls to ensure consistent security across the organization\" to prompt and response screening. Teams may tighten the baseline for their own apps but must never fall below it. Which approach on Google Cloud fits?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Set organization-level Model Armor floor settings with minimum prompt-injection, jailbreak and safety thresholds that no template can undercut.",
+        "rationale": "Floor settings define minimum filter requirements across the resource hierarchy, and Model Armor rejects any template that is less strict than the floor. That gives one enforced baseline while still letting a team create a stricter template for its own app, which is the harmonize-platform-level-controls element in practice."
+      },
+      {
+        "id": "b",
+        "text": "Publish an approved internal filtering library, require every team to adopt it, and verify that adoption during each product launch review.",
+        "rationale": "Shared code is consistency by convention. Nothing stops a team from skipping the library, calling a model directly or loosening its thresholds after launch, so the baseline is not enforced at the platform level. The home-grown regex filter in the stem is the same pattern, just centralised."
+      },
+      {
+        "id": "c",
+        "text": "Have each team create its own Model Armor template for its app, and let the security team review the chosen thresholds at each launch.",
+        "rationale": "Templates alone give every team a capable filter but no minimum. Without a floor setting, each team can pick permissive thresholds and the launch review is the only gate. Per-team templates are the right tool for tightening above a baseline, not for creating one."
+      },
+      {
+        "id": "d",
+        "text": "Turn on Data Access audit logs for every model endpoint, and have the security team review those logs for unscreened calls every week.",
+        "rationale": "Monitoring model inputs and outputs belongs to a different SAIF element, extending detection and response to AI. Audit logs report after the fact that screening was missing, but they do not prevent a team from shipping a weaker control, which is what the harmonizing element asks for."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "SAIF's six elements are not a checklist to apply in order. Harmonizing platform-level controls means moving a control from each application into the platform, and for LLM screening on Google Cloud that is a floor setting that every Model Armor template must meet. Detection and response (monitoring, logging) is a separate element that complements it. One caveat: floor settings do not check templates for Sensitive Data Protection conformance.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-security-157",
+    "type": "single",
+    "domainId": "security",
+    "concepts": [
+      "kms-cmek",
+      "separation-of-duties",
+      "cloud-hsm"
+    ],
+    "subObjective": "security.1",
+    "sourceUrl": "https://docs.cloud.google.com/kms/docs/autokey-overview",
+    "lastVerified": "2026-10-08",
+    "prompt": "Tallis Insurance runs dozens of product teams under one production folder. Today every customer-managed encryption key is requested through a ticket queue, and teams wait days to create a CMEK-protected bucket or disk. Requirements: developers must not be able to view or manage keys; keys must live in a project that only the security team administers; those administrators must not gain encrypt or decrypt access to data; HSM-backed keys with a yearly rotation are acceptable. One legacy analytics workload must run in a location where Cloud HSM is unavailable. Which design meets every requirement?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Enable Cloud KMS Autokey on the production folder with dedicated-project key storage, and create a manual CMEK for the one legacy workload.",
+        "rationale": "Developers request a key during resource creation, and Autokey's service agent creates and binds it. Developers can only request creation, not view or manage keys. Keys land in the security team's key project, and key administrators get no encrypt or decrypt permissions. Autokey does not create keys where Cloud HSM is unavailable, so that workload needs a manual CMEK."
+      },
+      {
+        "id": "b",
+        "text": "Enable Autokey in same-project mode across the folder and give each team Cloud KMS Admin on its own project to tune rotation.",
+        "rationale": "Same-project storage creates keys inside the resource projects, so the keys no longer live in a security-only project. Giving developers Cloud KMS Admin lets them manage the keys, which breaks the requirement that developers neither view nor manage keys."
+      },
+      {
+        "id": "c",
+        "text": "Enable Autokey on the folder with dedicated-project storage for all workloads and rely on it to fall back to a software key where Cloud HSM is unavailable.",
+        "rationale": "Autokey creates HSM-protected keys in the same location as the resource and does not substitute software keys. Where Cloud HSM is not supported, the key cannot be created, so the legacy workload would be blocked rather than quietly covered by a weaker key."
+      },
+      {
+        "id": "d",
+        "text": "Keep manual CMEK, pre-create a key ring per team in the central key project, and bind each service agent to its team's key as requests arrive.",
+        "rationale": "Manual CMEK in a central project can satisfy the separation requirements, and it also covers the legacy location. It keeps the security team in the request path for every new resource, though, so the ticket-queue delay the stem wants to eliminate remains."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "Autokey fits when many teams need compliant CMEK on demand: administrators enable it on a folder, keys use HSM protection and AES-256 GCM with a one-year default rotation, and the service agent handles key creation and IAM bindings. Manual CMEK remains the answer for locations without Cloud HSM and for anything outside Autokey's fixed key attributes.",
+    "difficulty": 3
   }
 ]

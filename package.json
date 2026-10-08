@@ -18,7 +18,8 @@
     "content:validate": "tsx scripts/validate-content.ts",
     "content:lint": "tsx scripts/lint-content.ts",
     "tts:check": "tsx scripts/check-tts-freshness.ts",
-    "tts:generate": "tsx scripts/generate-tts.ts"
+    "tts:generate": "tsx scripts/generate-tts.ts",
+    "tts:repair": "tsx scripts/repair-tts.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

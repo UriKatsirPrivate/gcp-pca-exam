@@ -2060,5 +2060,349 @@
       "e"
     ],
     "difficulty": 2
+  },
+  {
+    "id": "q-ops-excellence-051",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "alerting",
+      "incident-management",
+      "operational-excellence"
+    ],
+    "caseStudyId": "altostrat-media",
+    "subObjective": "ops-excellence.1",
+    "sourceUrl": "https://docs.cloud.google.com/monitoring/support/notification-options",
+    "lastVerified": "2026-10-08",
+    "prompt": "Altostrat Media monitors its GKE content platform with Cloud Monitoring and Prometheus, but alerts mostly go by email to a shared team mailbox. Overnight ingestion failures were noticed hours late because nobody was paged. Which change best improves incident response?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Add more recipients to the email notification channel and lower the alert thresholds so that someone is likely to see messages sooner",
+        "rationale": "More email recipients and lower thresholds add noise without paging or escalation. Google also advises pairing email with other channels because it cannot control delivery once a message is handed off."
+      },
+      {
+        "id": "b",
+        "text": "Display a Cloud Monitoring dashboard of ingestion health on a large screen in the operations area so staff can watch it",
+        "rationale": "A dashboard only helps when someone is looking at it. Overnight failures would still go unseen because nothing notifies an engineer who is away from the screen."
+      },
+      {
+        "id": "c",
+        "text": "Route alerting policies to an on-call paging channel such as PagerDuty with escalation, with a runbook link in each policy",
+        "rationale": "A paging channel with escalation reaches the on-call engineer, and the documentation field of a policy can carry runbook links and remediation steps in the notification, which cuts both detection and resolution time."
+      },
+      {
+        "id": "d",
+        "text": "Export alert-related logs to BigQuery and review incident trends in a weekly operations meeting held by the platform team",
+        "rationale": "Trend review helps retrospectives, but a weekly meeting is after the fact and nobody is woken up for a live ingestion failure."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "Operational excellence means alerts reach a responsible person fast and carry the context to act: paging channels with escalation plus runbook links.",
+    "difficulty": 1,
+    "examOnly": true
+  },
+  {
+    "id": "q-ops-excellence-061",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "cloud-observability",
+      "monitoring-logging"
+    ],
+    "caseStudyId": "cymbal-retail",
+    "subObjective": "ops-excellence.2",
+    "sourceUrl": "https://docs.cloud.google.com/stackdriver/docs/managed-prometheus",
+    "lastVerified": "2026-10-08",
+    "prompt": "Cymbal's platform team monitors its Kubernetes workloads with self-run Prometheus servers that feed Grafana dashboards and PromQL alert rules. As part of the move to Google Cloud, it wants to stop operating those servers while keeping the existing dashboards and rules. What should the architect recommend?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Keep the self-run Prometheus servers and add Thanos sidecars and object storage so that metrics can be retained for longer periods.",
+        "rationale": "Thanos extends retention but leaves the team operating the Prometheus servers and the added components, which is the burden they want to remove."
+      },
+      {
+        "id": "b",
+        "text": "Rewrite every dashboard and alert rule from scratch in the Cloud Monitoring console and discard the PromQL expressions the team already maintains.",
+        "rationale": "A manual rewrite is unnecessary rework. The managed service keeps PromQL, Grafana dashboards and alert rules working as they are, so none of it has to be rebuilt."
+      },
+      {
+        "id": "c",
+        "text": "Adopt Managed Service for Prometheus with managed collection, and keep Grafana and the PromQL alert rules pointed at the managed backend.",
+        "rationale": "Managed Service for Prometheus lets teams keep existing Grafana dashboards and PromQL-based alerts without running Prometheus servers, and its metrics are stored in Google's Monarch datastore."
+      },
+      {
+        "id": "d",
+        "text": "Move the metrics into an Elastic cluster on Compute Engine and rebuild each Grafana dashboard against Elastic's own query language.",
+        "rationale": "Self-hosting Elastic keeps the operational burden and forces a rebuild of dashboards and rules, instead of using a managed, PromQL-compatible backend."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "Managed Service for Prometheus keeps the Prometheus data model, PromQL and Grafana while Google operates the storage and query backend.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-ops-excellence-071",
+    "type": "multiple",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "cloud-logging",
+      "log-retention",
+      "monitoring-logging"
+    ],
+    "caseStudyId": "ehr-healthcare",
+    "subObjective": "ops-excellence.2",
+    "sourceUrl": "https://docs.cloud.google.com/logging/docs/buckets",
+    "lastVerified": "2026-10-08",
+    "prompt": "EHR Healthcare runs dev, staging, and production in separate Google Cloud projects under one organization, and teams add new projects often. Auditors want every project's logs kept centrally for one year, but projects currently keep only the default log retention. The platform team wants consistent logging that does not depend on each team configuring it. Which two actions together meet the requirement? Choose two.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Raise the retention period of the organization's _Default log bucket to one year so that every project's logs are kept that long",
+        "rationale": "Google Cloud does not let you extend the retention of a log bucket in an organization or folder, and each project's own logs stay in that project's bucket anyway. A sink to a project-level bucket is the supported route."
+      },
+      {
+        "id": "b",
+        "text": "Create an organization-level aggregated sink that routes all child projects' logs to a bucket in a dedicated logging project",
+        "rationale": "An aggregated sink at the organization applies to every child project, including projects created later, so routing is consistent without per-team setup."
+      },
+      {
+        "id": "c",
+        "text": "Keep logs in each project's _Default bucket, whose default retention already covers an annual audit cycle",
+        "rationale": "The default retention of the _Default bucket is 30 days, far short of one year, and logs would remain scattered across projects instead of centralized."
+      },
+      {
+        "id": "d",
+        "text": "Create the destination as a user-defined log bucket in the logging project and set its retention period to one year, as required",
+        "rationale": "Retention is configured per log bucket. User-defined buckets live in a project, and a custom retention period there keeps the routed logs for as long as the auditors require."
+      },
+      {
+        "id": "e",
+        "text": "Ask each team to create a sink in its own project that targets the central bucket and to record the filter used in a shared runbook",
+        "rationale": "Per-project sinks depend on every team remembering to create and configure them, so new projects are missed and filters drift. That is the inconsistency the platform team wants to remove."
+      }
+    ],
+    "correct": [
+      "b",
+      "d"
+    ],
+    "explanation": "Centralizing logs takes two parts: a sink that routes (an aggregated sink at the organization or folder) and a destination that retains (a user-defined bucket in a project with custom retention).",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "id": "q-ops-excellence-082",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "quality-control",
+      "testing-validation",
+      "grounding"
+    ],
+    "caseStudyId": "cymbal-retail",
+    "subObjective": "ops-excellence.4",
+    "sourceUrl": "https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/rubric-metric-details",
+    "lastVerified": "2026-10-08",
+    "prompt": "Cymbal's description-generation service prompts Gemini with each supplier row's title, attributes and specification text. Before switching to a newer model, the team ran both models through the Gen AI evaluation service on 500 prompts sampled from production logs, supplying the supplier row as context for the grounding metric. Merchandising prefers the newer model's copy and wants to ship it, and associates already review every description before it reaches the catalog. What should the architect recommend?",
+    "exhibit": {
+      "label": "Evaluation results (mean score per prompt, higher is better)",
+      "format": "table",
+      "content": "Metric                  | Current model | Newer model\nTEXT_QUALITY            | 0.91          | 0.96\nINSTRUCTION_FOLLOWING   | 0.93          | 0.95\nGROUNDING               | 0.94          | 0.82"
+    },
+    "choices": [
+      {
+        "id": "a",
+        "text": "Hold the rollout: the grounding drop points to claims the supplier data does not support. Tighten the prompt to supplier facts, rerun the same dataset and gate on grounding.",
+        "rationale": "The grounding metric checks that a response is grounded in the supplied context. Fluency and instruction-following scores cannot reveal invented specifications, so the grounding regression decides the release."
+      },
+      {
+        "id": "b",
+        "text": "Ship the newer model, since it wins two of the three metrics and associate review already catches inaccurate descriptions before the catalog is updated, so the grounding gap is not a blocker.",
+        "rationale": "Counting metric wins treats a fluency gain as equal to a factual regression. Review is a backstop, not a measurement, and a higher rate of unsupported claims raises associate workload and the chance a bad claim slips through."
+      },
+      {
+        "id": "c",
+        "text": "Ship the newer model and drop the grounding metric from the suite, because a model-based judge scoring each response against the context is too subjective to use as a release gate.",
+        "rationale": "Removing the one metric that failed hides the regression rather than fixing it. Grounding evaluates each response against the supplied source text and is the metric aimed at factual consistency."
+      },
+      {
+        "id": "d",
+        "text": "Replace the metrics with a computation-based score against writer-authored reference descriptions, since deterministic scoring is more trustworthy than model-judged scoring for a release gate.",
+        "rationale": "Computation-based metrics need ground truth, and Cymbal has no reference description for products that are still being onboarded. They also would not report whether a claim is supported by the supplier data."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "Pick the metric that matches the failure mode. Description quality can improve on fluency while factual fidelity to supplier data regresses, so the release gate must include grounding against the same context the prompt uses.",
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "id": "q-ops-excellence-092",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "alerting",
+      "cloud-monitoring",
+      "observability"
+    ],
+    "caseStudyId": "ehr-healthcare",
+    "subObjective": "ops-excellence.2",
+    "sourceUrl": "https://docs.cloud.google.com/stackdriver/docs/managed-prometheus",
+    "lastVerified": "2026-10-08",
+    "prompt": "EHR Healthcare runs an open-source Prometheus server and Grafana in each of its Kubernetes clusters, one per environment and region. Alertmanager emails every firing rule to one shared mailbox, and staff routinely ignore the messages. Leadership wants a single place to see performance and usage across all clusters, wants to keep the team's existing PromQL rules and Grafana dashboards, and wants to stop operating Prometheus servers. Which approach should the architect recommend?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Keep each Prometheus server and point Alertmanager at a Pub/Sub topic instead of the mailbox, so the same rules notify a different destination",
+        "rationale": "Changing the destination does not reduce alert volume or make the alerts actionable, and the per-cluster servers still have to be run and queried separately. It addresses neither the visibility nor the administration goals."
+      },
+      {
+        "id": "b",
+        "text": "Federate every cluster's Prometheus into one central Prometheus server on a Compute Engine VM and route its Alertmanager to a chat channel",
+        "rationale": "Federation gives one view, but EHR would now operate and scale a central server that is a single point of failure, which conflicts with the goal of no longer running Prometheus servers."
+      },
+      {
+        "id": "c",
+        "text": "Rewrite every alert rule as a log-based metric in Cloud Logging and retire PromQL and the Grafana dashboards after the cutover",
+        "rationale": "Log-based metrics are for signals that exist in logs. Rewriting every rule throws away the team's PromQL rules and dashboards, which the requirements explicitly say to keep."
+      },
+      {
+        "id": "d",
+        "text": "Adopt Managed Service for Prometheus with managed collection, move the rules to PromQL alerting policies, and page only on urgent alerts",
+        "rationale": "Managed collection removes the servers, the global backend allows PromQL queries across clusters and projects, and Grafana dashboards keep working. Prometheus alerting rules can migrate to Cloud Monitoring policies and channels, so urgent alerts are separated from noise."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "explanation": "Managed Service for Prometheus keeps the Prometheus data model, PromQL and Grafana while Google runs the collection and storage backend. Moving rules into Cloud Monitoring alerting policies puts alerting and notification channels in one place, where urgent alerts can go to a paging channel and the rest to lower-urgency channels.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-ops-excellence-122",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "cloud-logging",
+      "observability"
+    ],
+    "subObjective": "ops-excellence.2",
+    "sourceUrl": "https://docs.cloud.google.com/logging/docs/log-analytics",
+    "lastVerified": "2026-10-08",
+    "prompt": "An online ticketing company writes its checkout API request logs to a project-level, unlocked log bucket. The SRE team must report average latency per endpoint, grouped by hour, over the retained history, and wants to run ad hoc SQL against it. Platform leadership will not pay for a second copy of the logs or accept a new export pipeline to maintain. Which approach fits?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Upgrade the existing log bucket to Observability Analytics (formerly Log Analytics) and run SQL that groups entries by endpoint and hour",
+        "rationale": "Correct. Upgrading a project-level, unlocked bucket enables SQL grouping and aggregation over the logs where they already sit. No sink or copy is needed, and Logs Explorer keeps working on the same bucket."
+      },
+      {
+        "id": "b",
+        "text": "Query the bucket in Logs Explorer with the Logging query language and compute the hourly averages from its histogram panel",
+        "rationale": "Logs Explorer is built for troubleshooting and filtering. It does not support aggregate operations such as grouping and averaging, and its histogram shows entry counts, not latency means."
+      },
+      {
+        "id": "c",
+        "text": "Create a log sink that exports the checkout logs to BigQuery tables and run the hourly aggregations on that exported dataset",
+        "rationale": "This works technically but is the pattern leadership ruled out: the sink duplicates the data into a second store with its own storage cost, plus a pipeline to maintain. A linked dataset on an upgraded bucket gives BigQuery access without a copy."
+      },
+      {
+        "id": "d",
+        "text": "Define a distribution log-based metric on the latency field and chart the hourly mean per endpoint in Cloud Monitoring",
+        "rationale": "A user-defined log-based metric is fed only by entries received after it is created, so it cannot answer for the retained history. It is also a fixed, predefined aggregation, not ad hoc SQL."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "When the need is aggregation and trends over logs you already store, enable analytics on the log bucket rather than exporting. Keep Logs Explorer for filtering and troubleshooting individual entries.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-ops-excellence-123",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "binary-authorization",
+      "software-supply-chain",
+      "ci-cd"
+    ],
+    "subObjective": "ops-excellence.3",
+    "sourceUrl": "https://docs.cloud.google.com/binary-authorization/docs/overview",
+    "lastVerified": "2026-10-08",
+    "prompt": "A logistics company ships to a production GKE cluster through a Cloud Build and Cloud Deploy pipeline. Last month an engineer built a hotfix image on a laptop, pushed it to Artifact Registry and applied the Deployment with kubectl. It skipped the staging integration tests and caused an outage. Production must now run only images that the pipeline built and that passed the staging integration suite, even if someone applies manifests directly to the cluster. On-call must still be able to ship an emergency fix, with a clear audit trail. What should the architect do?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Enforce a Binary Authorization policy on production requiring a pipeline-signed attestation for the image digest after staging tests pass, with audited break-glass",
+        "rationale": "Correct. The pipeline signs an attestation for the image digest only after the staging suite succeeds, and the admission check blocks anything without it, including direct kubectl applies. Break-glass is the sanctioned override and every use is written to Cloud Audit Logs."
+      },
+      {
+        "id": "b",
+        "text": "Restrict Artifact Registry push access to the Cloud Build service account, deploy to production by release tag, and grant on-call engineers a separate emergency push role",
+        "rationale": "Registry permissions show who pushed an image, not that it passed the staging tests. Tags are mutable, anyone with cluster access can still apply any image the registry holds, and the emergency push role reopens the original hole without a dedicated audit trail."
+      },
+      {
+        "id": "c",
+        "text": "Enable Artifact Analysis vulnerability scanning on the repository and have the release process refuse to promote any image whose scan reports a critical or high severity vulnerability",
+        "rationale": "A clean scan says nothing about whether the integration suite ran. The check lives in the release process, so a direct kubectl apply of the hotfix image still bypasses it, and there is no emergency path."
+      },
+      {
+        "id": "d",
+        "text": "Add a manual approval to the Cloud Deploy promotion into production so that a second engineer must approve each release before it rolls out to the cluster",
+        "rationale": "An approval gate only governs releases that flow through Cloud Deploy. The hotfix reached the cluster through kubectl and never touched the pipeline. A human approval also proves nothing about test results."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "Pipeline-side controls only protect the paths that go through the pipeline. Enforcing at deploy time on the cluster, with attestations bound to image digests, closes the bypass, and break-glass keeps emergencies possible and auditable.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-ops-excellence-124",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "cloud-monitoring",
+      "monitoring-logging"
+    ],
+    "subObjective": "ops-excellence.2",
+    "sourceUrl": "https://docs.cloud.google.com/compute/docs/instances/observe-monitor-vms",
+    "lastVerified": "2026-10-08",
+    "prompt": "A retailer lifts and shifts a Java order service onto a managed instance group of Compute Engine VMs built from a custom image. In Cloud Monitoring the CPU and network charts populate, but the memory and disk-space utilization charts show no data. The application writes logs to files under /var/log/orders/, and none of them appear in Cloud Logging. The team needs to alert on memory and search those logs without changing application code. What should they do?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Install the Ops Agent on the instances, for example through an agent policy, and configure it to read the application log files",
+        "rationale": "Correct. Memory, disk and process metrics from inside the guest come only from the Ops Agent, which also tails log files at paths you configure. An agent policy installs it across the fleet without touching the application."
+      },
+      {
+        "id": "b",
+        "text": "Turn on the detailed monitoring option for the instance group so that the platform publishes guest-level memory and disk metrics",
+        "rationale": "Compute Engine has no such switch. The platform reports basic hypervisor-level metrics such as CPU and network, and memory and process utilization are available only when an agent runs inside the VM."
+      },
+      {
+        "id": "c",
+        "text": "Grant the instances' service account the Monitoring Viewer and Logs Viewer roles so the VMs can read their own metrics and log files",
+        "rationale": "Viewer roles allow reading data that already exists in Cloud Monitoring and Cloud Logging. Nothing collects or sends guest data without an agent, and a sender needs the writer roles instead (Logs Writer and Monitoring Metric Writer)."
+      },
+      {
+        "id": "d",
+        "text": "Add the Cloud Logging and Cloud Monitoring client libraries to the service so it emits memory gauges and its own log entries directly",
+        "rationale": "This can work for a codebase the team is free to change, but the requirement rules out code changes. It would also miss disk and OS-level data and leave the existing log files unread."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "Hypervisor-level metrics cover CPU and network only. For guest memory, disk space, processes and file-based logs on Compute Engine, run the Ops Agent and roll it out fleet-wide with an agent policy or automation.",
+    "difficulty": 2
   }
 ]

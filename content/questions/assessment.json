@@ -50,9 +50,9 @@
     ],
     "caseStudyId": "altostrat-media",
     "subObjective": "design-plan.2",
-    "sourceUrl": "https://docs.cloud.google.com/architecture/dr-scenarios-planning-guide",
-    "lastVerified": "2026-10-01",
-    "prompt": "Altostrat Media streams video globally. After a regional outage, leadership mandates an RTO of minutes and an RPO near zero for the catalog and entitlements data, but the budget cannot justify fully duplicating all compute continuously. Which disaster-recovery pattern matches these constraints most cost-effectively?",
+    "sourceUrl": "https://docs.cloud.google.com/architecture/dr-scenarios-for-applications",
+    "lastVerified": "2026-10-08",
+    "prompt": "Altostrat Media's GKE content platform serves the media library from Cloud Storage and relies on catalog and entitlements data. After a regional outage, leadership mandates an RTO of minutes and an RPO near zero for the catalog and entitlements data. Cost control is a top priority, and the budget cannot justify running full-capacity compute in two regions at all times. Which disaster-recovery pattern matches these constraints most cost-effectively?",
     "choices": [
       {
         "id": "a",
@@ -71,8 +71,8 @@
       },
       {
         "id": "d",
-        "text": "Hot active-active serving from a single region, with synchronous replication between its zones",
-        "rationale": "A hot pattern is the most expensive, and keeping everything in one region means a regional outage takes down both copies, so it does not address the scenario at all."
+        "text": "Hot active-active across two regions, with full-capacity compute serving production traffic in each region",
+        "rationale": "A hot pattern meets both targets because both environments serve production traffic, but it runs full capacity in two regions at all times. It is the most expensive pattern, which the stated budget rules out."
       }
     ],
     "correct": [
@@ -598,8 +598,8 @@
     "caseStudyId": "knightmotives-automotive",
     "subObjective": "manage-impl.1",
     "sourceUrl": "https://docs.cloud.google.com/database-migration/docs/mysql/quickstart",
-    "lastVerified": "2026-10-01",
-    "prompt": "KnightMotives Automotive must migrate a self-managed MySQL database to Cloud SQL for MySQL with minimal downtime, using continuous replication to keep the target in sync until cutover. Which Google tool is purpose-built for this?",
+    "lastVerified": "2026-10-08",
+    "prompt": "KnightMotives Automotive keeps the orders for its unreliable build-to-order system in a self-managed MySQL database in its data center. The team must move it to Cloud SQL for MySQL with minimal downtime, using continuous replication to keep the target in sync until cutover. Which Google tool is purpose-built for this?",
     "choices": [
       {
         "id": "a",
@@ -613,12 +613,12 @@
       },
       {
         "id": "c",
-        "text": "Storage Transfer Service jobs that copy the database files into a Cloud Storage bucket",
-        "rationale": "Storage Transfer Service moves objects between storage systems. It does not replicate a live database into a Cloud SQL instance."
+        "text": "Storage Transfer Service jobs that copy the database's data files into Cloud Storage for a later restore",
+        "rationale": "Copying files gives a point-in-time snapshot with no ongoing replication, and it never produces a Cloud SQL instance. Storage Transfer Service moves objects between storage systems rather than replicating a live database."
       },
       {
         "id": "d",
-        "text": "BigQuery Data Transfer Service scheduled loads from the MySQL server into BigQuery",
+        "text": "BigQuery Data Transfer Service scheduled loads from the MySQL server into BigQuery tables for reporting",
         "rationale": "This service loads data into BigQuery on a schedule. The target here is Cloud SQL for MySQL, and scheduled loads are not continuous replication."
       }
     ],

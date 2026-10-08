@@ -609,9 +609,9 @@
     ],
     "caseStudyId": "ehr-healthcare",
     "subObjective": "design-plan.2",
-    "sourceUrl": "https://docs.cloud.google.com/architecture/dr-scenarios-planning-guide",
-    "lastVerified": "2026-10-01",
-    "prompt": "A healthcare provider runs a patient-records platform that must meet strict RPO/RTO targets and survive the loss of an entire region for its most critical write workloads, while controlling cost for less-critical reporting workloads. Which disaster-recovery approach best balances these needs?",
+    "sourceUrl": "https://docs.cloud.google.com/spanner/docs/instance-configurations",
+    "lastVerified": "2026-10-08",
+    "prompt": "EHR Healthcare is designing disaster recovery for its patient-records platform on Google Cloud. The critical write workloads must meet strict RPO and RTO targets and survive the loss of an entire region, while the less critical reporting workloads are cost-sensitive. Which disaster-recovery approach best balances these needs?",
     "choices": [
       {
         "id": "a",
@@ -637,7 +637,8 @@
     "correct": [
       "b"
     ],
-    "difficulty": 3
+    "difficulty": 3,
+    "explanation": "Disaster recovery is tiered by criticality: pay for hot, multi-region designs only where the business needs minimal RTO and RPO, and use warm or cold patterns for the rest."
   },
   {
     "id": "q-design-plan-017",
@@ -646,13 +647,13 @@
     "concepts": [
       "scalability",
       "performance-latency",
-      "vpc-design"
+      "global-load-balancing"
     ],
     "caseStudyId": "altostrat-media",
     "subObjective": "design-plan.3",
     "sourceUrl": "https://docs.cloud.google.com/load-balancing/docs/application-load-balancer",
-    "lastVerified": "2026-10-01",
-    "prompt": "A global media company streams video and serves a web app to users on every continent. They need low-latency content delivery, a single global anycast entry point, and automatic routing of users to the nearest healthy backend. Which combination best meets these requirements?",
+    "lastVerified": "2026-10-08",
+    "prompt": "Altostrat Media serves its audience from a GKE-hosted content platform. With reliability and cost control as top priorities, the team needs low-latency content delivery, a single global anycast entry point, automatic routing of users to the nearest healthy backend, and edge caching to cut origin load. Which combination best meets these requirements?",
     "choices": [
       {
         "id": "a",
@@ -737,34 +738,35 @@
     "caseStudyId": "cymbal-retail",
     "subObjective": "design-plan.4",
     "sourceUrl": "https://docs.cloud.google.com/architecture/migration-to-gcp-getting-started",
-    "lastVerified": "2026-10-01",
-    "prompt": "A retailer is rationalizing its application portfolio. One internal app duplicates functionality already provided by a fully managed SaaS the company now subscribes to, and it carries high maintenance cost with few users. Under a build/buy/modify/deprecate analysis, what is the most appropriate disposition?",
+    "lastVerified": "2026-10-08",
+    "prompt": "Cymbal is adopting a managed commerce search service (AI Commerce Search) for its storefront. Its custom web app, which lets customers browse the catalog by querying relational databases for product names and categories, would then duplicate that service while still carrying high maintenance cost. Which migration disposition is most appropriate for the custom web app?",
     "choices": [
       {
         "id": "a",
-        "text": "Refactor the application into microservices and run those microservices on GKE",
+        "text": "Refactor the web app into separate microservices and run those microservices on GKE",
         "rationale": "Refactoring spends engineering effort improving an application whose function is already provided elsewhere."
       },
       {
         "id": "b",
-        "text": "Retire the application and move all of its users onto the SaaS product",
-        "rationale": "When a managed SaaS the company already pays for covers the capability, retiring the redundant app removes its maintenance cost and duplicate spend."
+        "text": "Decommission the web app and move its customers onto the managed search experience",
+        "rationale": "When a managed service covers the capability, decommissioning the redundant app removes its maintenance cost and duplicate spend. Decommissioning is an option to weigh during assessment; a workload is forced into a rehost only when it can be neither refactored nor decommissioned."
       },
       {
         "id": "c",
-        "text": "Rehost the application unchanged on Compute Engine VMs and keep maintaining it",
+        "text": "Rehost the web app unchanged on Compute Engine VMs and keep maintaining it as before",
         "rationale": "Rehosting keeps the app running and still carrying its high maintenance cost, so it preserves the duplication."
       },
       {
         "id": "d",
-        "text": "Rebuild the application from scratch on Cloud Run services and migrate its data",
-        "rationale": "Rebuilding invests the most effort in an app few people use and the SaaS product already replaces."
+        "text": "Rebuild the web app from scratch as a Cloud Run app with the same browse-by-query behavior",
+        "rationale": "A rebuild decommissions the app and rewrites it as a fully cloud-optimized app. That invests the most effort in re-creating browse and search behavior that the managed service already provides."
       }
     ],
     "correct": [
       "b"
     ],
-    "difficulty": 2
+    "difficulty": 2,
+    "explanation": "Assessment should check whether a workload's capability is already covered by a managed service. If it is, decommissioning beats refactoring, rehosting or rebuilding the duplicate."
   },
   {
     "id": "q-design-plan-020",
@@ -778,27 +780,27 @@
     "caseStudyId": "knightmotives-automotive",
     "subObjective": "design-plan.3",
     "sourceUrl": "https://docs.cloud.google.com/kubernetes-engine/docs/concepts/kubernetes-engine-overview",
-    "lastVerified": "2026-10-01",
-    "prompt": "An automotive manufacturer is modernizing a complex platform with dozens of interdependent services that require custom networking, DaemonSets, a service mesh, GPU-accelerated inference, and fine-grained pod scheduling across hundreds of nodes. Which compute platform is the most appropriate primary choice?",
+    "lastVerified": "2026-10-08",
+    "prompt": "KnightMotives is consolidating the fragmented code bases behind its vehicle services into one platform as part of its hybrid-cloud strategy. The platform will have dozens of interdependent services that need custom networking, DaemonSets, a service mesh, GPU-accelerated inference and fine-grained pod scheduling across hundreds of nodes. Some clusters must stay on-premises beside the plants yet be managed consistently with those in Google Cloud. Which compute platform is the most appropriate primary choice?",
     "choices": [
       {
         "id": "a",
-        "text": "Cloud Run services for every component of the platform",
-        "rationale": "Cloud Run is serverless and removes cluster management, so node-level constructs such as DaemonSets and pod placement across node pools are not available. GPU support alone does not close that gap."
+        "text": "Cloud Run services for every component, relying on serverless scaling to avoid managing clusters",
+        "rationale": "Cloud Run is serverless and removes cluster management, so node-level constructs such as DaemonSets and pod placement across node pools are not available. GPU support alone does not close that gap, and it does not give a consistently managed on-premises cluster."
       },
       {
         "id": "b",
-        "text": "GKE, with node pools, DaemonSets, custom networking and a service mesh",
-        "rationale": "GKE supports multiple node pools including GPUs, DaemonSets, custom networking configuration, and Cloud Service Mesh (formerly Anthos Service Mesh), giving the control this platform needs at the cost of more operations."
+        "text": "GKE, with node pools, DaemonSets, custom networking, a service mesh and a fleet that includes the on-premises clusters",
+        "rationale": "GKE supports multiple node pools including GPUs, DaemonSets, custom networking and Cloud Service Mesh, and a fleet can include clusters outside Google Cloud so that on-premises and cloud clusters are managed together, at the cost of more operations."
       },
       {
         "id": "c",
-        "text": "One large Compute Engine VM running the services with Docker Compose",
-        "rationale": "A single VM offers no real orchestration, no scheduling across hundreds of nodes, and no high availability."
+        "text": "A pair of large Compute Engine VMs behind a load balancer, running the services with Docker Compose",
+        "rationale": "Docker Compose has no scheduler across hundreds of nodes, so pod placement, DaemonSets, mesh and GPU scheduling would all be hand-built, and nothing manages on-premises clusters consistently with the cloud ones."
       },
       {
         "id": "d",
-        "text": "App Engine standard environment with automatic scaling for each service",
+        "text": "App Engine standard environment with automatic scaling, deploying each service as its own application",
         "rationale": "App Engine standard is a managed application platform without node-level control, so it does not offer the scheduling, DaemonSets or mesh topology this platform requires."
       }
     ],
@@ -2233,36 +2235,36 @@
       "business-continuity"
     ],
     "caseStudyId": "knightmotives-automotive",
-    "subObjective": "design-plan.5",
-    "sourceUrl": "https://cloud.google.com/solutions/mainframe-modernization",
-    "lastVerified": "2026-10-01",
+    "subObjective": "design-plan.4",
+    "sourceUrl": "https://docs.cloud.google.com/mainframe-dual-run/docs/dual-run-overview",
+    "lastVerified": "2026-10-08",
     "prompt": "KnightMotives' supply chain runs on an outdated mainframe and a legacy ERP, which makes new dealer promotions hard to launch. A supply-chain outage would halt vehicle production, so leadership will only approve a path that proves the modernized system behaves like the old one under real production data before cutover. Which approach fits these conflicting goals?",
     "choices": [
       {
         "id": "a",
-        "text": "Leave the mainframe unchanged and build new promotion features as spreadsheets that dealers maintain locally for now",
-        "rationale": "This avoids migration risk but leaves the underlying constraint untouched and adds uncontrolled, error-prone processes."
+        "text": "Leave the mainframe unchanged and add promotion features through a separate dealer-managed discount tool that runs beside the ERP for now",
+        "rationale": "This avoids migration risk but leaves the underlying constraint untouched and adds an uncontrolled side process whose discounts the ERP never sees."
       },
       {
         "id": "b",
-        "text": "Retire the ERP immediately and recreate promotion logic in new services while the mainframe is switched off for good",
-        "rationale": "Switching off the systems of record before the replacement is proven creates exactly the outage risk leadership wants to avoid."
+        "text": "Rehost the mainframe and ERP on Google Cloud, validate them for two weeks on test data, then switch the on-premises systems off for good",
+        "rationale": "A short validation on test data does not show that the new system behaves like the old one on real production data, and switching the systems of record off afterwards removes any fallback if it does not."
       },
       {
         "id": "c",
-        "text": "Modernize incrementally, running the mainframe and the new cloud implementation in parallel and comparing results",
-        "rationale": "A parallel-run approach such as Dual Run validates functional equivalence on live workloads and limits disruption, supporting a phased transition."
+        "text": "Modernize incrementally, running the mainframe and the new cloud implementation in parallel and comparing their results on the same inputs",
+        "rationale": "Dual Run executes the workload on the mainframe and on Google Cloud at the same time, replays live production events into the modernized application and compares the outputs, so differences are analyzed before cutover and the old system stays as a fallback."
       },
       {
         "id": "d",
-        "text": "Automatically refactor the whole mainframe estate and cut over the whole supply chain during a single weekend window",
-        "rationale": "A big-bang cutover has no real-data validation period, which contradicts the requirement to prove equivalence before switching."
+        "text": "Automatically refactor the whole mainframe estate, run a long test phase on synthetic data, then cut over the supply chain in one weekend window",
+        "rationale": "A long test phase on synthetic data still offers no live parity check against production behavior, and a single-window cutover concentrates all of the risk that leadership wants to avoid."
       }
     ],
     "correct": [
       "c"
     ],
-    "explanation": "When the dominant constraint is risk, choose the migration pattern that lets old and new run side by side. Google Cloud's mainframe options include rehost, automated refactor, replatform, Dual Run parallel running, and Mainframe Connector for hybrid integration.",
+    "explanation": "When the dominant constraint is risk, choose the migration pattern that lets old and new run side by side and compares their outputs on live events. Google Cloud's mainframe options include rehost, automated refactor, replatform, Dual Run parallel running, and Mainframe Connector for hybrid integration.",
     "difficulty": 3,
     "examOnly": true
   },
@@ -3036,7 +3038,8 @@
       "d"
     ],
     "explanation": "Subnet primary ranges can grow but never shrink or be swapped for a different range. Plan ranges with room to expand.",
-    "difficulty": 1
+    "difficulty": 1,
+    "examOnly": true
   },
   {
     "id": "q-design-plan-074",
@@ -3129,8 +3132,8 @@
     "caseStudyId": "knightmotives-automotive",
     "subObjective": "design-plan.3",
     "sourceUrl": "https://docs.cloud.google.com/network-connectivity/docs/interconnect/concepts/overview",
-    "lastVerified": "2026-10-01",
-    "prompt": "KnightMotives must upgrade connectivity between its manufacturing plants and Google Cloud. Several plants are far from any colocation facility where Google is present, and each needs a private link of roughly 500 Mbps to 2 Gbps, well below the capacity of a dedicated circuit. Which option fits best?",
+    "lastVerified": "2026-10-08",
+    "prompt": "KnightMotives must upgrade connectivity between its manufacturing plants and Google Cloud. Several plants are far from any colocation facility where Google is present. Each needs a private link of roughly 500 Mbps to 2 Gbps that does not cross the public internet, well below the capacity of a dedicated circuit. Which option fits best?",
     "choices": [
       {
         "id": "a",
@@ -3139,8 +3142,8 @@
       },
       {
         "id": "b",
-        "text": "HA VPN only, because Interconnect is offered solely to customers inside Google colocation facilities",
-        "rationale": "Partner Interconnect exists specifically for sites that cannot reach Google's facilities directly, so the premise is false."
+        "text": "HA VPN tunnels over the internet to each plant, since they are encrypted, cost less and carry up to 3 Gbps per tunnel",
+        "rationale": "Capacity is not the problem, since a tunnel carries roughly 1 to 3 Gbps. Standalone HA VPN sends its encrypted traffic across the public internet, which the plants' private-link requirement rules out."
       },
       {
         "id": "c",
@@ -3149,8 +3152,8 @@
       },
       {
         "id": "d",
-        "text": "Dedicated Interconnect, because partners cannot offer attachments larger than 1 Gbps per site",
-        "rationale": "Partner attachments range up to 50 Gbps, and a dedicated circuit would be oversized and need a physical presence the plants lack."
+        "text": "Dedicated Interconnect, extending a 10 Gbps circuit from the nearest Google colocation facility to each plant through a carrier",
+        "rationale": "Dedicated Interconnect needs a physical presence at a colocation facility and comes in 10 and 100 Gbps ports, so each plant would pay for far more capacity than it needs."
       }
     ],
     "correct": [
@@ -3289,7 +3292,8 @@
       "b"
     ],
     "explanation": "Regional Persistent Disk provides synchronous cross-zone replication for block storage. Local SSD is ephemeral, and zonal disks share their zone's fate.",
-    "difficulty": 1
+    "difficulty": 1,
+    "examOnly": true
   },
   {
     "id": "q-design-plan-080",
@@ -3369,7 +3373,8 @@
       "a"
     ],
     "explanation": "Match the dominant resource to the family: memory for in-memory databases, compute for HPC, storage for local-SSD-heavy databases, accelerators for GPU workloads.",
-    "difficulty": 1
+    "difficulty": 1,
+    "examOnly": true
   },
   {
     "id": "q-design-plan-082",
@@ -3382,8 +3387,8 @@
     "caseStudyId": "cymbal-retail",
     "subObjective": "design-plan.3",
     "sourceUrl": "https://docs.cloud.google.com/kubernetes-engine/docs/concepts/choose-cluster-mode",
-    "lastVerified": "2026-10-01",
-    "prompt": "Cymbal runs containerized storefront services on self-managed Kubernetes clusters whose node patching and capacity planning consume engineer time, and one of its goals is cutting cost from manual processes. The services are ordinary stateless workloads that need no privileged Pods or custom node configuration. Which target is most appropriate?",
+    "lastVerified": "2026-10-08",
+    "prompt": "Cymbal's existing Kubernetes clusters run its containerized storefront services, and node patching and capacity planning consume engineer time. One of its goals is cutting cost from manual processes. The services are ordinary stateless workloads that need no privileged Pods or custom node configuration. Which GKE target is most appropriate?",
     "choices": [
       {
         "id": "a",
@@ -3402,14 +3407,14 @@
       },
       {
         "id": "d",
-        "text": "GKE Standard with privileged mode enabled for all workloads, to keep maximum flexibility",
-        "rationale": "Enabling privileged mode widens the attack surface without a requirement for it, and still leaves node management to the team."
+        "text": "GKE Standard with node auto-provisioning and tuned node pools, keeping node-level flexibility",
+        "rationale": "Auto-provisioning trims some capacity toil, but in Standard the team still owns node pools, security policies and scaling configuration, and no stated requirement needs that control."
       }
     ],
     "correct": [
       "a"
     ],
-    "explanation": "For ordinary stateless workloads, Autopilot reduces operations effort; keep Standard for cases that need privileged access or custom node control.",
+    "explanation": "Google's guidance is to use Autopilot for most workloads unless the application needs privileges or configuration that Autopilot does not allow. Keep Standard for privileged access or custom node control.",
     "difficulty": 2
   },
   {
@@ -3839,15 +3844,15 @@
       "datastream",
       "data-movement"
     ],
-    "subObjective": "design-plan.4",
+    "subObjective": "design-plan.5",
     "sourceUrl": "https://docs.cloud.google.com/datastream/docs/overview",
-    "lastVerified": "2026-10-01",
-    "prompt": "Cymbal needs changes from its operational MySQL catalog and customer databases to appear in BigQuery within minutes to build a unified customer view. The storefront keeps using the source databases, and the team does not want to run replication servers. Which service fits?",
+    "lastVerified": "2026-10-08",
+    "prompt": "Cymbal plans to move its operational MySQL catalog and customer databases to Cloud SQL with Database Migration Service next year. Until then the storefront keeps using the source databases, but analysts need changes to appear in BigQuery within minutes to build a unified customer view. The team does not want to run replication servers. Which service fits the analytics requirement?",
     "choices": [
       {
         "id": "a",
         "text": "Database Migration Service, promoting each destination as the new primary",
-        "rationale": "Promotion turns a destination into the primary database for cutover; it is a migration step, not ongoing analytics replication."
+        "rationale": "Promotion turns a destination into the primary database for cutover. It is a migration step for next year's move, not ongoing analytics replication into BigQuery."
       },
       {
         "id": "b",
@@ -3868,7 +3873,7 @@
     "correct": [
       "c"
     ],
-    "explanation": "For near-real-time database-to-BigQuery replication without servers to run, use Datastream. Database Migration Service is for moving the database itself.",
+    "explanation": "For near-real-time database-to-BigQuery replication without servers to run, use Datastream, which supports self-managed MySQL and Cloud SQL for MySQL sources. Database Migration Service is for moving the database itself.",
     "difficulty": 2,
     "caseStudyId": "cymbal-retail"
   },
@@ -4256,5 +4261,808 @@
     ],
     "explanation": "Cloud-to-cloud object copies are Storage Transfer Service territory: agentless for S3 sources, schedulable, and parallelized.",
     "difficulty": 2
+  },
+  {
+    "id": "q-design-plan-103",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "migration-planning",
+      "phased-migration",
+      "migration-methodology"
+    ],
+    "caseStudyId": "altostrat-media",
+    "subObjective": "design-plan.4",
+    "sourceUrl": "https://docs.cloud.google.com/architecture/migration-to-gcp-assessing-and-discovering-your-workloads",
+    "lastVerified": "2026-10-08",
+    "prompt": "Altostrat Media will migrate its legacy on-premises ingestion and archival systems to Google Cloud. The archive is a read-mostly store of several hundred terabytes. The ingestion system takes newsroom feeds around the clock, relies on undocumented scripts that touch the archive, and cannot go offline during live-event coverage. The team is new to Google Cloud and has no hybrid link yet. Which migration plan fits best?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Inventory systems and map dependencies, build the landing zone and hybrid link, move the archive first with incremental copies, then ingestion",
+        "rationale": "Inventory and dependency mapping surface the hidden scripts, and the read-mostly, loosely coupled archive is a low-risk first wave. Incremental copies leave only recent changes to sync, and ingestion follows once the team and link are proven."
+      },
+      {
+        "id": "b",
+        "text": "Migrate ingestion first because it sits at the start of the content pipeline, then move the archive once feeds flow into Google Cloud",
+        "rationale": "Ordering by data flow ignores risk. Ingestion is the business-critical, most dependency-heavy system, so a first-wave problem would hit live coverage. Guidance favors low-risk, loosely coupled first movers."
+      },
+      {
+        "id": "c",
+        "text": "Copy both systems once in a single bulk transfer, then cut both over together in one weekend window and retire the data center",
+        "rationale": "A single copy misses every change made afterwards, and moving both systems at once concentrates risk on undocumented dependencies, with no proven path to recover if something breaks."
+      },
+      {
+        "id": "d",
+        "text": "Rebuild both systems as cloud-native services first, so that nothing from the legacy design is carried over before any data moves",
+        "rationale": "Rebuilding takes the most time and new skills, which this team lacks, and delays any benefit. It is for legacy systems that block progress and does not by itself plan how the archive data moves."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "Assess before moving: inventory, dependencies and risk decide wave order, and a phased plan with incremental data sync beats a one-shot cutover.",
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "id": "q-design-plan-113",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "integration-patterns",
+      "hybrid-connectivity"
+    ],
+    "caseStudyId": "cymbal-retail",
+    "subObjective": "design-plan.3",
+    "sourceUrl": "https://docs.cloud.google.com/dialogflow/cx/docs/concept/integration/sip-trunk/concepts-troubleshooting",
+    "lastVerified": "2026-10-08",
+    "prompt": "Cymbal wants a virtual agent to take over the calls that its legacy IVR routes today, so fewer calls end with call-center staff keying in orders by hand. It will keep its existing telephony with session border controllers and its toll-free numbers in the US and the EU. Callers who cannot self-serve must reach a human agent with their order context. Which design for the voice channel fits?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Use the CX Phone Gateway with Google-hosted numbers for production, since it is purpose-built for conversational IVR in front of existing call-center networks.",
+        "rationale": "The phone gateway works only with agents in the global region and supports only US phone numbers, so it cannot serve Cymbal's EU toll-free numbers."
+      },
+      {
+        "id": "b",
+        "text": "Keep the IVR for all inbound calls and give call-center agents real-time suggestions on every call, so handling time falls without any change to call routing or numbers.",
+        "rationale": "Shorter calls still need a staffed agent for every call. This does not deflect calls to self-service, so it misses the call-center staffing cost goal."
+      },
+      {
+        "id": "c",
+        "text": "Connect the session border controllers to Google's regional SIP endpoints, and transfer callers who need a human to the call center over SIP with order context in headers.",
+        "rationale": "SBC integration connects existing telephony to Google's SIP endpoints, which exist for the US and EU regions. SIP transfer or conferencing reaches a human agent, and UUI or x-headers can carry strings of data such as order context."
+      },
+      {
+        "id": "d",
+        "text": "Build a custom voice pipeline of Speech-to-Text, a Cloud Run intent matcher and Text-to-Speech, and stream the call audio to that pipeline over SIP.",
+        "rationale": "This rebuilds dialog management, intent handling and escalation that a managed conversational agent already provides, adding maintenance cost and no built-in human handoff."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "Telephony integration through an SBC and SIP trunk suits an existing call-center network. The phone gateway is limited to the global region and US numbers.",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "id": "q-design-plan-114",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "database-migration-service",
+      "minimal-downtime",
+      "storage-transfer-service"
+    ],
+    "caseStudyId": "cymbal-retail",
+    "subObjective": "design-plan.4",
+    "sourceUrl": "https://docs.cloud.google.com/database-migration/docs/mysql/migration-types",
+    "lastVerified": "2026-10-08",
+    "prompt": "Cymbal is leaving its on-premises data center to cut hosting costs. Its MySQL catalog database takes writes around the clock and can tolerate only a few minutes of downtime. Suppliers push nightly files over SFTP to an on-premises NFS share that feeds the legacy ETL batch jobs, and supplier contracts require six months notice before any endpoint changes. Which migration plan satisfies these constraints?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Take the catalog offline for a weekend for a one-time Database Migration Service load, while Storage Transfer Service agents copy the NFS share to Cloud Storage on a nightly schedule.",
+        "rationale": "A one-time migration requires stopping all writes to the source for the whole dump and load, which far exceeds a few minutes of downtime on an always-writing catalog."
+      },
+      {
+        "id": "b",
+        "text": "Replicate MySQL continuously with Database Migration Service, but move the SFTP intake first by asking suppliers to repoint to a new cloud endpoint this quarter.",
+        "rationale": "The database half is sound, but the supplier contracts require six months notice before any endpoint changes, so repointing suppliers this quarter breaks the contractual constraint."
+      },
+      {
+        "id": "c",
+        "text": "Rewrite the ETL jobs as Dataflow pipelines before moving anything, then migrate the database and the supplier files together in one cutover weekend.",
+        "rationale": "Coupling a rewrite to the move delays the hosting savings, and a single cutover weekend again exceeds the downtime tolerance. Migration risk is better reduced by moving first and modernizing later."
+      },
+      {
+        "id": "d",
+        "text": "Run continuous Database Migration Service replication and promote when lag is small, and copy the NFS share with Storage Transfer Service agents while SFTP stays put.",
+        "rationale": "Continuous migration keeps the source writable, so downtime is roughly the replication delay at promotion. Scheduled agent copies feed the cloud side while suppliers keep their endpoint, so ETL can be moved over later."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "explanation": "Match each workload to its tool and honor the stated constraints: continuous DMS for the always-writing database, and scheduled agent-based file copies so the supplier endpoint does not change.",
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "id": "q-design-plan-123",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "migration-planning",
+      "phased-migration",
+      "hybrid-connectivity"
+    ],
+    "caseStudyId": "ehr-healthcare",
+    "subObjective": "design-plan.4",
+    "sourceUrl": "https://docs.cloud.google.com/architecture/migration-to-gcp-assessing-and-discovering-your-workloads",
+    "lastVerified": "2026-10-08",
+    "prompt": "EHR Healthcare must vacate one colocation data center within nine months because the lease is ending. That facility hosts the stateless containerized patient-portal services, a staging MS SQL Server database, and the production MS SQL Server and MongoDB data stores. The legacy insurer file and API integrations run in a separate facility that EHR keeps, with no replacement planned. The cloud team has no production experience on Google Cloud yet. Which migration plan best fits these constraints?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Cut over the entire facility and the insurer integrations in one weekend shortly before the lease expires, so that only one event carries risk",
+        "rationale": "A single cutover concentrates all risk in one event with no rehearsal and no rollback room. It also moves the integrations that have no replacement plan and no deadline."
+      },
+      {
+        "id": "b",
+        "text": "Refactor SQL Server and MongoDB to cloud-native databases first, and move each workload only after its data layer has been redesigned",
+        "rationale": "Refactoring is heavy and slow, and a first wave should need minimal change. Redesigning every data store before moving anything puts the lease deadline at risk, and modernizing belongs in a later optimization phase."
+      },
+      {
+        "id": "c",
+        "text": "Move stateless services and staging first, then production data in later waves, keeping insurer integrations on-premises and privately linked",
+        "rationale": "Early waves should be low-risk, loosely coupled workloads that teach the team the platform. Production data follows once the pattern is proven, and the integrations stay put because nothing in the lease forces them to move."
+      },
+      {
+        "id": "d",
+        "text": "Start with the production SQL Server database as the most valuable workload, then migrate the applications that depend on it in a later wave",
+        "rationale": "A business-critical, stateful workload is a poor first mover. Mistakes made while the team is still learning hit the main line of business, so it belongs in a later wave."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "Order waves by business criticality, dependencies, statefulness and refactoring effort, and fit them inside the fixed deadline. Anything not forced out by the deadline can stay in place and be reached over hybrid connectivity.",
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "id": "q-design-plan-133",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "phased-migration",
+      "migration-planning",
+      "workload-disposition"
+    ],
+    "caseStudyId": "knightmotives-automotive",
+    "subObjective": "design-plan.4",
+    "sourceUrl": "https://docs.cloud.google.com/architecture/migration-to-gcp-assessing-and-discovering-your-workloads",
+    "lastVerified": "2026-10-08",
+    "prompt": "KnightMotives has finished discovery with Migration Center. Four on-premises systems are candidates. The supply-chain mainframe is depended on by every plant and the ERP, and an outage would stop production. The ERP promotions engine reads mainframe batch output every night. The dealer build-to-order portal, the most complained-about system, calls the ERP and the mainframe synchronously at every configuration step. The dealer inventory-lookup tier is stateless, read-only, fed by a nightly extract, and can tolerate a short outage. Leadership wants visible dealer benefit within two quarters without risking production. Which wave plan fits best?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Rehost the mainframe as-is in the first wave, since it is the oldest and riskiest system, and move the systems that depend on it afterwards",
+        "rationale": "Everything depends on the mainframe and an outage halts production, so it is the opposite of a first mover. Google's guidance is to start with workloads that have the fewest dependencies and that tolerate downtime."
+      },
+      {
+        "id": "b",
+        "text": "Move the inventory-lookup tier first to prove the foundation, then the ERP promotions engine and the portal in later waves, and the mainframe last using a parallel run",
+        "rationale": "A stateless, low-dependency tier that tolerates downtime is the recommended first mover. It gives dealers an early benefit and exercises the landing zone and hybrid connectivity, and Dual Run lets the mainframe move last with outputs compared on live events."
+      },
+      {
+        "id": "c",
+        "text": "Move the build-to-order portal first, because it is the biggest dealer pain point, accepting that its calls to the ERP and mainframe cross a hybrid link",
+        "rationale": "It has the most synchronous dependencies on systems still on-premises, so every configuration step would cross the hybrid link and an already unreliable system could get worse. Dealer pain is a reason to schedule it soon, not to make it the pilot."
+      },
+      {
+        "id": "d",
+        "text": "Hold all migration until the mainframe and ERP are refactored, then cut over all four systems together in a single planned wave after testing",
+        "rationale": "A single cutover delivers no dealer benefit within two quarters, gives the team no practice on a low-risk workload, and concentrates the production risk leadership wants to avoid. Phased waves let each one build on the last."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "difficulty": 3,
+    "explanation": "Sequence waves by dependency and risk, not by pain or age: low-dependency, downtime-tolerant workloads go first and the most depended-on systems go last, validated by parallel running."
+  },
+  {
+    "id": "q-design-plan-134",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "bigquery",
+      "business-requirements"
+    ],
+    "caseStudyId": "altostrat-media",
+    "subObjective": "design-plan.1",
+    "sourceUrl": "https://docs.cloud.google.com/bigquery/docs/bqml-introduction",
+    "lastVerified": "2026-10-08",
+    "prompt": "Altostrat Media's marketing group wants audience segments built from listening and viewing behavior, plus a score for which free-tier listeners are likely to upgrade, to target offers and run dynamic pricing trials. Behavior and demographic data are already in BigQuery. The analysts are fluent in SQL, there are no ML engineers, and governance wants the demographic columns to stay inside the warehouse. Which approach best meets these business requirements?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Send each listener's event history to a Gemini model from a Cloud Run function to produce a segment label and an offer",
+        "rationale": "Per-listener LLM calls over structured event data are slow and costly at audience scale, produce labels that are not reproducible across runs, and send per-user history out of the warehouse."
+      },
+      {
+        "id": "b",
+        "text": "Export the tables nightly to Cloud Storage, train custom models on GKE GPU nodes, and load the resulting scores back into BigQuery",
+        "rationale": "This copies demographic data out of the warehouse and depends on ML engineering skills the team lacks. Machine learning on BigQuery data does not require exporting it."
+      },
+      {
+        "id": "c",
+        "text": "Build k-means segments and an upgrade-propensity classifier in BigQuery ML, then write the scores to a table that campaign tools can read",
+        "rationale": "BigQuery ML brings modeling to the data with SQL. It supports k-means clustering and classification models such as logistic regression, so analysts can do both tasks without moving the demographic data."
+      },
+      {
+        "id": "d",
+        "text": "Train a BigQuery ML matrix factorization model on listener-title interactions and treat predicted ratings as upgrade likelihood",
+        "rationale": "Matrix factorization is meant for recommendation, predicting item affinity. It does not produce audience segments, and predicted title ratings are not an estimate of whether a listener will upgrade."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "When data already lives in BigQuery and the users are SQL analysts, in-place BigQuery ML models cover segmentation and propensity scoring. Choose the model family to match the question: clustering for segments, classification for likelihood, matrix factorization for recommendations.",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "id": "q-design-plan-144",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "integration-patterns",
+      "business-requirements"
+    ],
+    "caseStudyId": "cymbal-retail",
+    "subObjective": "design-plan.2",
+    "sourceUrl": "https://docs.cloud.google.com/workflows/docs/creating-callback-endpoints",
+    "lastVerified": "2026-10-08",
+    "prompt": "Cymbal's associates must approve, reject or edit each gen AI-generated product record before it updates the catalog. Reviews arrive in bursts, individual items can wait several days, and the values an associate edits must be the ones written to the catalog. Items still unreviewed after three days must be escalated to a team lead, and nobody wants a job that scans a table on a timer. Which orchestration design fits?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Start one Workflows execution per item that stores its callback endpoint URL with the item in the review queue and awaits it with a three-day timeout, escalating on the caught timeout error.",
+        "rationale": "A callback pauses the execution until the review UI posts the decision and edits, with no polling. The default wait is 12 hours, so the three-day timeout must be set explicitly, and a single execution can last up to a year. The UI backend needs permission to send callbacks."
+      },
+      {
+        "id": "b",
+        "text": "Write the generated values to the catalog flagged as draft so the site keeps serving them, let associates correct them afterward, and run a Cloud Scheduler job that escalates drafts still unreviewed after three days.",
+        "rationale": "The stated requirement is review before the catalog changes. Publishing unreviewed content and fixing it afterward breaks that rule, and the scheduled scan is the timer-driven table check Cymbal wants to avoid."
+      },
+      {
+        "id": "c",
+        "text": "Have the nightly ingest execution create a callback endpoint for every item in the batch, then run a separate nightly execution that awaits each endpoint and applies whatever edits associates posted that day.",
+        "rationale": "Callback endpoints can only be awaited in the workflow execution that created them. A later execution cannot receive callbacks from an earlier one, so this design cannot work however the endpoints are stored."
+      },
+      {
+        "id": "d",
+        "text": "Enqueue each item on a Cloud Tasks queue with a three-day schedule delay, and write the generated values to the catalog when the task fires, unless an associate has already rejected the item in the meantime.",
+        "rationale": "A delayed task is a timer, not a decision signal. Unreviewed items would be published automatically after three days instead of escalated, and edited values would have no path into the catalog."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "Model each pending item as a paused workflow execution. A callback endpoint turns the associate's decision into the resume signal, a timeout becomes the escalation path, and nothing touches the catalog until the callback arrives.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-design-plan-145",
+    "type": "multiple",
+    "domainId": "design-plan",
+    "concepts": [
+      "ha-failover",
+      "caching",
+      "scalability"
+    ],
+    "caseStudyId": "cymbal-retail",
+    "subObjective": "design-plan.3",
+    "sourceUrl": "https://docs.cloud.google.com/memorystore/docs/cluster/ha-and-replicas",
+    "lastVerified": "2026-10-08",
+    "prompt": "Cymbal runs Redis on-premises for product-detail caching and cart sessions and is moving it to Memorystore as part of leaving its data center. The cached dataset is expected to grow well beyond 300 GB over two years. A single-zone outage must not flush any part of the keyspace or make it unavailable, and storefront read traffic is heavy. Which two design choices meet these requirements? Choose two.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Create a Memorystore for Redis Cluster instance with at least one replica for every shard, so each shard's nodes are spread across several zones.",
+        "rationale": "High availability requires at least one replica per shard. Multi-zone placement keeps the whole keyspace readable and writable through a zonal outage, and the cluster scales out by adding shards."
+      },
+      {
+        "id": "b",
+        "text": "Provision read capacity above steady-state demand, because losing a zone removes replicas and leaves the surviving nodes serving all reads.",
+        "rationale": "In a zonal outage an HA instance keeps the full keyspace available but with reduced read capacity. Google recommends over-provisioning so the instance still has enough read capacity in that case."
+      },
+      {
+        "id": "c",
+        "text": "Use Memorystore for Redis on the Standard tier with read replicas, and move to a larger instance size whenever the dataset outgrows the current one.",
+        "rationale": "Standard tier gives cross-zone replication and failover, but the maximum primary size is 300 GB. It cannot hold a dataset that grows well past that, and it does not shard across nodes."
+      },
+      {
+        "id": "d",
+        "text": "Create a single-zone Memorystore for Redis Cluster instance with no replicas to avoid cross-zone traffic, and add shards as the dataset grows.",
+        "rationale": "Without replicas the instance is not highly available. If its zone has an outage, the keyspace in that zone is flushed and unavailable, which violates the stated requirement."
+      },
+      {
+        "id": "e",
+        "text": "Start with no replicas and add shards only when a zone fails, since scaling out keeps the cluster available while it rebalances the keyspace.",
+        "rationale": "Adding shards after the failure cannot bring back data that a non-HA instance flushed. Rebalancing during scale-out may also add latency at the worst moment."
+      }
+    ],
+    "correct": [
+      "a",
+      "b"
+    ],
+    "explanation": "Memorystore for Redis Cluster with replicas in multiple zones provides zonal fault tolerance and horizontal growth, and spare read capacity covers the reduced read throughput during a zonal outage.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-design-plan-184",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "machine-families",
+      "compute-selection",
+      "licensing"
+    ],
+    "subObjective": "design-plan.3",
+    "sourceUrl": "https://docs.cloud.google.com/compute/docs/instances/creating-instance-with-custom-machine-type",
+    "lastVerified": "2026-10-08",
+    "prompt": "Tamarind Analytics runs a licensed in-memory reporting engine on Compute Engine. The vendor bills per vCPU, and load testing shows the engine needs 6 vCPUs and 56 GB of memory. The architect wants to pay for neither idle vCPUs nor unused memory. Which VM configuration should be provisioned?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "An E2 custom machine type with 6 vCPUs and 56 GB, because E2 custom shapes accept any memory size",
+        "rationale": "E2 custom shapes are capped at 8 GB per vCPU, so 6 vCPUs top out at 48 GB, and E2 does not support extended memory. The request cannot be created."
+      },
+      {
+        "id": "b",
+        "text": "An N2 custom machine type with 6 vCPUs, using extended memory to raise its memory to 56 GB, matching the license",
+        "rationale": "N2 custom shapes allow 6 vCPUs, and extended memory lifts memory above the 8 GB per vCPU ceiling. It matches the vCPU license count and the memory need exactly."
+      },
+      {
+        "id": "c",
+        "text": "The predefined n2-highmem-8 shape, the smallest predefined N2 size that has enough memory for the engine",
+        "rationale": "It has 8 vCPUs and 64 GB. It satisfies memory but adds two vCPUs that the per-vCPU license bills for and that the engine never uses."
+      },
+      {
+        "id": "d",
+        "text": "A C3 custom machine type with 6 vCPUs and 56 GB, for the strongest per-core performance available",
+        "rationale": "C3 offers only predefined shapes. Custom machine types exist for the N and E series (and G2), not for compute-optimized C3, so this shape cannot be requested."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "Custom machine types fit workloads that fall between predefined shapes or carry per-vCPU license costs. Extended memory (N1, N2, N2D, N4 family) allows more than 8 GB per vCPU, at a higher memory price and without resource-based committed use discounts.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-design-plan-185",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "cost-optimization",
+      "migration-planning"
+    ],
+    "subObjective": "design-plan.3",
+    "sourceUrl": "https://docs.cloud.google.com/dataproc/docs/concepts/overview",
+    "lastVerified": "2026-10-08",
+    "prompt": "Marlowe Freight runs about 40 nightly Spark and Hive jobs on an on-premises Hadoop cluster that sits idle most of the day. The data team must move the jobs to Google Cloud within six weeks with minimal code changes, stop paying for idle capacity, and keep the data available when compute is gone. Which design best fits?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Rewrite every job as an Apache Beam pipeline on Dataflow, which autoscales its workers and needs no cluster management",
+        "rationale": "Dataflow runs Beam pipelines, not Spark or Hive code. Rewriting 40 jobs cannot meet a six-week, minimal-change deadline, even though the service is serverless."
+      },
+      {
+        "id": "b",
+        "text": "Translate the Spark and Hive logic into BigQuery SQL scheduled queries so that no cluster has to be sized or run",
+        "rationale": "A good long-term target for some analytics, but it is a full rewrite of the job logic and a different engine, which the deadline and minimal-change constraint rule out."
+      },
+      {
+        "id": "c",
+        "text": "Run the jobs on short-lived Managed Service for Apache Spark (formerly Dataproc) clusters, with data in Cloud Storage",
+        "rationale": "Existing Spark and Hive jobs run with little change, clusters are created per schedule and deleted after, so idle cost disappears, and Cloud Storage keeps the data independent of compute."
+      },
+      {
+        "id": "d",
+        "text": "Install Hadoop on a managed instance group of Compute Engine VMs and keep HDFS on persistent disks for parity",
+        "rationale": "This lifts the same operating burden to the cloud: the team still patches and sizes Hadoop, the cluster still idles, and data stays tied to cluster disks."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "For existing Spark and Hadoop code, a managed cluster service moves jobs without redevelopment. Pairing ephemeral clusters with Cloud Storage separates compute from data so that clusters can be deleted between runs. Dataflow and BigQuery are strong choices for new pipelines, but they require rewriting.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-design-plan-186",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "gke-cluster-design",
+      "container-orchestration"
+    ],
+    "subObjective": "design-plan.3",
+    "sourceUrl": "https://docs.cloud.google.com/kubernetes-engine/enterprise/policy-controller/docs/overview",
+    "lastVerified": "2026-10-08",
+    "prompt": "Brightwave Health registers 14 Kubernetes clusters, including three running on another cloud provider, in one fleet. Security requires that no workload in any cluster runs a privileged container and that every namespace carries a cost-center label. About 200 workloads already run, and some probably violate these rules, so the rollout must not disrupt them. Which approach should the architect choose?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Enable Policy Controller on the fleet, distribute constraints with Config Sync, and audit violations before switching to enforcement",
+        "rationale": "Constraints act on the Kubernetes API in every fleet cluster, including attached ones. Audit mode surfaces existing violations first, so enforcement can be enabled later without breaking running workloads."
+      },
+      {
+        "id": "b",
+        "text": "Set an organization policy that denies privileged containers, relying on its inheritance by every cluster under the organization",
+        "rationale": "Organization Policy constrains Google Cloud resources such as GKE cluster and node pool settings. It never evaluates Pod specs or namespace labels, and clusters on another provider are not Google Cloud resources."
+      },
+      {
+        "id": "c",
+        "text": "Require Binary Authorization attestations on all clusters so that only reviewed images are admitted and privileged Pods are rejected",
+        "rationale": "Binary Authorization checks image provenance at deploy time. A reviewed image can still be run privileged, and the policy cannot require namespace labels."
+      },
+      {
+        "id": "d",
+        "text": "Rely on namespace sameness: label each namespace once and let the fleet copy those settings to same-named namespaces in every cluster",
+        "rationale": "Sameness only means same-named namespaces are treated as one entity by features such as access grants and mesh. It does not propagate, validate, or enforce any Kubernetes settings."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "Policy Controller (Gatekeeper-based) provides fleet-wide guardrails, and its policy bundles can be audited before they are enforced. Config Sync supplies the single source of truth. Namespace sameness is a naming assumption for other fleet features, not a policy mechanism, and Policy Controller does not depend on it.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-design-plan-187",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "shared-vpc",
+      "network-design",
+      "vpc-design"
+    ],
+    "subObjective": "design-plan.3",
+    "sourceUrl": "https://docs.cloud.google.com/vpc/docs/shared-vpc",
+    "lastVerified": "2026-10-08",
+    "prompt": "Quillfeather Retail has seven product teams, each with its own project, and a single Cloud Interconnect to headquarters. The central network team must own all subnets, routes and firewall rules. Each product team must be able to create VMs and GKE clusters, but only in the subnets assigned to it, and must not be able to change the network. Which design meets these requirements?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Give each team its own VPC network and peer all of them with a hub VPC that holds the Interconnect attachments",
+        "rationale": "Peering exchanges routes only. Every team VPC keeps its own subnets and firewall rules under that team's control, so the network team owns nothing except the hub."
+      },
+      {
+        "id": "b",
+        "text": "Keep a VPC per team, enforce organization-level hierarchical firewall policies, and create VLAN attachments in every project",
+        "rationale": "Hierarchical firewall policies centralize only firewall rules. Subnets and routes stay with each team, and seven separate attachments multiply the Interconnect work."
+      },
+      {
+        "id": "c",
+        "text": "Put the VPC and Interconnect in a host project, attach team projects as service projects, and grant per-subnet Network User",
+        "rationale": "Shared VPC centralizes subnets, routes and firewall rules in the host project. Service project admins launch resources into only the subnets shared with them, and cannot modify the network."
+      },
+      {
+        "id": "d",
+        "text": "Put all teams in one VPC project and grant each team the Compute Network Admin role so that they can add their own subnets",
+        "rationale": "Network Admin lets teams change subnets and routes, which violates the central ownership requirement, and it does not limit which subnets a team may use."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "Shared VPC lets a host project own networks while service project admins only create instances that use shared subnets. A project cannot be both host and service project, and each service project attaches to one host project.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-design-plan-154",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "integration-patterns",
+      "data-movement",
+      "scalability"
+    ],
+    "caseStudyId": "ehr-healthcare",
+    "subObjective": "design-plan.2",
+    "sourceUrl": "https://docs.cloud.google.com/storage/docs/pubsub-notifications",
+    "lastVerified": "2026-10-08",
+    "prompt": "EHR Healthcare plans to onboard dozens of new insurance providers over the next year and wants each one live as fast as possible. Providers deliver claim files in different formats, such as CSV, JSON and fixed-width, to a per-provider location on nightly or hourly schedules. EHR needs the data normalized into one BigQuery claims schema. A malformed file from one provider must not delay other providers, and no file may be silently lost. The legacy on-premises insurer integrations are being retired over several years and will not be extended. Which design fits?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Add each new provider's formats to the existing on-premises integration servers and forward the converted output to Google Cloud over the private link, as today",
+        "rationale": "The legacy integrations are slated for replacement with no plan to upgrade them, so extending them adds scope to a platform that is being retired and keeps new onboarding tied to it."
+      },
+      {
+        "id": "b",
+        "text": "Require every provider to convert its data to EHR's canonical schema and load it into BigQuery directly, using a shared service account key that EHR issues to each of them",
+        "rationale": "This pushes the work onto each provider, which slows onboarding, and a shared long-lived key spread across organizations is a security and compliance problem. EHR's own pipeline should absorb the format differences."
+      },
+      {
+        "id": "c",
+        "text": "Run a self-managed Kafka cluster on GKE with one consumer deployment per provider format, writing normalized rows to BigQuery for analysts",
+        "rationale": "This can work technically, but EHR would run and patch a messaging cluster and build a deployment for every format. That contradicts the goal of lower infrastructure administration cost and makes onboarding slow."
+      },
+      {
+        "id": "d",
+        "text": "Land files in Cloud Storage per provider, notify Pub/Sub, and process them with Cloud Run, sending repeated failures to a dead-letter topic",
+        "rationale": "Notifications are delivered at least once and are not lost, a Cloud Run service can apply a per-provider mapping so a new provider is configuration, and a dead-letter topic isolates files that keep failing so other providers are not delayed."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "explanation": "A shared, serverless ingestion path with a per-provider mapping turns onboarding into configuration. Event notifications are delivered at least once, so the normalizer should be idempotent. Dead-letter topics isolate poison files and keep them for review.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-design-plan-155",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "relational-vs-nosql",
+      "storage-selection",
+      "firestore"
+    ],
+    "caseStudyId": "ehr-healthcare",
+    "subObjective": "design-plan.3",
+    "sourceUrl": "https://docs.cloud.google.com/firestore/mongodb-compatibility/docs/overview",
+    "lastVerified": "2026-10-08",
+    "prompt": "EHR Healthcare is moving its production MS SQL Server and MongoDB data stores off colocation hardware. The SQL Server databases use plain T-SQL and do not depend on SSAS or Always On availability groups. The MongoDB applications use the official MongoDB drivers and aggregation queries. Goals are minimal application changes, lower administration cost, no shard management, and high availability. Which pair of target services best fits?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Cloud SQL for SQL Server with high availability for the relational data, and Firestore in Native mode for the MongoDB data",
+        "rationale": "Native mode exposes the Firestore API and SDKs, not the MongoDB wire protocol or MQL. The access mode is chosen when the database is created, so the MongoDB drivers and queries would need a rewrite."
+      },
+      {
+        "id": "b",
+        "text": "Cloud SQL for SQL Server with high availability for the relational data, and Firestore with MongoDB compatibility for the MongoDB data",
+        "rationale": "Cloud SQL for SQL Server is a managed service that takes over backups, failover and patching. Firestore with MongoDB compatibility, on Enterprise edition, accepts MongoDB drivers and MQL and scales without sharding or capacity planning."
+      },
+      {
+        "id": "c",
+        "text": "Cloud Spanner for the relational data, and Bigtable for the MongoDB documents, so that both stores scale horizontally",
+        "rationale": "Spanner does not speak T-SQL and Bigtable has no MQL or document model, so every application would need a significant rewrite. Horizontal scale was not the stated problem."
+      },
+      {
+        "id": "d",
+        "text": "SQL Server on Compute Engine VMs and MongoDB on GKE StatefulSets, rebuilt from the colocation configuration to keep behavior identical for every application",
+        "rationale": "Lift-and-shift minimizes code changes, but EHR would still patch, back up and fail over both engines itself, so it does not meet the goal of lowering administration cost."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "Managed targets that keep the existing wire protocol or dialect satisfy both the low-change and low-administration goals. The Firestore access mode is fixed at creation, so choosing the MongoDB-compatible mode up front matters. Check SQL Server feature dependencies, such as SSAS or Always On, before assuming Cloud SQL fits.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-design-plan-164",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "data-movement",
+      "integration-patterns",
+      "scalability"
+    ],
+    "caseStudyId": "knightmotives-automotive",
+    "subObjective": "design-plan.2",
+    "sourceUrl": "https://docs.cloud.google.com/dataflow/docs/concepts/streaming-with-cloud-pubsub",
+    "lastVerified": "2026-10-08",
+    "prompt": "KnightMotives' hybrid and ICE models upload driving-event records over cellular links. On rural roads the link often drops. The on-vehicle uploader publishes each record to a Pub/Sub topic. If it does not receive the publish response, it retries with a back-off capped at two minutes. A streaming Dataflow job reads a pull subscription and writes to BigQuery, where the safety team computes the event rates behind the claim that the company's AI beats national safety statistics. The exhibit shows a reconciliation against on-vehicle counters. Which change best removes the surplus rows without losing any records?",
+    "exhibit": {
+      "label": "Reconciliation of one day of uploads",
+      "format": "table",
+      "content": "Region   | Records generated | Rows in BigQuery | Missing records | Surplus rows\nUrban    | 1,000,000         | 1,000,400        | 0               | +0.04%\nRural    | 1,000,000         | 1,061,000        | 0               | +6.1%"
+    },
+    "choices": [
+      {
+        "id": "a",
+        "text": "Give each record a stable event ID attribute reused on every retry, and have the Dataflow Pub/Sub source deduplicate on that attribute",
+        "rationale": "A retried publish is a new message with a new Pub/Sub message ID, so the default deduplication cannot see it. If the publisher sets the same attribute on every retry, Dataflow can detect the duplicates, and the comparison window of ten minutes covers retries capped at two minutes."
+      },
+      {
+        "id": "b",
+        "text": "Turn on exactly-once delivery for the pull subscription, so that Pub/Sub delivers every published record to the Dataflow job only a single time",
+        "rationale": "Exactly-once delivery stops redelivery of a message after it is acknowledged, but it does not remove publish-side duplicates. A retry whose first attempt succeeded is stored as a separate message and is delivered as well."
+      },
+      {
+        "id": "c",
+        "text": "Raise the subscription acknowledgement deadline to its maximum, so that the Dataflow job is never redelivered a message that it is still busy processing",
+        "rationale": "A longer deadline reduces redelivery of the same message caused by slow processing. The surplus rows here come from separate messages published by retrying vehicles, which is why the surplus is far larger on rural roads than in cities."
+      },
+      {
+        "id": "d",
+        "text": "Publish with a per-vehicle ordering key, so that Pub/Sub delivers retried records in sequence and discards the repeated copies of each record",
+        "rationale": "Ordering keys fix the delivery order of messages for a key within a region. They do not compare content or remove copies, so a record retried after a lost response would still arrive twice, in order."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 3,
+    "explanation": "Duplicates created by publisher retries must be removed on a stable record identity, which is what the Dataflow attribute deduplication provides. Exactly-once delivery and acknowledgement tuning address redelivery to the subscriber, not publish-side duplicates."
+  },
+  {
+    "id": "q-design-plan-165",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "business-requirements",
+      "integration-patterns",
+      "design-tradeoffs"
+    ],
+    "caseStudyId": "knightmotives-automotive",
+    "subObjective": "design-plan.1",
+    "sourceUrl": "https://docs.cloud.google.com/dataplex/docs/catalog-overview",
+    "lastVerified": "2026-10-08",
+    "prompt": "KnightMotives wants a data platform to support data monetization, but its data is siloed. Supply-chain extracts come from the mainframe, promotion tables from the ERP, dealer exports sit in Cloud Storage, and telemetry is in BigQuery. Analysts lose weeks finding which tables exist, what columns mean and who owns them. The mainframe and ERP must stay on-premises for at least eighteen months, and migration funding will be released only after the first data products prove their value. Which first step best breaks down the silos under these constraints?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Index BigQuery and Cloud Storage automatically in Knowledge Catalog, add custom entries for the on-premises tables, and define a shared business glossary",
+        "rationale": "Knowledge Catalog, formerly Dataplex Universal Catalog, harvests technical metadata from Google Cloud sources automatically, supports custom entries for bespoke or third-party sources, and has a business glossary for shared meaning. This delivers discovery now, without waiting for any migration."
+      },
+      {
+        "id": "b",
+        "text": "Migrate the mainframe and ERP tables into BigQuery before anything else, because a catalog can only index data that already sits in Google Cloud sources",
+        "rationale": "Custom entries let a catalog describe data that stays elsewhere, so migration is not a prerequisite. This ordering also contradicts the constraints: the systems must stay on-premises and migration funding comes only after the first data products succeed."
+      },
+      {
+        "id": "c",
+        "text": "Add a department label and a policy tag to every BigQuery table, so that analysts can find the owners and the meanings by searching on those tags",
+        "rationale": "Labels and policy tags apply only to BigQuery resources, so Cloud Storage exports and on-premises tables stay invisible. Policy tags exist to control column-level access, not to carry shared business definitions."
+      },
+      {
+        "id": "d",
+        "text": "Have every data owner document its tables in a shared spreadsheet with schemas and owners, and require the sheet to be updated at every release",
+        "rationale": "A manual inventory is outdated as soon as a schema changes, carries no lineage or searchable business terms, and relies on discipline in the same fragmented teams that created the silos."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 2,
+    "explanation": "A metadata catalog can unify discovery across sources that have not moved. Automatic harvesting covers cloud sources, custom entries cover on-premises systems, and a glossary supplies shared meaning."
+  },
+  {
+    "id": "q-design-plan-188",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "bigquery",
+      "testing-validation",
+      "design-tradeoffs"
+    ],
+    "subObjective": "design-plan.2",
+    "sourceUrl": "https://docs.cloud.google.com/dataform/docs/dependencies",
+    "lastVerified": "2026-10-08",
+    "prompt": "Brightwell Freight's analysts own 40 SQL transformations that rebuild reporting tables in BigQuery every night as scheduled queries chained by staggered start times. Twice, a late upstream load made the dashboards show partial data, and nobody could tell which SQL had changed between releases. The analysts write only SQL. They want peer review in Git, automatic run ordering, and a guarantee that a reporting table is not rebuilt when the quality checks on its inputs fail. Which design meets these needs?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Build a Dataform repository in Git with ref() dependencies and uniqueKey and nonNull assertions on every source table, relying on a failed assertion to halt the downstream reporting rebuilds",
+        "rationale": "This is the common assumption that assertions are gates. The documentation states that when action B depends on action A, failing assertions on A does not stop B from running unless they are explicitly made dependencies with includeDependentAssertions or dependOnDependencyAssertions. The bad rebuild would still happen."
+      },
+      {
+        "id": "b",
+        "text": "Build a Dataform repository in Git with SQLX actions linked by ref(), assertions on each source table, and dependOnDependencyAssertions set on the reporting actions",
+        "rationale": "Dataform compiles SQLX and runs it in BigQuery in dependency order, and its Git integration gives review and history. Assertions do not block anything by default; dependOnDependencyAssertions adds the direct assertions of each dependency as dependencies, so a reporting action runs only when they pass."
+      },
+      {
+        "id": "c",
+        "text": "Rewrite each reporting table as a Dataflow batch job that reads the BigQuery sources, validates rows inside the pipeline, and writes the result back to BigQuery",
+        "rationale": "Dataflow moves the data through workers and needs code in Java or Python, for transformations that are plain SQL already sitting in BigQuery. Dataform is built for this ELT step after the data is loaded and keeps authoring in SQL."
+      },
+      {
+        "id": "d",
+        "text": "Move the SQL into a Cloud Composer DAG whose tasks call BigQuery in sequence, with sensors waiting on each upstream load and a failed task stopping the rest of the run",
+        "rationale": "Airflow can enforce order and stop on failure, and Managed Airflow suits pipelines whose dependencies extend outside BigQuery. Here everything is SQL inside BigQuery, so it adds an environment to operate and leaves dependency graphs, quality checks and SQL review for the team to assemble by hand."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "Dataform runs SQL transformations inside BigQuery, orders them from ref() dependencies, versions them in a Git repository, and tests them with assertions. Because assertion failures do not block dependents by default, a quality gate must be wired explicitly with dependOnDependencyAssertions or includeDependentAssertions. Managed Airflow is the add-on when orchestration must reach beyond BigQuery.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-design-plan-189",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "bigquery",
+      "integration-patterns",
+      "data-movement"
+    ],
+    "subObjective": "design-plan.1",
+    "sourceUrl": "https://docs.cloud.google.com/bigquery/docs/analytics-hub-manage-listings",
+    "lastVerified": "2026-10-08",
+    "prompt": "Harbor Metrics keeps a 6 TB BigQuery dataset of shipping benchmarks, refreshed daily, and wants to offer it to about thirty partner companies, each in its own Google Cloud organization. The requirements are one authoritative copy, partners always querying current data, partners paying for the queries they run, no copying or exporting of the raw tables by partners, and Harbor Metrics deciding which partners may subscribe. Which design best fits?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Grant each partner's Google group the BigQuery Data Viewer role on the source dataset and let partners run their queries from their own projects",
+        "rationale": "This avoids copies and lets partners pay for their own query jobs, but dataset IAM has no equivalent of the listing egress setting that disables copy and export. There is also no exchange where partners can discover and subscribe to the offering."
+      },
+      {
+        "id": "b",
+        "text": "Export the tables to Parquet files in a Cloud Storage bucket every day and share the bucket with Requester Pays enabled so partners cover their own read costs",
+        "rationale": "Requester Pays shifts retrieval and network charges, but the bucket owner still pays for storage and the files are a second daily copy. Partners cannot query them as current BigQuery tables, and nothing stops them keeping or re-sharing the files."
+      },
+      {
+        "id": "c",
+        "text": "Publish the dataset as a listing in a private Analytics Hub exchange, enable the listing's option to disable copy and export of shared data, and grant each partner the Subscriber role",
+        "rationale": "Subscribing creates a read-only linked dataset that points at the shared dataset, so no replica exists and partners see current data. Subscribers pay for their own queries, the publisher can restrict copy and export at the listing level, and the Subscriber role controls who may join."
+      },
+      {
+        "id": "d",
+        "text": "Schedule BigQuery dataset copies with the Data Transfer Service into each partner's project so that every partner queries its own local replica on its own bill",
+        "rationale": "Dataset copies are recurring and replace changed tables, so partners see data that lags the daily refresh, and thirty replicas of 6 TB incur destination storage charges. Each partner then owns ordinary tables that it can copy or export freely."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "Analytics Hub (BigQuery sharing) is publish-subscribe sharing without replication: publishers curate exchanges and listings, subscribers get linked datasets, and egress controls can be set per listing. Copy-based options trade freshness and storage for ownership, and plain IAM grants lack the egress and discovery layer.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-design-plan-190",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "datastream",
+      "bigquery",
+      "data-retention",
+      "design-tradeoffs"
+    ],
+    "subObjective": "design-plan.3",
+    "sourceUrl": "https://docs.cloud.google.com/datastream/docs/destination-bigquery",
+    "lastVerified": "2026-10-08",
+    "prompt": "Larkspur Insurance runs its policy system on Cloud SQL for PostgreSQL, and every table has a primary key. Analysts work in BigQuery and need current policy state within minutes. Compliance also requires that every update and delete remain available as a queryable event for audit. The data team is small and will not operate streaming infrastructure, and the production instance must not take analytic query load. Which design should the architect choose?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Run a self-managed Debezium connector publishing to Pub/Sub, with a Dataflow streaming job writing every captured change event into BigQuery tables for audit and for analysis",
+        "rationale": "This captures every change and could meet the audit need, but it is exactly the streaming infrastructure the team refuses to operate: the connector, the topic and the Dataflow job all need monitoring. Datastream delivers the same capture as a serverless service."
+      },
+      {
+        "id": "b",
+        "text": "Run a Datastream stream into BigQuery in append-only mode, keep the change events as the audit trail, and expose current state through a view over the latest event per key",
+        "rationale": "Append-only mode records every change as a separate event, with metadata such as the change type and sequence number, including deletes. Datastream is serverless, and the view gives analysts current state while the events satisfy audit."
+      },
+      {
+        "id": "c",
+        "text": "Query the instance with BigQuery federated queries through EXTERNAL_QUERY and snapshot the results into audit tables on a nightly schedule",
+        "rationale": "A federated query is sent to Cloud SQL and executes there, so the production instance takes the analytic load. Nightly snapshots also miss intermediate updates and deletes between runs, so audit would be incomplete."
+      },
+      {
+        "id": "d",
+        "text": "Run a Datastream stream into BigQuery in merge mode with a short data staleness limit, so that the tables always mirror the current state of the source",
+        "rationale": "Merge mode applies changes so that BigQuery keeps only the updated data. Earlier versions of a row and deleted rows are not retained as events, so the audit requirement fails even though freshness is satisfied."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "Datastream's BigQuery destination has two write modes: merge keeps only current rows, append-only keeps every change event. When audit history and current state are both required, append-only plus a current-state view is the fit. On a PostgreSQL source, Datastream reads through a logical replication slot, so monitor WAL disk usage if a stream is paused or fails.",
+    "difficulty": 3
   }
 ]

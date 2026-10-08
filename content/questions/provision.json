@@ -669,13 +669,12 @@
     "domainId": "provision",
     "concepts": [
       "vpc-design",
-      "load-balancing"
+      "shared-vpc"
     ],
-    "caseStudyId": "altostrat-media",
     "subObjective": "provision.1",
     "sourceUrl": "https://docs.cloud.google.com/vpc/docs/shared-vpc",
-    "lastVerified": "2026-10-01",
-    "prompt": "Altostrat Media streams video globally and is consolidating multiple business units, each with its own project and VPC and overlapping RFC 1918 ranges, into one network. They accept re-addressing workloads into a single planned address space. They want the network team to control subnets and firewall policy centrally, while application teams deploy in their own projects on that shared network. Which design should the architect recommend?",
+    "lastVerified": "2026-10-08",
+    "prompt": "A media company is consolidating multiple business units, each with its own project and VPC and overlapping RFC 1918 ranges, into one network. They accept re-addressing workloads into a single planned address space. They want the network team to control subnets and firewall policy centrally, while application teams deploy in their own projects on that shared network. Which design should the architect recommend?",
     "choices": [
       {
         "id": "a",
@@ -756,8 +755,8 @@
     "caseStudyId": "cymbal-retail",
     "subObjective": "provision.1",
     "sourceUrl": "https://docs.cloud.google.com/bigquery/docs/omni-introduction",
-    "lastVerified": "2026-10-01",
-    "prompt": "Cymbal Retail runs analytics on Google Cloud but keeps a large transactional dataset exported as files in Amazon S3. Analysts want to query that data with minimal data movement and without standing up and managing their own ETL clusters. Which approach best matches this multicloud analytics requirement?",
+    "lastVerified": "2026-10-08",
+    "prompt": "Cymbal Retail runs analytics on Google Cloud, but a fulfillment partner delivers a large order-history dataset as files into the partner's Amazon S3 bucket. Analysts want to query that data with minimal data movement and without standing up and managing their own ETL clusters. Which approach best matches this multicloud analytics requirement?",
     "choices": [
       {
         "id": "a",
@@ -776,14 +775,14 @@
       },
       {
         "id": "d",
-        "text": "VPC Network Peering between Google Cloud and the other cloud, then querying the files over the peering link",
-        "rationale": "Peering connects Google Cloud VPC networks; it is neither a connection to another cloud nor a query engine."
+        "text": "BigQuery Data Transfer Service with scheduled loads from the S3 bucket, then query the copies in BigQuery storage",
+        "rationale": "Scheduled S3 loads are a real option, but they copy the data into BigQuery storage on a schedule, adding movement, duplicate storage and staleness. Omni queries the data where it sits, with no need to copy it out of the other cloud."
       }
     ],
     "correct": [
       "a"
     ],
-    "explanation": "Omni is limited to specific AWS and Azure regions and has query restrictions, so check the limitations before committing.",
+    "explanation": "Omni is limited to specific AWS and Azure regions and has query restrictions, so check the limitations before committing. If data must be filtered or joined heavily with Google Cloud data, a scheduled transfer can still make sense.",
     "difficulty": 2
   },
   {
@@ -797,7 +796,7 @@
     "caseStudyId": "knightmotives-automotive",
     "subObjective": "provision.3",
     "sourceUrl": "https://docs.cloud.google.com/compute/docs/instances/committed-use-discounts-overview",
-    "lastVerified": "2026-10-01",
+    "lastVerified": "2026-10-08",
     "prompt": "KnightMotives Automotive runs a 24/7 customer-facing telemetry ingestion service on Compute Engine with steady, predictable baseline load that rarely changes. The CFO wants the lowest sustainable cost for this always-on workload **without** risking interruptions. Which pricing/provisioning strategy is most appropriate?",
     "choices": [
       {
@@ -824,7 +823,7 @@
     "correct": [
       "b"
     ],
-    "explanation": "Flexible (spend-based) CUDs range from 17% to 63% by service and term; cover the baseline with commitments and burst above it on demand.",
+    "explanation": "Compute flexible CUDs currently give 28% for one year and 46% for three years on general-purpose families such as N2 and E2, and 63% only for three-year memory-optimized commitments. Resource-based CUDs reach up to 55%, or 70% for memory-optimized. Cover the steady baseline with commitments and burst above it on demand.",
     "difficulty": 2
   },
   {
@@ -2290,8 +2289,8 @@
     ],
     "caseStudyId": "altostrat-media",
     "subObjective": "provision.3",
-    "sourceUrl": "https://docs.cloud.google.com/run/docs/create-jobs",
-    "lastVerified": "2026-10-01",
+    "sourceUrl": "https://docs.cloud.google.com/functions/quotas",
+    "lastVerified": "2026-10-08",
     "prompt": "Altostrat's transcoding runs in an event-driven Cloud Run function triggered when a file lands in Cloud Storage. Feature-length documentaries take up to three hours to transcode, and the function is cut off long before that. The team wants to keep the event-driven trigger, avoid managing servers and process many files in parallel. What should they change?",
     "choices": [
       {
@@ -2318,7 +2317,8 @@
     "correct": [
       "c"
     ],
-    "difficulty": 3
+    "difficulty": 3,
+    "explanation": "Cloud Run functions (2nd gen) allow 540 seconds for event-driven and 60 minutes for HTTP functions (functions/quotas). Cloud Run service requests top out at 60 minutes, while Cloud Run jobs allow task timeouts up to 168 hours (run/docs/create-jobs)."
   },
   {
     "id": "q-provision-056",
@@ -2530,7 +2530,8 @@
     "correct": [
       "a"
     ],
-    "difficulty": 1
+    "difficulty": 1,
+    "examOnly": true
   },
   {
     "id": "q-provision-061",
@@ -2800,8 +2801,8 @@
     ],
     "caseStudyId": "cymbal-retail",
     "subObjective": "provision.5",
-    "sourceUrl": "https://docs.cloud.google.com/vertex-ai/generative-ai/docs/grounding/overview",
-    "lastVerified": "2026-10-01",
+    "sourceUrl": "https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/grounding/overview",
+    "lastVerified": "2026-10-08",
     "prompt": "Cymbal's virtual shopping agent must answer questions about current product details and return policies, and Cymbal wants every answer tied to its own catalog and policy documents so it can be traced to sources. Which technique on the Agent Platform addresses this directly?",
     "choices": [
       {
@@ -2816,8 +2817,8 @@
       },
       {
         "id": "c",
-        "text": "Raise the model's output token limit so replies include more catalog detail",
-        "rationale": "A larger limit changes reply length only. It does not connect answers to Cymbal's data."
+        "text": "Lower the model's temperature so that its replies invent fewer catalog details",
+        "rationale": "A lower temperature reduces randomness only. It does not connect answers to Cymbal's catalog and policy documents, and it provides no source links for traceability."
       },
       {
         "id": "d",
@@ -2955,5 +2956,824 @@
       "c"
     ],
     "difficulty": 2
+  },
+  {
+    "id": "q-provision-071",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "hybrid-connectivity",
+      "hybrid-networking"
+    ],
+    "caseStudyId": "altostrat-media",
+    "subObjective": "provision.1",
+    "sourceUrl": "https://docs.cloud.google.com/network-connectivity/docs/how-to/choose-product",
+    "lastVerified": "2026-10-08",
+    "prompt": "Altostrat Media's legacy ingestion systems sit in a regional data center that is not in any Dedicated Interconnect colocation facility. Nightly ingestion of new footage needs about 8 Gbps sustained, traffic must reach private VPC addresses without crossing the public internet, and the ingestion path has a 99.99% availability target. Which connectivity design should the architect recommend?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Partner Interconnect with redundant VLAN attachments in two metros and Cloud Routers exchanging routes over BGP",
+        "rationale": "Partner Interconnect is built for sites that cannot reach a Dedicated Interconnect colocation facility, reaches internal VPC addresses without the public internet, and supports 99.99% designs with redundant attachments across two metros."
+      },
+      {
+        "id": "b",
+        "text": "HA VPN with two tunnels to the on-premises gateway, since it carries a 99.99% SLA and needs no service provider or colocation",
+        "rationale": "HA VPN can reach the 99.99% SLA, but each tunnel is limited to roughly 1-3 Gbps and traffic from the data center crosses the public internet, so the sustained throughput and no-internet requirements fail."
+      },
+      {
+        "id": "c",
+        "text": "Dedicated Interconnect with four connections in two metros, ordered from Google and cross-connected to the data center",
+        "rationale": "Dedicated Interconnect requires the customer network to reach a colocation facility where Google is present. The stem says this data center cannot, so the physical connection cannot be built."
+      },
+      {
+        "id": "d",
+        "text": "Direct Peering at a nearby Google edge location, with BGP sessions to Google's edge network for private access",
+        "rationale": "Direct Peering is meant for Google Workspace and Google APIs, offers no SLA, and does not provide access to resources that have only internal IP addresses in a VPC."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "Choose the hybrid link by what the site can physically reach, the bandwidth needed, and whether traffic may cross the internet: HA VPN for modest bandwidth, Partner Interconnect without colocation access, Dedicated Interconnect with it.",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "id": "q-provision-072",
+    "type": "multiple",
+    "domainId": "provision",
+    "concepts": [
+      "gemini-agent-platform",
+      "rag",
+      "grounding"
+    ],
+    "caseStudyId": "altostrat-media",
+    "subObjective": "provision.4",
+    "sourceUrl": "https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/capabilities/video-understanding",
+    "lastVerified": "2026-10-08",
+    "prompt": "Altostrat Media wants two generative AI features built on its library in Cloud Storage: concise summaries of newly uploaded podcasts and interviews, and a discovery assistant that recommends only titles currently in the catalog, which changes daily as titles are added and withdrawn. The team has no labeled training data and little ML operations capacity. Which two approaches should the architect combine? Choose two.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Prompt a Gemini model with each new audio or video file from Cloud Storage plus a summarization instruction",
+        "rationale": "Gemini accepts audio and video input from Cloud Storage and can summarize it. Prompting needs no labeled data and is the recommended starting point before any tuning."
+      },
+      {
+        "id": "b",
+        "text": "Ground the assistant with RAG Engine, ingesting catalog data from Cloud Storage and refreshing the corpus as titles change",
+        "rationale": "RAG retrieves current catalog content at request time, which reduces hallucinations and works around the model's knowledge cutoff, and RAG Engine can ingest data from Cloud Storage."
+      },
+      {
+        "id": "c",
+        "text": "Run supervised tuning of a Gemini model on the full transcript archive so that the model learns the whole catalog",
+        "rationale": "Tuning needs a sizable labeled dataset and is meant to fix recurring errors or style after prompting falls short. Catalog knowledge baked into weights goes stale when titles are withdrawn."
+      },
+      {
+        "id": "d",
+        "text": "Train a custom summarization model from scratch on the audio archive using custom training jobs on GPUs",
+        "rationale": "A from-scratch model needs labeled data and heavy ML operations, which the team lacks, and a foundation model already summarizes audio and video through prompting."
+      },
+      {
+        "id": "e",
+        "text": "Let Gemini answer recommendation questions from its pretrained knowledge, with an instruction to name only real Altostrat titles",
+        "rationale": "An instruction cannot supply a catalog the model never saw. Without retrieval the assistant will invent titles or recommend withdrawn ones."
+      }
+    ],
+    "correct": [
+      "a",
+      "b"
+    ],
+    "explanation": "Match the technique to the need: prompt a multimodal model for transformation tasks such as summarization, and ground it with retrieval when answers must reflect changing private data. Tune only when prompting falls short.",
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "id": "q-provision-081",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "gemini-agent-platform",
+      "structured-output"
+    ],
+    "caseStudyId": "cymbal-retail",
+    "subObjective": "provision.4",
+    "sourceUrl": "https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/capabilities/control-generated-output",
+    "lastVerified": "2026-10-08",
+    "prompt": "Cymbal receives supplier rows that each hold a product title, a free-text description and a photo. For every row it needs (1) attributes in the catalog's fixed structure, with values drawn from a controlled vocabulary per product category, and (2) color variants and background changes generated from the supplier's base photo. Both outputs go to an associate review UI. Which design on Gemini Enterprise Agent Platform fits both needs?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Prompt Gemini with the supplier data and set only the JSON response type, describing the attribute structure in the prompt, then edit the base photo with a Gemini image model.",
+        "rationale": "Setting the JSON response type without a response schema is only a strong hint and does not ensure valid JSON. Downstream review and catalog writes would break on malformed or off-vocabulary output."
+      },
+      {
+        "id": "b",
+        "text": "Prompt Gemini with the supplier data under a response schema that uses enum fields, then generate each variant from a text-only description of the product.",
+        "rationale": "The attribute half is correct, but a text-only description cannot reproduce the product shown in the supplier's photo, so the variants would not be derived from the base image as required."
+      },
+      {
+        "id": "c",
+        "text": "Prompt Gemini with the supplier title, description and photo under a response schema that uses enum fields, then prompt a Gemini image model to edit the base photo.",
+        "rationale": "A response schema makes the output follow the defined structure, and enum fields limit values to the controlled vocabulary. Gemini image models edit a supplied image from a natural-language prompt, with no mask needed."
+      },
+      {
+        "id": "d",
+        "text": "Train a custom image classifier for each attribute on past catalog photos, then script hue shifts over each base photo to produce the color variants.",
+        "rationale": "This needs per-attribute training data and ignores the title and description. Scripted hue shifts also cannot change backgrounds or add text overlays, which prompt-driven image editing can."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "Constrain attribute generation with a response schema (enums for controlled values) and use prompt-driven Gemini image editing on the supplier's base photo, keeping an associate in the loop before the catalog updates.",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "id": "q-provision-091",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "global-load-balancing",
+      "performance-latency",
+      "caching"
+    ],
+    "caseStudyId": "ehr-healthcare",
+    "subObjective": "provision.1",
+    "sourceUrl": "https://docs.cloud.google.com/cdn/docs/using-cache-modes",
+    "lastVerified": "2026-10-08",
+    "prompt": "EHR Healthcare serves its patient portal from GKE in a single region. Clinicians in Europe and Asia report slow page loads, and profiling shows most of the delay is spent downloading JavaScript bundles and images that are stored in a Cloud Storage bucket. Patient record API responses are personalized and contain PHI. The goal is to reduce latency for all customers without caching PHI at the edge. Which design meets this goal?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Create a regional external Application Load Balancer in each continent behind DNS round-robin and enable Cloud CDN on each of them",
+        "rationale": "Cloud CDN works with the global external or classic Application Load Balancer, so regional load balancers cannot provide it. Round-robin DNS also does not steer users to their nearest region."
+      },
+      {
+        "id": "b",
+        "text": "Enable Cloud CDN on every backend and use the force-cache-all mode so that even API responses come from edge caches near users",
+        "rationale": "Force-cache-all ignores private and no-store directives and can cache per-user, identifiable content. Google advises it only for backends such as Cloud Storage buckets, never for personalized API responses."
+      },
+      {
+        "id": "c",
+        "text": "Use a global external Application Load Balancer with Cloud CDN on the static-asset bucket, leaving the API backend uncached",
+        "rationale": "Cloud CDN serves cacheable static content from edge locations close to users through a global external Application Load Balancer, and leaving the API backend without caching keeps per-user PHI out of the edge caches."
+      },
+      {
+        "id": "d",
+        "text": "Add GKE nodes and Pod replicas in the current region so that each request is processed faster before it travels to the user",
+        "rationale": "More capacity shortens processing time but not the distance each asset travels. Profiling shows download time, not server processing, is the delay, so scaling the origin leaves distant users slow."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "Put the edge cache where content is static and shared, and keep it away from personalized responses. Cloud CDN's cache mode decides what is stored, so avoid forcing everything into the cache on mixed backends.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-101",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "data-retention",
+      "bucket-lock"
+    ],
+    "caseStudyId": "knightmotives-automotive",
+    "subObjective": "provision.2",
+    "sourceUrl": "https://docs.cloud.google.com/storage/docs/bucket-lock",
+    "lastVerified": "2026-10-08",
+    "prompt": "KnightMotives Automotive stores crash-test sensor recordings from its autonomous-driving programme in a Cloud Storage bucket. Safety regulators require every recording to be kept for at least ten years, and counsel wants a guarantee that nobody, including project owners, can delete or overwrite a recording before then. Which configuration meets the requirement?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Set a ten-year retention policy on the bucket and lock it, so objects cannot be deleted or replaced until they reach that age",
+        "rationale": "A locked retention policy is irreversible: it cannot be removed or shortened, and an object cannot be deleted or overwritten until it has met the retention period. The bucket itself cannot be deleted until every object has met it."
+      },
+      {
+        "id": "b",
+        "text": "Turn on Object Versioning, so that every deleted or overwritten recording stays in the bucket as a noncurrent version for years",
+        "rationale": "Versioning keeps earlier versions but enforces no minimum age: anyone holding delete permission can still remove noncurrent versions. Only a retention policy blocks deletion until an object reaches a given age."
+      },
+      {
+        "id": "c",
+        "text": "Raise the soft delete retention window to its maximum, so any deleted recording can be restored for as long as needed",
+        "rationale": "Soft delete retention can be set only between 7 and 90 days, far short of ten years, and it is a recovery window for deleted objects rather than a control that blocks deletion."
+      },
+      {
+        "id": "d",
+        "text": "Set a ten-year retention policy but leave it unlocked, so the team can adjust the period if the regulation changes",
+        "rationale": "Unless a retention policy is locked, it can be increased, decreased or removed. An administrator could shorten it and then delete recordings early, which is exactly what counsel wants to rule out."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 1,
+    "explanation": "Only a locked retention policy makes deletion before a set age impossible for every principal; versioning and soft delete aid recovery, and an unlocked policy can still be changed.",
+    "examOnly": true
+  },
+  {
+    "id": "q-provision-102",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "gemini-agent-platform",
+      "online-inference",
+      "alerting"
+    ],
+    "caseStudyId": "knightmotives-automotive",
+    "subObjective": "provision.4",
+    "sourceUrl": "https://docs.cloud.google.com/vertex-ai/docs/model-monitoring/using-model-monitoring",
+    "lastVerified": "2026-10-08",
+    "prompt": "KnightMotives serves a tabular gradient-boosted model from a Gemini Enterprise Agent Platform online endpoint. It suggests in-vehicle climate and navigation settings for each driver. After a launch in Nordic markets, engineers worry that winter driving patterns differ from the training data, but drivers' accept-or-reject outcomes are only joined back to the requests about six weeks later. The original training table is in BigQuery. The team wants an early warning that needs no labels, delivered to the ML on-call channel. What should they do?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Enable Model Monitoring on the endpoint, with skew detection against the BigQuery training table and alerts sent to a notification channel",
+        "rationale": "Model Monitoring logs online requests and compares the distribution of each input feature with the training data, so no outcome labels are needed. It alerts by email or through Cloud Monitoring channels when a feature passes its threshold, and it supports tabular models like this one."
+      },
+      {
+        "id": "b",
+        "text": "Create Cloud Monitoring alerting policies on the endpoint's latency, error rate and CPU utilization, and page the on-call when any of them is breached",
+        "rationale": "Those metrics describe serving health. An endpoint can answer quickly and without errors while receiving inputs that look nothing like the training data, so they cannot reveal a changed feature distribution."
+      },
+      {
+        "id": "c",
+        "text": "Run scheduled model evaluations against ground-truth outcomes and alert the on-call when accuracy falls below the agreed target",
+        "rationale": "Evaluation compares predictions with real outcomes, and those arrive about six weeks late. The warning would come after drivers had already received weeks of poor suggestions, whereas input monitoring needs no labels."
+      },
+      {
+        "id": "d",
+        "text": "Retrain the model every night in a pipeline on the newest logged requests, so it adapts to winter without any monitoring in place",
+        "rationale": "The newest requests have no outcome labels yet, so there is nothing valid to train on. Retraining blindly also gives the team no signal about whether inputs shifted, which features moved, or when."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 2,
+    "explanation": "When labels lag, monitor the input distribution against the training baseline and alert on thresholds; evaluation and retraining come after that signal."
+  },
+  {
+    "id": "q-provision-103",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "prebuilt-ai-apis",
+      "grounding"
+    ],
+    "caseStudyId": "altostrat-media",
+    "subObjective": "provision.5",
+    "sourceUrl": "https://docs.cloud.google.com/dialogflow/cx/docs/concept/data-store/handler",
+    "lastVerified": "2026-10-08",
+    "prompt": "Altostrat Media wants 24/7 self-service support for subscribers with billing, playback and account questions. The answers live in a help-center website of several hundred HTML and PDF pages that change weekly, plus policy documents in Cloud Storage. Replies must link to the page they came from, and a subscriber who asks for a person must reach the human support team. The team has no NLU specialists and no labeled conversation data. What should the architect build?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "A Gemini model behind Cloud Run with the entire help-center text pasted into the system instruction and a custom handoff service",
+        "rationale": "The corpus is re-pasted on every request, goes stale with each weekly change, may not fit the context window, and yields no retrieval-based source links. The handoff would also be custom code."
+      },
+      {
+        "id": "b",
+        "text": "A flow-based Dialogflow CX agent where staff write an intent with training phrases and a fixed reply for each help topic",
+        "rationale": "This works for a short list of stable topics, but several hundred pages that change weekly would need constant manual authoring, and fixed replies give no generated, source-linked answers from the live content."
+      },
+      {
+        "id": "c",
+        "text": "A Conversational Agents agent with a data store over the help site and bucket, giving cited answers and human routing",
+        "rationale": "Data store handlers produce LLM answers grounded in the site and uploaded content, return the sources they used, and the agent routes requests such as talking to a human through generated intents. It needs no labeled data."
+      },
+      {
+        "id": "d",
+        "text": "Supervised tuning of a Gemini model on archived support chats so it memorizes policies, plus a custom handoff service for humans",
+        "rationale": "Tuning adjusts model behavior and style rather than serving as a store of changing facts, needs labeled examples the team lacks, and gives no source citations. Weekly policy changes would need repeated tuning."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "For support answers drawn from changing documentation, ground a conversational agent in a data store rather than hand-authoring intents or baking content into prompts or weights. Note that the data stores feature is excluded from the Dialogflow CX SLA, so critical journeys may still warrant deterministic flows alongside it. Google is consolidating Dialogflow CX under the Conversational Agents name.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-104",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "prebuilt-ai-apis",
+      "gemini-agent-platform"
+    ],
+    "caseStudyId": "altostrat-media",
+    "subObjective": "provision.5",
+    "sourceUrl": "https://docs.cloud.google.com/generative-ai-app-builder/docs/media-user-events",
+    "lastVerified": "2026-10-08",
+    "prompt": "Altostrat Media is adding a personalized home-page row to its streaming site using a media recommendations app in Vertex AI Search (being renamed Agent Search). The app is configured with the Recommended for You type, the Home Page Context event type, and the watch duration per session objective. Months of events are already imported from BigQuery, yet the team cannot get a model trained for this configuration. The exhibit shows the event counts. What should the architect change?",
+    "exhibit": {
+      "label": "User events ingested into the app, last 90 days",
+      "format": "table",
+      "content": "Event type        | Events  | Unique user pseudo IDs\nview-item         | 412,000 | 38,200\nmedia-play        |  95,000 | 21,400\nmedia-complete    |       0 |      0\nview-home-page    |       0 |      0\nsearch            |       0 |      0"
+    },
+    "choices": [
+      {
+        "id": "a",
+        "text": "Import more historical view-item events from BigQuery until the volume clears the minimum needed to optimize recommendations",
+        "rationale": "Volume is not the gap. The 412,000 view-item events already exceed the documented 250,000 minimum, and more of the same event type cannot supply the missing completion and home-page events."
+      },
+      {
+        "id": "b",
+        "text": "Keep Home Page Context and switch the objective to click-through rate, which needs only the view-item events already ingested",
+        "rationale": "Click-through optimization would drop the media-complete need, but Home Page Context still requires view-home-page events, which the exhibit shows are absent, so this configuration still cannot train."
+      },
+      {
+        "id": "c",
+        "text": "Change the type to Most Popular, which ranks recently popular titles and needs no per-listener event types to be recorded",
+        "rationale": "Most Popular recommends what is popular across all users within a time window. It is not personalized to each listener, so it abandons the personalization goal instead of fixing the missing events."
+      },
+      {
+        "id": "d",
+        "text": "Record media-complete events with progress duration and view-home-page events with panel info from the player and home page",
+        "rationale": "The watch duration objective needs media-complete events alongside play or view events, and Home Page Context needs view-home-page events. Panel info also lets recommendations be attributed to specific home-page panels."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "explanation": "Match the app's type, context and objective to the event types actually instrumented. A diagnosis starts by comparing the required events for the chosen objective with what the exhibit shows has arrived.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-provision-113",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "prebuilt-ai-apis",
+      "data-movement"
+    ],
+    "caseStudyId": "cymbal-retail",
+    "subObjective": "provision.5",
+    "sourceUrl": "https://docs.cloud.google.com/retail/docs/catalog",
+    "lastVerified": "2026-10-08",
+    "prompt": "Associates at Cymbal approve gen AI-generated titles, descriptions and brand values before the catalog is updated. The website, the mobile app and AI Commerce Search must all show the same approved text, and new supplier products should be searchable the day they are approved. The catalog changes constantly. How should approved content reach AI Commerce Search?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Keep the catalog database as the source of truth and, after each approval, patch the changed products' built-in title, description and brand fields in AI Commerce Search.",
+        "rationale": "Patching updates only the changed fields, so approved content flows daily or faster. Built-in fields such as title, description and brand have a larger effect on searchability than custom attributes. The same source feeds every channel."
+      },
+      {
+        "id": "b",
+        "text": "Store each approved description as a custom attribute marked searchable and leave the built-in product fields as the supplier supplied them.",
+        "rationale": "Custom attributes can be made searchable, but built-in fields such as title, description and brands have a bigger impact on searchability and indexability. Leaving them as supplied wastes the enrichment."
+      },
+      {
+        "id": "c",
+        "text": "Re-import the full catalog from Cloud Storage once a week, together with the other channel feeds, so that all three channels change on the same schedule.",
+        "rationale": "Google recommends uploading catalog changes ideally every day when the catalog changes often. A weekly cycle delays searchability well beyond the same-day goal even though the channels stay aligned."
+      },
+      {
+        "id": "d",
+        "text": "Keep approved text only in the catalog database and feed search the original supplier text, since relevance is driven by user events and not by catalog fields.",
+        "rationale": "Search performance is sensitive to the uploaded catalog, product information and user events alike. Withholding the enriched fields leaves AI Commerce Search with weaker text and the channels inconsistent."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "Treat the approved catalog record as the single source of truth and push changed fields incrementally to AI Commerce Search, using the built-in fields that matter most for search quality.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-123",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "autoscaling",
+      "gke",
+      "scalability"
+    ],
+    "caseStudyId": "ehr-healthcare",
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/kubernetes-engine/docs/how-to/capacity-provisioning",
+    "lastVerified": "2026-10-08",
+    "prompt": "Every weekday at 08:00 clinics open and EHR Healthcare's patient-portal traffic rises about eightfold within three minutes. The portal runs on a GKE Standard cluster with a Horizontal Pod Autoscaler on CPU and node pool autoscaling enabled. The exhibit shows what the on-call engineer captured during the last spike, when users received 503 errors. EHR wants the errors gone without paying for a full-size fleet all day and without hand-managed scheduled scaling. What should the architect change?",
+    "exhibit": {
+      "label": "Events during the 08:00 spike",
+      "format": "log",
+      "content": "08:00:40 HPA portal      cpu 187%/60%  replicas 8 -> 24  (maxReplicas 120)\n08:00:42 Pod portal-7f9c-x4k2  Pending: 0/6 nodes are available: 6 Insufficient cpu\n08:00:43 ClusterAutoscaler     TriggeredScaleUp: portal-pool 6 -> 14 nodes  (max 40)\n08:00:45 Gateway               503 upstream_unavailable (16 replicas unschedulable)\n08:02:58 Node portal-pool-n7   Ready (first added node)\n08:03:10 Pod portal-7f9c-x4k2  Scheduled, Running\n08:03:30 Gateway               503 rate back to baseline"
+    },
+    "choices": [
+      {
+        "id": "a",
+        "text": "Raise the HPA maximum replica count well above 120 and lower the CPU target to 30% so that more replicas are created sooner",
+        "rationale": "The HPA is not capped: it asked for 24 of an allowed 120 and was acting immediately. More or earlier replicas would only create more Pending Pods, because the delay comes from waiting for nodes."
+      },
+      {
+        "id": "b",
+        "text": "Raise the node pool's autoscaling maximum from 40 nodes to 100 so that the cluster autoscaler can add more nodes during a spike",
+        "rationale": "The cluster autoscaler scaled up at once to 14 of a maximum of 40, so the limit was never reached. The errors lasted only for the roughly two minutes it took the first new node to become Ready."
+      },
+      {
+        "id": "c",
+        "text": "Add a Vertical Pod Autoscaler in Auto mode on the portal Deployment so that each Pod's CPU request grows as load increases",
+        "rationale": "Larger requests need even more node capacity and do not remove the wait for new nodes. Google advises against combining the vertical and horizontal autoscalers on the same CPU or memory metric."
+      },
+      {
+        "id": "d",
+        "text": "Deploy low-priority placeholder Pods that reserve spare node capacity, so that portal replicas preempt them and start without waiting for new nodes",
+        "rationale": "Placeholder Pods hold ready capacity at a lower priority. When the HPA adds portal replicas they evict the placeholders and schedule immediately, and the autoscaler then replaces the buffer. EHR chooses how big a buffer to pay for."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "explanation": "The exhibit shows both autoscalers working and no limit being hit: the outage window is node provisioning time. A reserved buffer of low-priority placeholder Pods trades a small standing cost for immediate scheduling.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-provision-133",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "caching",
+      "global-load-balancing",
+      "performance-latency"
+    ],
+    "caseStudyId": "knightmotives-automotive",
+    "subObjective": "provision.1",
+    "sourceUrl": "https://docs.cloud.google.com/cdn/docs/using-signed-urls",
+    "lastVerified": "2026-10-08",
+    "prompt": "KnightMotives is modernizing its legacy ICE models with a multi-gigabyte software package delivered over the air. Only entitled vehicles may download it, and an entitlement check runs in an update service. Most vehicles in a country fetch the same package within the same week, and many are on rural cellular links that drop mid-download, so the download must resume. Dealers have no budget for new equipment. Which delivery design fits best?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Keep the package in a Cloud Storage backend bucket behind a global external Application Load Balancer with Cloud CDN, and issue short-lived signed URLs",
+        "rationale": "Cloud CDN can use a backend bucket as origin and serves repeated downloads from edge caches. Signed URLs grant time-limited access to anyone holding them, so the update service can gate entitlement, and byte range support lets interrupted downloads resume."
+      },
+      {
+        "id": "b",
+        "text": "Keep the package in a regional bucket and have the update service issue Cloud Storage signed URLs that vehicles use directly, with no load balancer or cache in front of the bucket",
+        "rationale": "Signed URLs do control access and ranged reads work, but every vehicle download is then served from the origin bucket's location. Repeated downloads of the same package gain no edge caching, so latency and origin load are worse than with Cloud CDN."
+      },
+      {
+        "id": "c",
+        "text": "Run a managed instance group that holds the package on persistent disks behind a regional load balancer, and have all vehicles download it from those VMs",
+        "rationale": "This can work, but capacity is sized for the peak week and the team patches and scales the servers. Cloud Storage with Cloud CDN is built for large static objects and absorbs the repeated downloads at the edge."
+      },
+      {
+        "id": "d",
+        "text": "Replicate the package to a file server at every dealership, and have vehicles update over the dealer network when parked on the lot",
+        "rationale": "Dealers have no budget for new equipment, and a fleet of servers to replicate and secure is a heavy burden. It also excludes owners who rarely visit a dealer, which are the rural vehicles with the worst connectivity."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 2,
+    "explanation": "For large, widely repeated downloads to unreliable clients, serve from Cloud Storage through a load balancer with Cloud CDN and gate access with short-lived signed URLs."
+  },
+  {
+    "id": "q-provision-153",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "storage-classes",
+      "cost-optimization"
+    ],
+    "subObjective": "provision.2",
+    "sourceUrl": "https://docs.cloud.google.com/storage/docs/storage-classes",
+    "lastVerified": "2026-10-08",
+    "prompt": "Redwood Mutual, an insurer, writes a nightly export of its claims database to a Cloud Storage bucket. A lifecycle rule deletes each export 400 days after creation. No restore has been needed in four years, but the disaster recovery plan says a full restore must begin reading data within one hour of a declaration. Which storage class is the best fit for the export bucket?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Coldline, because Archive objects take hours to restore and so could not meet a one-hour deadline to begin reading the data.",
+        "rationale": "This treats Archive like tape or a deep-archive tier. In Cloud Storage, Archive data is available within milliseconds, so the recovery window is not a reason to pay Coldline storage rates for data this cold."
+      },
+      {
+        "id": "b",
+        "text": "Nearline, because any colder class would add early deletion charges to exports that the lifecycle rule removes after 400 days.",
+        "rationale": "The early deletion charge applies only to objects deleted or replaced before the minimum duration. Archive's minimum is 365 days, which these objects exceed, so Nearline's higher at-rest cost buys nothing here."
+      },
+      {
+        "id": "c",
+        "text": "Archive, because the exports outlive its minimum duration and a rare restore justifies paying retrieval fees for millisecond access.",
+        "rationale": "Archive is meant for data read less than once a year. Its minimum duration is 365 days, so deleting at 400 days triggers no early deletion charge, and it serves reads with low latency, so a restore can begin within the hour."
+      },
+      {
+        "id": "d",
+        "text": "Standard, because it is the only class with no retrieval fees, and the restore has to begin reading data within the hour.",
+        "rationale": "Standard does have no retrieval fee, but its at-rest cost is the highest. Data read less than once a year is the pattern retrieval-fee classes are priced for, and a restore that may never happen does not justify Standard rates."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "Cloud Storage classes trade at-rest price against retrieval fees and a minimum storage duration (Nearline 30 days, Coldline 90, Archive 365). All of them, Archive included, return data with low latency. Pick the coldest class whose minimum duration the data's real lifetime exceeds and whose access frequency matches.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-154",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "storage-selection",
+      "ai-hypercomputer"
+    ],
+    "subObjective": "provision.2",
+    "sourceUrl": "https://docs.cloud.google.com/architecture/optimize-ai-ml-workloads-managed-lustre",
+    "lastVerified": "2026-10-08",
+    "prompt": "Northwind Vision trains an image model on 300 TB of data held in a Cloud Storage bucket, using 128 GPUs across many nodes in one zone. Every node must read the same dataset in parallel and write synchronous checkpoints through standard POSIX file operations. The company wants the bucket to stay the durable system of record. Which design fits?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Create a Managed Lustre instance, import the dataset, and delete the bucket copy so that Lustre becomes the only system of record.",
+        "rationale": "Managed Lustre is persistent, but Google's guidance is to treat it as working storage and keep data and checkpoints in Cloud Storage. Deleting the bucket copy removes the durable repository the company wants to keep."
+      },
+      {
+        "id": "b",
+        "text": "Create a Managed Lustre instance in the GPU zone, import the dataset, checkpoint to it, and export checkpoints to the bucket.",
+        "rationale": "Managed Lustre is a POSIX parallel file system with sub-millisecond latency, recommended for training and checkpointing when clients sit in the same zone. Cloud Storage stays the central repository through import and export."
+      },
+      {
+        "id": "c",
+        "text": "Copy the dataset to Local SSD on each GPU node, checkpoint there, and synchronize the files between nodes on a schedule.",
+        "rationale": "Local SSD is attached to a single host, and its data may be lost whenever the VM stops or is terminated. It is not a shared file system, so it cannot hold the checkpoints or give all nodes one view of the data."
+      },
+      {
+        "id": "d",
+        "text": "Mount the bucket on every node with Cloud Storage FUSE and Rapid Cache, and use that mount for all reads and synchronous checkpoints.",
+        "rationale": "FUSE with Rapid Cache is the recommended choice for serving and inference, where lower cost matters. It is an adapter, not a native POSIX file system, and it offers lower per-VM throughput than Managed Lustre."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "For multi-node training that needs POSIX semantics and low latency, Managed Lustre in the compute zone is the working store, with Cloud Storage as the durable repository. Cloud Storage FUSE with Rapid Cache is the recommended pairing for serving and inference.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-155",
+    "type": "multiple",
+    "domainId": "provision",
+    "concepts": [
+      "iap",
+      "firewall"
+    ],
+    "subObjective": "provision.1",
+    "sourceUrl": "https://docs.cloud.google.com/iap/docs/using-tcp-forwarding",
+    "lastVerified": "2026-10-08",
+    "prompt": "A fintech's security policy forbids external IP addresses on Compute Engine VMs, and the company has no VPN. Administrators on corporate laptops must still reach SSH on private VMs in a custom-mode VPC, with each access decision made per user through IAM. Which two actions meet these requirements? Choose two.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Grant the administrators the IAP-secured Tunnel User role on the project or on the target VMs.",
+        "rationale": "IAP TCP forwarding authorizes each user through IAM, and this role is what permits a user to open a tunnel to a VM. No external IP is needed on the VM."
+      },
+      {
+        "id": "b",
+        "text": "Add an ingress firewall rule allowing TCP port 22 from 35.235.240.0/20, the range IAP uses for TCP forwarding.",
+        "rationale": "Tunneled connections reach the VM from that Google-owned range. Without this ingress rule the VPC drops them, because a custom-mode VPC denies ingress by default."
+      },
+      {
+        "id": "c",
+        "text": "Create a Cloud NAT gateway on the subnet so that administrators can open SSH sessions through the NAT address.",
+        "rationale": "Cloud NAT translates outbound connections from VMs without external IPs and passes only replies to them. It does not allow unsolicited inbound connections such as a new SSH session."
+      },
+      {
+        "id": "d",
+        "text": "Enable Private Google Access on the subnet so that laptops can reach the VMs' SSH port over Google's network.",
+        "rationale": "Private Google Access lets VMs with internal IPs initiate connections to Google APIs and services. It is an outbound mechanism and gives no inbound path from administrators' laptops."
+      },
+      {
+        "id": "e",
+        "text": "Deploy a bastion VM with an external IP and allow SSH to it from the corporate egress range.",
+        "rationale": "A bastion can work in general, but here it needs an external IP, which the policy forbids. It also adds a host to patch and does not make the per-user IAM access decision."
+      }
+    ],
+    "correct": [
+      "a",
+      "b"
+    ],
+    "explanation": "IAP TCP forwarding needs two things: an IAM grant that lets the user tunnel, and a firewall rule that lets IAP's range reach the port. Nothing needs an external IP or a VPN.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-156",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "machine-families",
+      "licensing"
+    ],
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/compute/docs/instances/creating-instance-with-custom-machine-type",
+    "lastVerified": "2026-10-08",
+    "prompt": "A team is moving a per-vCPU-licensed database to a Compute Engine VM. The sizing profile is shown. Which machine configuration meets the need while keeping the licensed vCPU count as low as possible?",
+    "exhibit": {
+      "label": "Sizing profile and licence terms",
+      "format": "table",
+      "content": "Item | Value\nDatabase licence | Charged for every vCPU of the VM\nMeasured need | 6 vCPUs and 42 GB of memory\nPlatform standard | General-purpose N-series; no extended memory"
+    },
+    "choices": [
+      {
+        "id": "a",
+        "text": "A custom machine type on the N2D series with exactly 6 vCPUs and 42 GB of memory.",
+        "rationale": "N2D custom accepts only specific vCPU counts: 2, 4, 8, 16, 32, 48, 64, 80 or 96. Six is not allowed, so the configuration cannot be created."
+      },
+      {
+        "id": "b",
+        "text": "The predefined n2-highmem-8 type (8 vCPUs, 64 GB), the nearest shape that covers the memory.",
+        "rationale": "It covers the memory, but it brings two extra vCPUs. The licence charges for every vCPU, so this over-licenses the database. Custom machine types exist to avoid this."
+      },
+      {
+        "id": "c",
+        "text": "A custom machine type on the N2 series with exactly 6 vCPUs and 42 GB of memory.",
+        "rationale": "N2 custom accepts 6 vCPUs, and 42 GB is 7 GB per vCPU, inside the default per-vCPU memory range. Custom sizing avoids paying for licensed vCPUs the workload does not use."
+      },
+      {
+        "id": "d",
+        "text": "A custom machine type on the N1 series with exactly 6 vCPUs and 42 GB of memory.",
+        "rationale": "N1 custom allows up to 6.5 GB per vCPU, which is 39 GB at 6 vCPUs. The 42 GB request would need extended memory, which the platform standard excludes."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "Custom machine types let you pick the vCPU count and memory within per-series limits, which matters most with per-vCPU licensing. Check the series' allowed vCPU counts and its memory-per-vCPU ceiling before choosing one. Extended memory goes beyond that ceiling at a premium.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-provision-157",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "compute-provisioning",
+      "gpu-tpu",
+      "committed-use-discounts"
+    ],
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/compute/docs/instances/choose-reservation-type",
+    "lastVerified": "2026-10-08",
+    "prompt": "Helix Genomics will fine-tune a protein model starting in 45 days on 64 GPU VMs that must sit together in one tightly coupled cluster. The run needs about 21 days of continuous, uninterrupted capacity, GPU capacity in the target zone is scarce, and the team wants to pay only for those 21 days. Which approach should the architect choose?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Create an on-demand reservation for the 64 GPU VMs today, so capacity is held until the run begins, and delete it afterwards",
+        "rationale": "An on-demand reservation is billed at the on-demand rate from the moment it exists, used or not. Holding it for 45 idle days before the run breaks the requirement to pay only for the 21 days of work."
+      },
+      {
+        "id": "b",
+        "text": "Buy a three-year resource-based committed use discount for the GPU VMs, which secures the capacity and lowers the price of the run",
+        "rationale": "A resource-based commitment is a billing discount, not a capacity guarantee; capacity needs a reservation. It also cannot be canceled, so the team would pay for three years to cover a 21-day job."
+      },
+      {
+        "id": "c",
+        "text": "Request a calendar-mode future reservation of 64 GPU VMs for a 21-day period, then launch reservation-bound VMs at its start",
+        "rationale": "Calendar mode reserves GPU capacity for a fixed period of 24 hours to 90 days. GPU requests open up to 60 days ahead, so 45 days is in range, and allocation is dense for cluster training. Billing starts when the request is fulfilled."
+      },
+      {
+        "id": "d",
+        "text": "Submit a Flex-start VM request for 64 GPU VMs and let Dynamic Workload Scheduler provision them together once capacity frees up",
+        "rationale": "Flex-start VMs run for at most seven days and are provisioned on a best-effort basis when resources are available. A 21-day run exceeds that limit and there is no assurance the capacity arrives by the start date."
+      },
+      {
+        "id": "e",
+        "text": "Run the job on Spot VMs, which give the deepest discount, and rely on frequent checkpoints to recover when instances are reclaimed",
+        "rationale": "Spot VMs can be stopped or deleted at any time to reclaim capacity and carry no capacity assurance. The run requires uninterrupted capacity in a scarce zone, so a discount cannot make up for the missing guarantee."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "Match the capacity tool to the duration and start date. Calendar-mode future reservations cover GPU, H4D or TPU capacity for up to 90 days at a known future start. Standard future reservations take start dates up to one year out with no stated maximum length, but Google recommends periods of 365 days or longer to improve approval odds and GPU requests need the account team. Flex-start is best-effort and capped at seven days. Committed use discounts cut price but never reserve capacity.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-provision-158",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "gemini-agent-platform",
+      "prebuilt-ai-apis"
+    ],
+    "subObjective": "provision.4",
+    "sourceUrl": "https://docs.cloud.google.com/gemini-enterprise-agent-platform/machine-learning/start/training-methods",
+    "lastVerified": "2026-10-08",
+    "prompt": "Ferrous Ridge, a steel fabricator, has 14,000 photos of weld seams. Inspectors labeled each photo with one of nine company-specific defect classes. The company has two quality engineers and no ML engineers. It wants a trained model that it can evaluate against held-out labeled photos and deploy to an endpoint with as little code as possible. Which approach fits?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Call Cloud Vision API label detection on each photo and map the returned labels onto the nine defect classes with rules",
+        "rationale": "Label detection returns general labels from Google's predefined categories. It knows nothing about the company's nine weld-defect classes, and the 14,000 labeled photos would go unused."
+      },
+      {
+        "id": "b",
+        "text": "Prompt Gemini on every request with the nine class definitions and a few sample photos, and skip training altogether",
+        "rationale": "Prompting a foundation model does not learn from the 14,000 labeled photos and gives no held-out evaluation of a model the company owns. Prompting suits tasks without labeled data; here the labels are the asset."
+      },
+      {
+        "id": "c",
+        "text": "Train an AutoML image classifier on the labeled photos, review its evaluation metrics, then deploy it to an endpoint",
+        "rationale": "AutoML lets a team create and train a model with minimal technical effort and no programming. It fits a standard objective such as image classification with the team's own labeled data."
+      },
+      {
+        "id": "d",
+        "text": "Write a training application around a custom CNN and run it as a custom training job on Agent Platform with GPUs",
+        "rationale": "Custom training gives full control over architecture and loss, but it needs data science and programming skills the team lacks. Reserve it for cases where AutoML cannot meet the need, which a standard classification task does not show."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "Choose the lightest approach that uses the data you have. Pretrained APIs cover common tasks with no training data, prompting or tuning a foundation model suits language and multimodal generation, AutoML trains standard objectives on your labeled data with no code, and custom training is for architectures or loss functions AutoML cannot express.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-159",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "prebuilt-ai-apis",
+      "gemini-agent-platform"
+    ],
+    "subObjective": "provision.5",
+    "sourceUrl": "https://docs.cloud.google.com/retail/docs/what-is-it",
+    "lastVerified": "2026-10-08",
+    "prompt": "Marlowe Outfitters, an online retailer with 2 million SKUs, wants storefront search and browse that tolerate misspellings, offer facets, and rank results by what shoppers actually click and buy. It has 18 months of storefront clickstream, a product catalog in BigQuery, and three engineers but no ML staff. Launch is next quarter. Which approach fits?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Use AI Commerce Search (formerly Vertex AI Search for commerce): import the catalog and user events and let it rank results",
+        "rationale": "The retail-specific service takes a product catalog and user events, and handles data preprocessing, model training, hyperparameter tuning and serving. It provides search, browse and recommendations without an ML team."
+      },
+      {
+        "id": "b",
+        "text": "Create an Agent Search app over a website data store that crawls the storefront's product pages and enable its standard search features",
+        "rationale": "A generic app indexes page content. It is not the commerce product that ingests a structured catalog plus shopper events to rank by purchase behavior, which is the requirement."
+      },
+      {
+        "id": "c",
+        "text": "Train a two-tower ranking model on the clickstream with custom training, then serve candidates from Vector Search behind a custom API",
+        "rationale": "This can work, but it recreates what the managed service already handles. Three engineers with no ML staff would spend the quarter on data pipelines, training and serving instead of launching."
+      },
+      {
+        "id": "d",
+        "text": "Load the whole product catalog into Gemini's context with each query and ask the model to return the best-matching products",
+        "rationale": "Two million products are far more catalog data than fits in a prompt. Even a subset would add cost and latency to every query, and the model would not learn from the clickstream the retailer already holds."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "For retail product discovery, AI Commerce Search (formerly Vertex AI Search for commerce, earlier Retail API) is the purpose-built managed option. Its inputs are the product catalog and user events, and the same data feeds search, browse and recommendations.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-160",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "serverless",
+      "cloud-run",
+      "iam-least-privilege"
+    ],
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/eventarc/standard/docs/run/route-trigger-cloud-storage",
+    "lastVerified": "2026-10-08",
+    "prompt": "Linden Freight uploads scanned manifests to a Cloud Storage bucket in me-west1. An Eventarc trigger in me-west1 filters on google.cloud.storage.object.v1.finalized and targets the manifest-api Cloud Run service. The security team forbids allUsers on that service. The trigger was created with --service-account=manifest-trigger@ and shows no error, but the service never receives events. The exhibit lists the relevant IAM bindings. What should the architect change?",
+    "exhibit": {
+      "label": "IAM bindings relevant to the trigger",
+      "format": "table",
+      "content": "Principal                              | Role                      | Granted on\nmanifest-trigger@ (trigger identity)   | roles/eventarc.eventReceiver | project\nmanifest-runtime@ (service identity)   | roles/run.invoker         | service manifest-api\nCloud Storage service agent            | roles/pubsub.publisher    | project"
+    },
+    "choices": [
+      {
+        "id": "a",
+        "text": "Grant roles/run.invoker on the manifest-api service to the trigger's service account, since that identity makes the authenticated call",
+        "rationale": "The trigger uses its service account as its identity when it calls the service, and that account needs the Cloud Run invoker role. The exhibit grants invoker to the runtime identity, which does not call the service."
+      },
+      {
+        "id": "b",
+        "text": "Grant roles/eventarc.eventReceiver to the runtime service account as well, so the service is allowed to receive the forwarded events",
+        "rationale": "The event receiver role belongs to the trigger's identity, which already has it. The runtime identity is what the service runs as; it never receives events on its own behalf."
+      },
+      {
+        "id": "c",
+        "text": "Add allUsers as an invoker of the service, so the trigger's delivery requests are accepted without needing authentication",
+        "rationale": "This would likely make deliveries work, but it opens the service to the internet and breaks the stated security rule. The least-privilege fix is to grant invoker to the trigger's identity alone."
+      },
+      {
+        "id": "d",
+        "text": "Grant roles/pubsub.publisher to the trigger's service account, because Eventarc moves the object events through Pub/Sub",
+        "rationale": "Publisher access is needed by the Cloud Storage service agent, which already has it in the exhibit. The trigger identity receives and delivers events and does not publish them."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "For a Cloud Storage trigger to Cloud Run, three identities matter. The Cloud Storage service agent needs pubsub.publisher, the trigger's service account needs eventarc.eventReceiver and run.invoker, and the runtime identity is unrelated to delivery. Compare each binding with the identity that performs the action.",
+    "difficulty": 3
   }
 ]
