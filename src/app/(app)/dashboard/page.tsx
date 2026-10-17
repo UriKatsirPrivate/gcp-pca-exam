@@ -108,6 +108,12 @@ export default async function DashboardPage() {
     .slice(-20)
     .map((p) => ({
       label: p.at.toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+      detail: p.at.toLocaleString(undefined, {
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      }),
       score: Math.round(p.score),
     }));
 

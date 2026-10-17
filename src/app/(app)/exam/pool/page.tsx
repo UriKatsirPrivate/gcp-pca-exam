@@ -56,12 +56,10 @@ export default async function ExamPoolPage({
     distinct: ["questionId"],
   });
   const seenIds = new Set(seenRows.map((r) => r.questionId));
-  let unseenTotal = 0;
   const unseenByDomain: Partial<Record<DomainId, number>> = {};
   const unseenByCase: Partial<Record<CaseStudyId, number>> = {};
   for (const q of examOnly) {
     if (!seenIds.has(q.id)) {
-      unseenTotal++;
       unseenByDomain[q.domainId] = (unseenByDomain[q.domainId] ?? 0) + 1;
       if (q.caseStudyId) {
         unseenByCase[q.caseStudyId] = (unseenByCase[q.caseStudyId] ?? 0) + 1;
@@ -72,7 +70,7 @@ export default async function ExamPoolPage({
   if (domainIds.length === 0 && caseIds.length === 0) {
     return (
       <div className="space-y-6">
-        <PoolHeader total={examOnly.length} unseen={unseenTotal} />
+        <PoolHeader />
         <Card>
           <CardHeader
             title="Pick domains or case studies"
@@ -113,7 +111,7 @@ export default async function ExamPoolPage({
   if (picked.length === 0) {
     return (
       <div className="space-y-6">
-        <PoolHeader total={examOnly.length} unseen={unseenTotal} />
+        <PoolHeader />
         <EmptyState
           title={unseenOnly ? "Nothing unseen left here" : "Nothing held out here"}
           body={
@@ -142,17 +140,10 @@ export default async function ExamPoolPage({
     const cs = caseStudies.find((c) => c.id === q.caseStudyId);
     if (cs) caseStudyData[cs.id] = { name: cs.name, sections: cs.sections };
   }
-  const unseenInSelection = picked.filter((q) => !seenIds.has(q.id)).length;
 
   return (
     <div className="space-y-6">
-      <PoolHeader
-        total={examOnly.length}
-        unseen={unseenTotal}
-        domainTitle={domainTitle}
-        selectionCount={picked.length}
-        selectionUnseen={unseenInSelection}
-      />
+      <PoolHeader domainTitle={domainTitle} />
       <PoolRunner questions={questions} caseStudies={caseStudyData} />
     </div>
   );
@@ -208,43 +199,15 @@ function filterUnseen(qs: Question[], seenIds: Set<string>): Question[] {
   return qs.filter((q) => !seenIds.has(q.id));
 }
 
-function PoolHeader({
-  total,
-  unseen,
-  domainTitle,
-  selectionCount,
-  selectionUnseen,
-}: {
-  total: number;
-  unseen: number;
-  domainTitle?: string;
-  selectionCount?: number;
-  selectionUnseen?: number;
-}) {
+function PoolHeader({ domainTitle }: { domainTitle?: string }) {
   return (
     <div className="space-y-2">
       <ButtonLink href="/exam" variant="ghost" size="sm">
         <ArrowLeft size={14} /> Back to Exam
       </ButtonLink>
-      <div>
-        <h1 className="text-2xl font-semibold">
-          Held-out pool{domainTitle ? ` · ${domainTitle}` : ""}
-        </h1>
-        <p className="mt-0.5 text-sm text-muted">
-          {typeof selectionCount === "number" && typeof selectionUnseen === "number" ? (
-            <>
-              {selectionUnseen} of {selectionCount} questions here are still unseen —
-              reviewing them now uses up that freshness for a future simulation exam.{" "}
-            </>
-          ) : (
-            <>{unseen} of {total} questions across all domains are still unseen. </>
-          )}
-          These are held out so your first simulation exam draws mostly-fresh
-          items. Review them here with the answer revealed right after each one
-          — doing so marks them seen, the same as answering them in a quiz or
-          drill.
-        </p>
-      </div>
+      <h1 className="text-2xl font-semibold">
+        Held-out pool{domainTitle ? ` · ${domainTitle}` : ""}
+      </h1>
     </div>
   );
 }
