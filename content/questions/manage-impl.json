@@ -1291,7 +1291,8 @@
     "correct": [
       "c"
     ],
-    "difficulty": 2
+    "difficulty": 2,
+    "examOnly": true
   },
   {
     "id": "q-manage-impl-032",
@@ -1423,7 +1424,8 @@
       "c",
       "e"
     ],
-    "difficulty": 2
+    "difficulty": 2,
+    "examOnly": true
   },
   {
     "id": "q-manage-impl-035",
@@ -1802,7 +1804,8 @@
     "correct": [
       "d"
     ],
-    "difficulty": 3
+    "difficulty": 3,
+    "examOnly": true
   },
   {
     "id": "q-manage-impl-044",
@@ -1926,7 +1929,8 @@
       "c",
       "e"
     ],
-    "difficulty": 3
+    "difficulty": 3,
+    "examOnly": true
   },
   {
     "id": "q-manage-impl-047",
@@ -2045,7 +2049,8 @@
     "correct": [
       "d"
     ],
-    "difficulty": 1
+    "difficulty": 1,
+    "examOnly": true
   },
   {
     "id": "q-manage-impl-050",
@@ -2259,5 +2264,174 @@
     ],
     "explanation": "Assess each VM's container fit first. Good-fit middleware goes to containers on GKE, and workloads that depend on kernel drivers or hardware-bound licenses are rehosted as VMs.",
     "difficulty": 3
+  },
+  {
+    "id": "q-manage-impl-135",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": [
+      "apigee",
+      "api-management"
+    ],
+    "subObjective": "manage-impl.1",
+    "sourceUrl": "https://docs.cloud.google.com/apigee/docs/api-platform/deploy/ui-deploy-new",
+    "lastVerified": "2026-10-17",
+    "prompt": "Tessera Logistics exposes its order API through an Apigee proxy at /v1/orders. The next release replaces the flat unitPrice field with a nested price object, which breaks existing clients. Partners hardcode the /v1 path and most cannot migrate for six months, and the team wants to roll back any problem in the new shape without touching what partners use today. How should the team ship the change?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Save the new response shape as a new revision of the existing proxy and deploy it, then give partners the revision number to cite in support requests",
+        "rationale": "Deploying a new revision without changing its base path undeploys the previous revision in that environment, so version 1 disappears for every partner at once. Revision numbers are not a partner-facing version."
+      },
+      {
+        "id": "b",
+        "text": "Route 20 percent of calls on /v1/orders to an implementation with the new shape, and raise the share as partners report no problems",
+        "rationale": "A traffic share is a rollout technique for one contract. Partners cannot choose it, so 20 percent of unprepared clients would receive a breaking response with no notice."
+      },
+      {
+        "id": "c",
+        "text": "Ask partners to send the proxy revision number in a request header so that Apigee serves the revision each partner asks for",
+        "rationale": "The revision number is an internal counter that the documentation describes as opaque to apps and unrelated to the API's version. Apigee does not select a deployed configuration by a header carrying it."
+      },
+      {
+        "id": "d",
+        "text": "Create a separate proxy for version 2 on /v2/orders, deploy it beside version 1, and announce a retirement date for version 1",
+        "rationale": "Each major version is its own proxy on its own base path, so v1 keeps serving unchanged while v2 is introduced. Revisions of the v2 proxy then give rollback without affecting v1, and the retirement date gives partners a window."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "explanation": "A proxy revision is deployment history inside one version, and a new revision at the same base path replaces the deployed one. Parallel major versions need separate proxies with separate base paths.",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "id": "q-manage-impl-136",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": [
+      "apigee",
+      "api-management"
+    ],
+    "subObjective": "manage-impl.1",
+    "sourceUrl": "https://docs.cloud.google.com/apigee/docs/api-platform/analytics/analytics-reference",
+    "lastVerified": "2026-10-17",
+    "prompt": "Tessera Logistics will undeploy the orders-v1 proxy in two weeks, at the end of its announced deprecation window. All four partner apps below hold the API product that bundles both proxies. The exhibit comes from a custom analytics report over the last 30 days. Based on the report, which apps still depend on orders-v1 and need outreach before the date?",
+    "exhibit": {
+      "label": "Calls per developer app over 30 days",
+      "format": "table",
+      "content": "| Developer app | Calls to orders-v1 | Calls to orders-v2 |\n|---|---|---|\n| ship-track | 182,400 | 0 |\n| bay-scan | 3,150 | 91,000 |\n| dock-sync | 0 | 240,000 |\n| pallet-lab | 0 | 0 |"
+    },
+    "choices": [
+      {
+        "id": "a",
+        "text": "Contact ship-track only, because bay-scan already uses version 2 and its 3,150 remaining calls are too few to matter at retirement",
+        "rationale": "Any call to the old proxy will fail once it is undeployed, whatever its volume. bay-scan still depends on version 1 for part of its traffic and has to migrate that part."
+      },
+      {
+        "id": "b",
+        "text": "Contact ship-track and bay-scan before the date, since both still call version 1, while dock-sync and pallet-lab show no calls to it",
+        "rationale": "Per-proxy and per-app analytics show actual consumption. Only apps with calls to orders-v1 are affected by its removal, and the report identifies exactly which two."
+      },
+      {
+        "id": "c",
+        "text": "Treat all four apps as affected, because each holds the API product that includes the version 1 proxy and could call it at any time",
+        "rationale": "Holding a product is an entitlement, not usage. Treating every holder as affected ignores the analytics the team already has and turns a targeted outreach into a blanket one."
+      },
+      {
+        "id": "d",
+        "text": "Undeploy orders-v1 now, since dock-sync and pallet-lab are not calling it and the other two apps have started calling version 2",
+        "rationale": "Starting to call version 2 does not stop calls to version 1. ship-track made 182,400 calls to the old proxy and bay-scan still makes some, so retiring early would break both."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "Analytics can group by proxy and by developer app, so retirement decisions should rest on observed callers, not on who is registered.",
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "id": "q-manage-impl-137",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": [
+      "apigee",
+      "api-management"
+    ],
+    "subObjective": "manage-impl.1",
+    "sourceUrl": "https://docs.cloud.google.com/apigee/docs/api-platform/fundamentals/understanding-apis-and-api-proxies",
+    "lastVerified": "2026-10-17",
+    "prompt": "A Tessera Logistics release note says revision 14 of the orders proxy is now live. A partner developer asks support whether they must change their integration. How should the API team answer?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Yes, a new revision number means a new major version, so every partner must migrate to it and update its client code before the window closes",
+        "rationale": "Revision and version are unrelated. A major version is the public interface, while a revision is an internal number for a proxy configuration, so a new revision does not announce a new version."
+      },
+      {
+        "id": "b",
+        "text": "Yes, every revision changes the proxy's base path, so partners have to update the URLs that their apps call",
+        "rationale": "A new revision does not change the base path by itself. Deploying a revision without changing its base path simply replaces the previously deployed revision at the same URL."
+      },
+      {
+        "id": "c",
+        "text": "No, the revision number is an internal counter for the proxy's configuration, opaque to apps and unrelated to the version of the API",
+        "rationale": "Revisions are sequentially numbered deployment history that lets the team iterate and roll back. Apps never see the number, so it is not a signal that the contract changed."
+      },
+      {
+        "id": "d",
+        "text": "Only partners that use API key validation, because key checks are re-issued against the proxy each time a new revision is deployed",
+        "rationale": "Nothing is re-issued at each revision. Keys stay valid and tied to API products, and the revision number does not alter what an app has to send."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "Do not confuse the version of an API with the revision of a proxy. Partners care about the first; the second is the team's own deployment history.",
+    "difficulty": 1,
+    "examOnly": true
+  },
+  {
+    "id": "q-manage-impl-138",
+    "type": "single",
+    "domainId": "manage-impl",
+    "concepts": [
+      "apigee",
+      "api-management",
+      "change-management"
+    ],
+    "subObjective": "manage-impl.1",
+    "sourceUrl": "https://docs.cloud.google.com/apigee/docs/api-platform/fundamentals/understanding-apis-and-api-proxies",
+    "lastVerified": "2026-10-17",
+    "prompt": "Tessera Logistics runs orders-v1 and orders-v2 as separate proxies in production. A policy change saved as revision 9 of orders-v2 now returns errors to v2 clients, while revision 8 of that proxy was healthy and orders-v1 is unaffected. What is the fastest safe way to restore v2 without touching v1?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Deploy revision 8 of orders-v2 to the environment, which replaces revision 9 at the same base path and leaves orders-v1 untouched",
+        "rationale": "Proxy revisions are sequentially numbered precisely so a change can be reverted by deploying a previous revision. Deploying at the same base path replaces the faulty revision, and the v1 proxy is a separate deployment."
+      },
+      {
+        "id": "b",
+        "text": "Undeploy orders-v2 and tell its clients to call /v1/orders until a fix is ready, since version 1 already serves the same underlying order data",
+        "rationale": "Version 1 returns the old response shape, and v2 clients were built for the new one. Sending them to v1 trades one failure for another and drops the parallel-run design."
+      },
+      {
+        "id": "c",
+        "text": "Correct the policy inside revision 9 and redeploy that same revision, because a deployed revision can be updated in place",
+        "rationale": "A revision cannot be modified incrementally and redeployed. Changes must be saved as a new revision first, which is slower than redeploying a revision known to be healthy."
+      },
+      {
+        "id": "d",
+        "text": "Create a third proxy on /v3/orders from revision 8 and ask the v2 clients to switch their base path to it during the incident",
+        "rationale": "A new major version is for a breaking contract change, not an incident fix. It forces every v2 client to change code during an outage, when redeploying revision 8 restores the existing path."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "Revisions are the rollback mechanism inside one version. Versions (separate proxies and base paths) are the compatibility mechanism between them.",
+    "difficulty": 2
   }
 ]

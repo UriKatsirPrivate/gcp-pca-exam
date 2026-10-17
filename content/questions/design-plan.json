@@ -5064,5 +5064,1589 @@
     ],
     "explanation": "Datastream's BigQuery destination has two write modes: merge keeps only current rows, append-only keeps every change event. When audit history and current state are both required, append-only plus a current-state view is the fit. On a PostgreSQL source, Datastream reads through a logical replication slot, so monitor WAL disk usage if a stream is paused or fails.",
     "difficulty": 3
+  },
+  {
+    "id": "q-design-plan-191",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "phased-migration",
+      "migration-methodology",
+      "hybrid-networking"
+    ],
+    "subObjective": "design-plan.4",
+    "sourceUrl": "https://docs.cloud.google.com/load-balancing/docs/negs/hybrid-neg-concepts",
+    "lastVerified": "2026-10-17",
+    "prompt": "Brightwater Logistics runs a 15-year-old Java order-management monolith on VMs in its own data center. About 120 developers ship to it every week, and the business will not accept a feature freeze. Customers and mobile apps reach it through one public hostname. The data center lease ends in 24 months, and leadership wants the monolith retired without any single high-risk cutover. Which approach best fits these constraints?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Pause feature work for a year, rewrite the system as microservices on Cloud Run, and move all traffic after the rewrite passes testing",
+        "rationale": "A big-bang rewrite needs the feature freeze the business refuses and ends in one all-at-once cutover with no cheap rollback."
+      },
+      {
+        "id": "b",
+        "text": "Add an external Application Load Balancer facade with a hybrid NEG to the legacy app, then move one capability at a time to Cloud Run",
+        "rationale": "A routing facade keeps the hostname stable while URL map rules and weights move one route at a time to new services. Rollback is a routing change, and the legacy app is retired once it receives no traffic."
+      },
+      {
+        "id": "c",
+        "text": "Finish the domain model and target design for every future service first, then start moving traffic after all designs are approved",
+        "rationale": "Designing everything up front delays all value and assumes the service boundaries are already known. Boundaries are learned by extracting one capability at a time."
+      },
+      {
+        "id": "d",
+        "text": "Containerize the whole monolith as a single image on GKE, test it for a quarter, then switch the public hostname over on one planned weekend",
+        "rationale": "This is a rehost of the entire monolith as one unit. It still needs one high-risk cutover and decomposes nothing, so it fails the stated constraint."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "The strangler fig pattern fits when a system cannot be replaced in one step and cannot stop changing: a facade routes, capabilities move one at a time, and legacy is retired at zero traffic.",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "id": "q-design-plan-192",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "workload-disposition",
+      "migration-methodology",
+      "migrate-to-vms"
+    ],
+    "subObjective": "design-plan.4",
+    "sourceUrl": "https://docs.cloud.google.com/architecture/migration-to-gcp-getting-started",
+    "lastVerified": "2026-10-17",
+    "prompt": "Marlow Dental runs a vendor-supplied practice-management server in a branch office. Its desktop clients talk to the server over a proprietary TCP protocol, and the vendor provides no source code and no API. The office lease ends in ten weeks. The company has already bought a SaaS product that will replace this system next year. What should the architect recommend for the next ten weeks?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Place Apigee in front of the application and route one feature at a time to new Cloud Run services until the old server is empty",
+        "rationale": "A routing facade needs requests it can intercept and a legacy system that can be changed. Proprietary TCP clients, no API and no source make that impossible, and ten weeks is far too short."
+      },
+      {
+        "id": "b",
+        "text": "Refactor the application into containers on GKE so that it gains horizontal scaling and managed upgrades before the lease ends",
+        "rationale": "Refactoring requires changing the code, which the vendor does not provide. It also invests in a system that is being replaced next year."
+      },
+      {
+        "id": "c",
+        "text": "Re-architect the workload as microservices behind an external Application Load Balancer URL map that uses a hybrid NEG",
+        "rationale": "The clients use a proprietary TCP protocol rather than HTTP, so a URL map cannot route it, and no source means nothing can be re-architected. The deadline rules it out as well."
+      },
+      {
+        "id": "d",
+        "text": "Rehost the server as-is on a Compute Engine VM, keep the clients pointed at it, and retire it when the SaaS replacement goes live",
+        "rationale": "Rehost fits when source code cannot be modified and the business case does not justify change. It meets the deadline, and the planned repurchase handles the long-term answer."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "explanation": "A strangler facade is not the default answer. It needs interceptable traffic and a changeable legacy system, and it is a poor fit for a hard decommission date.",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "id": "q-design-plan-193",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "phased-migration",
+      "apigee",
+      "minimal-downtime"
+    ],
+    "subObjective": "design-plan.4",
+    "sourceUrl": "https://learn.microsoft.com/en-us/azure/architecture/patterns/strangler-fig",
+    "lastVerified": "2026-10-17",
+    "prompt": "Kestrel Insurance exposes a quoting API to 40 partner integrators through Apigee. Behind the proxy, a legacy quoting engine uses an on-premises database whose rate tables a back-office tool updates every day, and other legacy modules still read them. The team extracted rate lookup into a new Cloud Run service with its own Cloud SQL database, and Apigee now routes 10 percent of lookups to it. Which data approach keeps both paths correct during the overlap and rollback cheap?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Keep the legacy tables authoritative, replicate changes to the new database with change data capture, and delete the legacy tables last",
+        "rationale": "Daily legacy updates keep flowing to the new store, both paths return the same rates, and rollback stays a routing change because the legacy tables still exist and stay current."
+      },
+      {
+        "id": "b",
+        "text": "Give the new service its own fresh copy of the rate tables now, let the legacy engine keep its copy, and reconcile the two at the end",
+        "rationale": "Two independent copies drift as soon as the back office updates the legacy one, so the new path returns stale rates until the final reconciliation."
+      },
+      {
+        "id": "c",
+        "text": "Export the legacy tables once into the new database before routing any traffic, then stop synchronizing so that the service is independent",
+        "rationale": "A one-time snapshot is stale after the next daily update. The new service becomes independent before it is authoritative, and rollback is no longer clean."
+      },
+      {
+        "id": "d",
+        "text": "Have the Apigee proxy write every rate update to both the legacy and the new database so that they stay identical with no replication job",
+        "rationale": "The facade is a router, not a transaction coordinator. A failed second write leaves the databases silently diverged, and the back-office tool does not go through the proxy at all."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "id": "q-design-plan-194",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "rollback",
+      "load-balancer-selection",
+      "hybrid-networking"
+    ],
+    "subObjective": "design-plan.4",
+    "sourceUrl": "https://docs.cloud.google.com/load-balancing/docs/https/traffic-management-global",
+    "lastVerified": "2026-10-17",
+    "prompt": "A retailer is moving a public web app from an on-premises backend, reachable only at a private IP and port over Cloud Interconnect, to a new Cloud Run service. Traffic enters through an external Application Load Balancer. The team wants to start at 0 percent on Cloud Run, raise the share in steps, and drop back to the old backend within seconds if errors rise. Which design does this?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "A Cloud DNS weighted round robin policy across the old and the new public endpoints, with a one-hour TTL on the records",
+        "rationale": "Rollback is bounded by resolver caching, so errors continue for as long as clients hold the old answer. It also exposes two endpoints instead of one stable address."
+      },
+      {
+        "id": "b",
+        "text": "A Cloud Run traffic split between revisions, with the on-premises application registered as one of the service's revisions",
+        "rationale": "Cloud Run revision splits divide traffic between revisions of one Cloud Run service. An on-premises application cannot be a revision."
+      },
+      {
+        "id": "c",
+        "text": "A URL map route rule with weighted backend services: a hybrid NEG for the on-premises app and a serverless NEG for Cloud Run",
+        "rationale": "Weights on the route rule split traffic between the two backend services, and changing a weight is the whole rollback. The hybrid NEG reaches the private on-premises endpoint."
+      },
+      {
+        "id": "d",
+        "text": "A Cloud Deploy canary pipeline that rolls the on-premises application forward to Cloud Run in ten percent steps each day",
+        "rationale": "Cloud Deploy releases new versions of a workload to targets. It does not route live requests between a legacy backend and a new service."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "difficulty": 1,
+    "examOnly": true
+  },
+  {
+    "id": "q-design-plan-195",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "ha-failover",
+      "gke-cluster-design",
+      "global-load-balancing"
+    ],
+    "subObjective": "design-plan.2",
+    "sourceUrl": "https://docs.cloud.google.com/kubernetes-engine/docs/concepts/multi-cluster-gateways",
+    "lastVerified": "2026-10-17",
+    "prompt": "Tallis Tickets runs checkout on a regional GKE cluster in europe-west1 with nodes in three zones. Its database is already Spanner multi-region. A new requirement says checkout must keep serving if all of europe-west1 is lost, without a manual cutover. What should the architect add?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Additional node pools in every remaining zone of europe-west1, plus Pod anti-affinity so that replicas spread across all of those zones",
+        "rationale": "A regional cluster already survives a zone failure. More zones protect against the same failure and do nothing for the loss of the region."
+      },
+      {
+        "id": "b",
+        "text": "A standby cluster in europe-west4 kept at minimal size, with a runbook that scales it up and repoints DNS once a disaster is declared",
+        "rationale": "This is a manual cutover, which the requirement excludes, and recovery time depends on node provisioning plus DNS caching."
+      },
+      {
+        "id": "c",
+        "text": "A second regional cluster in europe-west1, registered to the same fleet and added behind the multi-cluster Gateway to add spare capacity",
+        "rationale": "Both clusters sit in one region, so they share the failure domain. Losing the region still takes down every backend."
+      },
+      {
+        "id": "d",
+        "text": "A second cluster in europe-west4, with both clusters in one fleet and exposed through a multi-cluster Gateway on a global load balancer",
+        "rationale": "Clusters in two regions share no failure domain, and the multi-cluster Gateway sends traffic only to clusters that have healthy Pods, so failover needs no manual step."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "explanation": "Name the pattern rather than the API: regional clusters in different regions in one fleet behind a global multi-cluster load balancer. The data tier must have its own multi-region design, which Spanner multi-region provides here.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-design-plan-196",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "cloud-run",
+      "ha-failover",
+      "serverless"
+    ],
+    "subObjective": "design-plan.2",
+    "sourceUrl": "https://docs.cloud.google.com/run/docs/configuring/configure-service-health",
+    "lastVerified": "2026-10-17",
+    "prompt": "Ledgerly runs a payments API as Cloud Run services in europe-west1 and europe-west4 behind a global external Application Load Balancer. The exhibit shows the backend service. During an incident, europe-west1 returned HTTP 503 for 20 minutes while nearby users kept being routed there. The team wants automatic cross-region failover and failback. What should they do?",
+    "exhibit": {
+      "label": "Backend service (abridged)",
+      "format": "config",
+      "language": "yaml",
+      "content": "name: payments-api-backend\nloadBalancingScheme: EXTERNAL_MANAGED\nprotocol: HTTPS\nbackends:\n- group: regions/europe-west1/networkEndpointGroups/payments-neg-w1   # serverless NEG\n- group: regions/europe-west4/networkEndpointGroups/payments-neg-w4   # serverless NEG\nhealthChecks: []\noutlierDetection: {}"
+    },
+    "choices": [
+      {
+        "id": "a",
+        "text": "Attach an HTTP health check to the backend service so that the load balancer ejects the serverless NEG for a region when its probes start failing",
+        "rationale": "Backend services that use a serverless NEG must not reference a health check, so this cannot work. Without a health signal the load balancer keeps sending traffic to the failing region."
+      },
+      {
+        "id": "b",
+        "text": "Configure Cloud Run service health, with readiness probes and a minimum instance in each region, so the load balancer can steer away from an unhealthy region",
+        "rationale": "Service health aggregates per-region readiness into a signal that serverless NEGs can use, which gives automated failover and gradual failback between two or more regional services."
+      },
+      {
+        "id": "c",
+        "text": "Lower the DNS TTL on the record for the load balancer's address to a few seconds so that clients re-resolve to the healthy region faster",
+        "rationale": "Both regions already sit behind one anycast address, so there is nothing for clients to re-resolve. The missing piece is a health signal at the load balancer."
+      },
+      {
+        "id": "d",
+        "text": "Raise the maximum instance count and the concurrency setting in europe-west1 so that the service has headroom to absorb the failing requests",
+        "rationale": "The failure was HTTP 503 responses from the region, not a lack of capacity. More instances do not tell the load balancer to stop routing there."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "difficulty": 3
+  },
+  {
+    "id": "q-design-plan-197",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "global-load-balancing",
+      "ha-failover",
+      "business-continuity"
+    ],
+    "subObjective": "design-plan.2",
+    "sourceUrl": "https://docs.cloud.google.com/load-balancing/docs/https/global-applb-failover-overview",
+    "lastVerified": "2026-10-17",
+    "prompt": "Northwind Games serves players worldwide from two regions. Each region has its own load balancer with a separate IP address, and a Cloud DNS failover routing policy with a 3,600-second TTL points players at the primary. Postmortems show recovery takes far longer than the 5-minute target, because many players keep connecting to the failed region. What change best fixes the root cause?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Add a third region and a second failover record so that the DNS policy always has a healthy target available to return",
+        "rationale": "More targets do not shorten caching. Players holding the cached answer for the failed region still connect there until their TTL expires."
+      },
+      {
+        "id": "b",
+        "text": "Enable Cloud CDN on both regional load balancers so that cached responses keep players connected while the primary is down",
+        "rationale": "Cloud CDN serves only cacheable content. Live game sessions and API calls still reach the failed origin, and the CDN does not change how clients are directed."
+      },
+      {
+        "id": "c",
+        "text": "Front both regions with one global external Application Load Balancer on a single anycast IP and health-checked backends",
+        "rationale": "Clients keep one address, and the load balancer moves traffic to healthy backends on its own health checks, so recovery no longer waits on resolver caches."
+      },
+      {
+        "id": "d",
+        "text": "Reduce the DNS TTL to zero seconds so that no resolver is allowed to keep the old answer after the primary region fails",
+        "rationale": "A shorter TTL narrows the cache window but cannot remove it, and health check detection time is added on top. Google's guidance recommends 30 to 60 seconds, not zero."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "DNS failover duration is roughly the TTL plus the health check interval times the unhealthy threshold. A global load balancer with multi-region backends avoids the cache entirely.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-design-plan-198",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "cloud-run",
+      "serverless",
+      "ha-failover"
+    ],
+    "subObjective": "design-plan.2",
+    "sourceUrl": "https://docs.cloud.google.com/run/docs/resource-model",
+    "lastVerified": "2026-10-17",
+    "prompt": "A startup deploys a stateless API as a single Cloud Run service in us-central1 and asks what availability it gets without any additional design. Which statement is accurate?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Instances are replicated across zones in us-central1, so one zone can fail, but an outage of the whole region takes the service down",
+        "rationale": "Cloud Run services live in one region and are replicated across that region's zones. Surviving a regional outage requires a second deployment in another region."
+      },
+      {
+        "id": "b",
+        "text": "Cloud Run services are global by default, so a regional outage is handled by serving requests from a replica in another region",
+        "rationale": "Cloud Run is regional. Multi-region availability comes from deploying the service in several regions behind a global load balancer, not from a default replica."
+      },
+      {
+        "id": "c",
+        "text": "Every instance runs in one zone, so surviving a zone failure requires a second service deployed in another zone of the region",
+        "rationale": "Cloud Run replicates a service across multiple zones within its region automatically, and you do not choose zones for it."
+      },
+      {
+        "id": "d",
+        "text": "The service also survives a regional outage if the minimum instance count is set to at least one in every zone of the us-central1 region",
+        "rationale": "Minimum instances keep capacity warm inside the region. They do nothing when the whole region is unavailable, and zones are not configurable per service."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 1,
+    "examOnly": true
+  },
+  {
+    "id": "q-design-plan-199",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "pubsub",
+      "integration-patterns",
+      "design-tradeoffs",
+      "business-continuity"
+    ],
+    "subObjective": "design-plan.2",
+    "sourceUrl": "https://docs.cloud.google.com/pubsub/docs/dead-letter-topics",
+    "lastVerified": "2026-10-17",
+    "prompt": "A food-delivery platform's order validator pulls from a Pub/Sub subscription. One malformed order always throws an unhandled exception, so it is never acknowledged and is redelivered every few seconds, flooding the logs and burning CPU. Other orders are processed normally. What configuration contains the problem while keeping the bad message for inspection?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Raise the subscription's message retention to 31 days so that the malformed order stays available until the code is fixed",
+        "rationale": "Retention keeps messages but does not stop redelivery. The poison message would keep cycling until retention expires and then be discarded."
+      },
+      {
+        "id": "b",
+        "text": "Configure a dead-letter topic with a maximum delivery attempts value, attach a subscription to it, and alert on its backlog",
+        "rationale": "After the attempt limit the message leaves the subscription and lands in the dead-letter topic, where a subscription keeps it for inspection and the backlog alert shows that it is there."
+      },
+      {
+        "id": "c",
+        "text": "Enable retain acknowledged messages and have the consumer acknowledge failed messages immediately so they are not redelivered",
+        "rationale": "Acknowledging a failed message removes it from normal delivery, so the order is silently dropped from processing and no failure signal reaches anyone."
+      },
+      {
+        "id": "d",
+        "text": "Increase the acknowledgement deadline of the subscription to 600 seconds so that the consumer has more time to process each message",
+        "rationale": "The ack deadline is only a redelivery timer. The malformed order still fails, and it would be redelivered after ten minutes instead of seconds."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-design-plan-200",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "pubsub",
+      "integration-patterns",
+      "backup-recovery",
+      "business-continuity"
+    ],
+    "subObjective": "design-plan.2",
+    "sourceUrl": "https://docs.cloud.google.com/pubsub/docs/subscription-properties",
+    "lastVerified": "2026-10-17",
+    "prompt": "A nightly reconciliation system reads from a Pub/Sub pull subscription. The consumers do not run during a vendor's maintenance windows, which can last up to three days. The exhibit shows the subscription 21 hours into the current window. What change best protects against message loss in future windows?",
+    "exhibit": {
+      "label": "Subscription settings and current metrics",
+      "format": "metrics",
+      "content": "subscription: recon-sub (pull)\nmessage_retention_duration: 86400s\nack_deadline_seconds: 30\nretry_policy: exponential backoff (min 10s, max 600s)\ndead_letter_policy: max_delivery_attempts=5 -> topic recon-dlt\n\ncurrent metrics\nnum_unacked_messages: rising\noldest_unacked_message_age: 21h\ndead_letter_message_count: 0"
+    },
+    "choices": [
+      {
+        "id": "a",
+        "text": "Lower the maximum delivery attempts to its minimum so that backlogged messages move to the dead-letter topic sooner during the window",
+        "rationale": "Nothing is being delivered and failing, so nothing reaches the dead-letter topic, as the zero count shows. With inactive pull consumers the attempt count can even reset, and the minimum is already 5."
+      },
+      {
+        "id": "b",
+        "text": "Increase the acknowledgement deadline to its 600-second maximum so that messages are not redelivered while consumers restart",
+        "rationale": "The ack deadline is a redelivery timer for messages that were already delivered. It has no effect on how long an undelivered backlog is kept."
+      },
+      {
+        "id": "c",
+        "text": "Increase the maximum of the exponential backoff so that redelivery attempts are spread out across the whole maintenance window",
+        "rationale": "Backoff spaces redelivery after a nack or an expired deadline. It does not stop messages from aging out of a subscription that nobody is pulling."
+      },
+      {
+        "id": "d",
+        "text": "Raise message retention to cover the longest expected window with margin, and alert on oldest unacked message age before it nears the limit",
+        "rationale": "Pub/Sub may discard messages once retention passes, whatever their state. Retention above the longest outage keeps the backlog until consumers return, and an age alert warns before loss."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "explanation": "A dead-letter topic answers poison messages, not outages. Retention is the safeguard for a consumer that is away for a long time, up to 31 days.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-design-plan-201",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "pubsub",
+      "integration-patterns",
+      "design-tradeoffs"
+    ],
+    "subObjective": "design-plan.2",
+    "sourceUrl": "https://docs.cloud.google.com/pubsub/docs/dead-letter-topics",
+    "lastVerified": "2026-10-17",
+    "prompt": "A team configured a dead-letter topic on a Pub/Sub subscription. Delivery attempts for a poison message are well past the configured maximum, yet subscription/dead_letter_message_count stays at 0 and nothing reaches the dead-letter topic. Both the topic and the subscription exist. What is the most likely cause?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "The subscription uses pull delivery, but dead-letter topics are only supported for push and export subscriptions",
+        "rationale": "Dead-letter topics apply to pull subscriptions as well, and the documentation describes pull-specific delivery attempt behavior."
+      },
+      {
+        "id": "b",
+        "text": "The dead-letter topic has no subscription attached to it, so Pub/Sub refuses to forward any messages into the topic",
+        "rationale": "A missing subscription does not block forwarding. Forwarded messages are published and then lost because a topic with no subscription retains nothing, and the metric would still count them."
+      },
+      {
+        "id": "c",
+        "text": "The Pub/Sub service account lacks publisher on the dead-letter topic and subscriber on the source subscription",
+        "rationale": "Forwarding is done by the Pub/Sub service account, and delivery attempts are only counted when the dead-letter setup and its permissions are correct."
+      },
+      {
+        "id": "d",
+        "text": "The consumer's own service account lacks the publisher role on the dead-letter topic that it uses to forward failures",
+        "rationale": "The consumer never publishes to the dead-letter topic. Pub/Sub forwards messages itself using its own service account."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "difficulty": 1
+  },
+  {
+    "id": "q-design-plan-202",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "pubsub",
+      "integration-patterns",
+      "design-tradeoffs",
+      "scalability"
+    ],
+    "subObjective": "design-plan.2",
+    "sourceUrl": "https://docs.cloud.google.com/pubsub/docs/subscription-retry-policy",
+    "lastVerified": "2026-10-17",
+    "prompt": "An image-resizing worker consumes from Pub/Sub and calls a partner API that rate-limits with HTTP 429 for 20 to 40 seconds at a time. The worker nacks on a 429, and Pub/Sub redelivers immediately, so each burst triggers thousands of instant retries that prolong the throttling. Valid messages should still succeed eventually. What should the architect configure?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "An exponential backoff retry policy (for example 10-second minimum, 600-second maximum), plus a dead-letter topic for permanent failures",
+        "rationale": "Backoff spaces redelivery of each failed message, which relieves the partner API, while valid messages keep retrying. The dead-letter topic only catches messages that never succeed."
+      },
+      {
+        "id": "b",
+        "text": "A dead-letter topic with five maximum delivery attempts as the only control, so that rate-limited messages leave the subscription quickly",
+        "rationale": "Immediate retries burn through five attempts within seconds, so valid orders would be dead-lettered during every burst instead of being retried later."
+      },
+      {
+        "id": "c",
+        "text": "A 600-second acknowledgement deadline, so that Pub/Sub waits ten minutes after each delivery before sending the message again",
+        "rationale": "A negative acknowledgement triggers redelivery under the retry policy regardless of the deadline, so the instant retries continue."
+      },
+      {
+        "id": "d",
+        "text": "A message retention of ten minutes, so that rate-limited messages expire before they can be retried against the partner API again",
+        "rationale": "Short retention discards messages, including valid ones, which turns throttling into data loss rather than slowing the retries."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-design-plan-203",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "storage-selection",
+      "design-tradeoffs",
+      "ha-failover"
+    ],
+    "subObjective": "design-plan.3",
+    "sourceUrl": "https://docs.cloud.google.com/sql/docs/postgres/high-availability",
+    "lastVerified": "2026-10-17",
+    "prompt": "Fernhill Dental runs its scheduling application on a self-managed PostgreSQL 15 VM in a colocation rack. The database is 250 GB, grows about 5 GB a month and peaks at a few hundred transactions per second. Requirements are 99.95% availability, automatic recovery from a single-zone failure within a couple of minutes, and the lowest sensible operating cost and effort. The application uses only core PostgreSQL features. Which target is the best fit?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Spanner with the PostgreSQL interface in a multi-region configuration, so that availability and scale far exceed what is needed today",
+        "rationale": "Nothing in the requirements asks for horizontal write scale or loss of a whole region. Spanner's PostgreSQL interface is a subset of PostgreSQL, so even this simple application would likely need rework, and the capacity is bought for a problem Fernhill does not have."
+      },
+      {
+        "id": "b",
+        "text": "Cloud SQL for PostgreSQL with high availability enabled, which keeps a synchronous standby instance in a second zone of the same region",
+        "rationale": "An HA Cloud SQL instance fails over to its standby in about a minute, and the Enterprise edition carries a 99.95% SLA. It matches the stated scale and availability with the least operations, which is the point of choosing by requirement rather than by product size."
+      },
+      {
+        "id": "c",
+        "text": "AlloyDB for PostgreSQL with a read pool and the columnar engine enabled, so that there is headroom for future analytical queries",
+        "rationale": "AlloyDB is the right step up when PostgreSQL needs analytics on live data or read scale. No such requirement is stated here, so it adds cost and components that Cloud SQL with high availability already makes unnecessary."
+      },
+      {
+        "id": "d",
+        "text": "Bigtable with multi-cluster routing, which gives automatic failover across zones and effectively unlimited scale for the booking records",
+        "rationale": "Bigtable is a wide-column NoSQL store with no relational SQL model, so a PostgreSQL application would need a rewrite. Automatic failover is not a reason to abandon a relational engine for a 250 GB scheduling workload."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "The over-engineering trap is picking the biggest product. Match the stated requirements: regional scale, 99.95% and zone-level recovery are Cloud SQL territory. Move to AlloyDB or Spanner only when a requirement forces it.",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "id": "q-design-plan-204",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "storage-selection",
+      "relational-vs-nosql",
+      "design-tradeoffs"
+    ],
+    "subObjective": "design-plan.3",
+    "sourceUrl": "https://docs.cloud.google.com/alloydb/docs/overview",
+    "lastVerified": "2026-10-17",
+    "prompt": "Marlowe Analytics sells a SaaS product built on PostgreSQL 14 in its own data center. The application depends on several PostgreSQL extensions and stored procedures, and its product dashboards run heavy aggregate queries over hundreds of millions of rows in the live transactional tables. Marlowe wants a managed service with automatic zone-level failover, as little application rework as possible, and no separate analytics copy of the data to build or keep in sync. Which service fits best?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Spanner with the PostgreSQL interface, because its horizontal scale handles both the transactions and the large aggregate queries across regions",
+        "rationale": "The PostgreSQL interface supports only a subset of PostgreSQL and does not support extensions or user-defined stored procedures. Google states that migrating a PostgreSQL application likely requires rework, which breaks the minimal-rework requirement."
+      },
+      {
+        "id": "b",
+        "text": "Bigtable with a row key per customer, because wide-column storage scans large volumes quickly and fails over between clusters",
+        "rationale": "Bigtable has no relational SQL model, so the extensions, stored procedures and queries would all need a rewrite. Fast key-range scans do not replace SQL aggregates over relational tables."
+      },
+      {
+        "id": "c",
+        "text": "Cloud SQL for PostgreSQL, with Datastream replicating the tables into BigQuery so that the dashboards query the warehouse",
+        "rationale": "Cloud SQL would keep the application working, but the design creates exactly the separate analytics copy the requirements rule out. The replica must be built, monitored and kept in sync."
+      },
+      {
+        "id": "d",
+        "text": "AlloyDB for PostgreSQL with its columnar engine, which speeds up scans, joins and aggregates directly on the live transactional data",
+        "rationale": "AlloyDB is PostgreSQL-compatible, so extensions and stored procedures need little change. Its columnar engine accelerates analytical queries on live data, and the primary uses an active and a standby node in different zones for failover."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "explanation": "Spanner's PostgreSQL interface is a subset, not a drop-in. When the need is PostgreSQL compatibility plus analytics on live data, AlloyDB is the documented fit.",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "id": "q-design-plan-205",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "rto-rpo",
+      "disaster-recovery",
+      "global-consistency"
+    ],
+    "subObjective": "design-plan.2",
+    "sourceUrl": "https://docs.cloud.google.com/spanner/docs/instance-configurations",
+    "lastVerified": "2026-10-17",
+    "prompt": "Quillon Pay keeps a payment ledger in a relational database that serves a single country. A new regulation requires the ledger to stay inside that country, and the business now requires that losing an entire Google Cloud region neither loses any committed transaction nor depends on a manual promotion step. The country has two Google Cloud regions that Spanner offers as a dual-region configuration. Which design meets every requirement?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Spanner in the dual-region configuration covering both regions, so writes replicate synchronously and a regional outage causes no data loss",
+        "rationale": "Spanner documents zero RPO for dual-region configurations because no data is lost during a regional outage, with 99.999% availability, and both regions sit inside the country."
+      },
+      {
+        "id": "b",
+        "text": "AlloyDB in the first region with a secondary cluster in the second region, promoted when the primary region fails",
+        "rationale": "AlloyDB cross-region replication is asynchronous and promotion is a manual action, so recent transactions can be lost and a person must act. Both conflict with the requirements."
+      },
+      {
+        "id": "c",
+        "text": "Cloud SQL Enterprise Plus with high availability, which provides a synchronous standby, automatic failover and a 99.99% SLA that includes maintenance",
+        "rationale": "Cloud SQL high availability places the primary and standby in two zones of one region. It does not span regions, so losing the region still takes the whole database down."
+      },
+      {
+        "id": "d",
+        "text": "Cloud SQL with a cross-region read replica in the second region, promoted by a runbook once an outage has been declared",
+        "rationale": "Cross-region replicas replicate asynchronously, so some committed transactions can be lost, and promotion is done manually and intentionally. It fails both the zero-loss and the no-manual-step requirements."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "Cross-region replicas and secondary clusters are disaster-recovery tools with asynchronous replication and manual promotion. Among the relational options, only Spanner's dual-region and multi-region configurations keep serving through a region loss, and dual-region documents zero RPO.",
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "id": "q-design-plan-206",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "spanner-vs-bigtable",
+      "performance-latency",
+      "ha-failover"
+    ],
+    "subObjective": "design-plan.3",
+    "sourceUrl": "https://docs.cloud.google.com/bigtable/docs/routing",
+    "lastVerified": "2026-10-17",
+    "prompt": "A ride-hailing platform stores driver state in a Bigtable instance with two clusters, one in europe-west1 and one in europe-west4, for availability. The dispatch service writes a driver's status and immediately reads it back to choose the next assignment. Support sees occasional reads that return the previous status. The service uses the instance's default app profile, and the team accepts a manual failover step. What change fixes the stale reads?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Switch the default profile to row-affinity routing, so that every driver's row key is always served by the same cluster, wherever it runs",
+        "rationale": "Row affinity routes single-row requests by row key, but Bigtable states that read-your-writes consistency is not guaranteed because requests can still fail over to another cluster."
+      },
+      {
+        "id": "b",
+        "text": "Add a third cluster in another region, so that replication reaches every cluster faster and the lag disappears",
+        "rationale": "Replication between clusters is asynchronous and typically takes seconds to minutes. More clusters add replication work and never turn eventual consistency into read-your-writes."
+      },
+      {
+        "id": "c",
+        "text": "Create an app profile with single-cluster routing that points at one cluster, and use it for both the writes and the reads",
+        "rationale": "Single-cluster routing is the policy that gives read-your-writes consistency, because the client group only touches one cluster. The cost is manual failover if that cluster fails, which the team accepts."
+      },
+      {
+        "id": "d",
+        "text": "Keep multi-cluster routing and add nodes to both clusters, so that each request finishes before the next read is issued",
+        "rationale": "Capacity does not change consistency. Multi-cluster routing sends each request to the nearest available cluster, so the read can still land on a cluster that has not yet received the write."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "The default profile of a multi-cluster instance uses multi-cluster routing, which is eventually consistent. Pin the client group that needs read-after-write to a single cluster, and accept manual failover.",
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "id": "q-design-plan-207",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "performance-latency",
+      "scalability",
+      "design-tradeoffs"
+    ],
+    "subObjective": "design-plan.3",
+    "sourceUrl": "https://docs.cloud.google.com/bigtable/docs/replication-settings",
+    "lastVerified": "2026-10-17",
+    "prompt": "A retailer's recommendation service reads features from one Bigtable cluster with a p99 read-latency target of 10 ms. Every night a batch job scans the whole table, and during the scan serving latency doubles. The team wants the scan isolated from serving traffic while both see the same data, without changing the row-key design or writing application code to copy data. What should they do?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Add a second cluster to the instance and send both the batch job and the serving traffic through one shared multi-cluster app profile for simplicity",
+        "rationale": "With one multi-cluster profile, requests from both workloads can land on either cluster, so the scan still competes with serving reads. Isolation needs each workload pinned to its own cluster."
+      },
+      {
+        "id": "b",
+        "text": "Add a second cluster, and give the batch job and the serving service separate app profiles with single-cluster routing to their own clusters",
+        "rationale": "This is the documented isolation layout. Replication keeps both clusters identical, each profile pins its workload to one cluster, and the batch scan no longer touches the cluster that serves reads."
+      },
+      {
+        "id": "c",
+        "text": "Create a second Bigtable instance and have the serving application itself write every update to both instances",
+        "rationale": "Two instances do not replicate to each other, so the application would carry dual-write code and risk the copies diverging. The requirements forbid copy code, and instance replication already exists within one instance."
+      },
+      {
+        "id": "d",
+        "text": "Put Cloud CDN in front of the recommendation service so that most feature reads never reach Bigtable while the scan runs",
+        "rationale": "Cloud CDN caches HTTP responses at the edge. Per-user feature lookups are rarely cacheable, and every uncached read still hits the same cluster the scan is loading, so nothing is isolated."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "Replication plus one single-cluster app profile per workload is the documented way to isolate batch analytics from serving traffic. Use separate app profiles per workload, and do not assume multi-cluster routing isolates anything.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-design-plan-208",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "migration-tooling",
+      "firestore",
+      "minimal-downtime"
+    ],
+    "subObjective": "design-plan.4",
+    "sourceUrl": "https://docs.cloud.google.com/firestore/mongodb-compatibility/docs/migrate-data",
+    "lastVerified": "2026-10-17",
+    "prompt": "Tessera Health runs a self-managed MongoDB 6 replica set on VMs. Its application uses the official MongoDB drivers and aggregation pipelines, and the team wants a serverless managed target with no shard management. The data set is about 2 TB, and the business accepts only a short write outage at cutover. Which migration approach is documented and fits?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "A Database Migration Service continuous job from the MongoDB replica set to Firestore with MongoDB compatibility, promoted at cutover",
+        "rationale": "Database Migration Service covers MySQL, PostgreSQL, SQL Server and Oracle sources. MongoDB is not among them, so the job cannot be created."
+      },
+      {
+        "id": "b",
+        "text": "Nightly mongodump files loaded into Cloud Storage and bulk-imported into Firestore in Native mode, with a final dump at cutover",
+        "rationale": "Native mode exposes the Firestore API, not MongoDB drivers or queries, so the application would need a rewrite. Dump-and-load also leaves a long outage for the last delta."
+      },
+      {
+        "id": "c",
+        "text": "Datastream streaming straight into Cloud SQL for PostgreSQL, with the documents then converted to JSONB tables and the queries ported",
+        "rationale": "Datastream's direct destinations are BigQuery and Cloud Storage, not Cloud SQL. Converting to a relational schema would also force the MongoDB application to be rewritten."
+      },
+      {
+        "id": "d",
+        "text": "Datastream capturing the replica set into Cloud Storage and Dataflow writing it to Firestore with MongoDB compatibility, then cutting over",
+        "rationale": "Google documents this path: Datastream captures data at rest and change events into a bucket, Dataflow writes them to the destination, and only a short write outage is needed at cutover. The source must support Change Streams, which a replica set does."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "explanation": "MongoDB is not a Database Migration Service source. The documented minimal-downtime path to Firestore with MongoDB compatibility (Enterprise edition) is Datastream plus Dataflow.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-design-plan-209",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "database-migration-service",
+      "migration-tooling",
+      "minimal-downtime"
+    ],
+    "subObjective": "design-plan.4",
+    "sourceUrl": "https://docs.cloud.google.com/database-migration/docs/overview",
+    "lastVerified": "2026-10-17",
+    "prompt": "Halden Logistics runs a 3 TB Oracle database for its order system on premises. The company wants to leave Oracle licensing by moving to a managed PostgreSQL-compatible service, with the source online until a cutover of a few minutes. Stored procedures and schema objects should be converted by tooling wherever possible rather than rewritten by hand. Which approach fits?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "A Database Migration Service heterogeneous migration: a conversion workspace for schema and code, then a continuous job to Cloud SQL for PostgreSQL",
+        "rationale": "Database Migration Service supports Oracle to Cloud SQL and AlloyDB for PostgreSQL, converts schema and code through conversion workspaces, and replicates changes continuously so the source stays online until cutover."
+      },
+      {
+        "id": "b",
+        "text": "A Datastream stream replicating the Oracle tables into Cloud SQL for PostgreSQL continuously, with cutover once the stream has caught up",
+        "rationale": "Datastream writes directly to BigQuery and Cloud Storage, not Cloud SQL, and it does no schema or code conversion. It feeds analytics rather than migrating a database."
+      },
+      {
+        "id": "c",
+        "text": "BigQuery Migration Service translating the PL/SQL, with the data loaded into BigQuery and the order system repointed at the new warehouse tables",
+        "rationale": "BigQuery Migration Service targets data warehouses and translates to GoogleSQL. BigQuery is an analytics store, not a transactional database for an order system."
+      },
+      {
+        "id": "d",
+        "text": "A one-time Database Migration Service job during a weekend freeze, with the converted code tested only after the data has been copied across",
+        "rationale": "A one-time job may involve downtime, which contradicts the few-minute cutover. Converting and testing objects after the copy also puts the riskiest work on the critical path."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "Oracle to PostgreSQL is a heterogeneous Database Migration Service migration: conversion workspace first, then a continuous job. Datastream and BigQuery Migration Service solve different problems.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-design-plan-210",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "migration-tooling",
+      "data-movement",
+      "caching"
+    ],
+    "subObjective": "design-plan.4",
+    "sourceUrl": "https://docs.cloud.google.com/memorystore/docs/redis/import-data",
+    "lastVerified": "2026-10-17",
+    "prompt": "Bramble Games is moving a self-managed Redis leaderboard of about 40 GB to Memorystore for Redis. The plan is to export an RDB snapshot to Cloud Storage and import it into a Memorystore instance that has been serving a pilot group's live leaderboard for a week. What must the architect make sure the team plans for?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "A Database Migration Service continuous job that streams source changes, because an RDB import only runs while replication from the source is active",
+        "rationale": "Database Migration Service does not list Redis as a source, and an RDB import is a file restore, not a replication-dependent operation."
+      },
+      {
+        "id": "b",
+        "text": "A merge of the snapshot with the pilot data, so that keys existing only on the Memorystore instance are preserved by the import",
+        "rationale": "The import replaces the instance's data. Google warns to run it only if you are willing to overwrite all current data, so pilot-only keys are lost."
+      },
+      {
+        "id": "c",
+        "text": "An overwrite of all current instance data and an outage of the instance during the import, so pilot data must be exported first or be disposable",
+        "rationale": "The documentation says an import overwrites all current instance data and the instance is unavailable while it runs. Import time grows with size, so schedule a window."
+      },
+      {
+        "id": "d",
+        "text": "An online import with no unavailability, because Memorystore loads the file into a hidden standby and then swaps it in",
+        "rationale": "There is no hidden-standby swap. The instance cannot be accessed or modified until the import finishes, so assuming zero impact would break the pilot users."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "The documented Redis path is RDB export, Cloud Storage and import. It is destructive and takes the instance offline, so import into an empty instance or accept losing and pausing the pilot data.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-design-plan-211",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "datastream",
+      "database-migration-service",
+      "migration-tooling"
+    ],
+    "subObjective": "design-plan.4",
+    "sourceUrl": "https://docs.cloud.google.com/datastream/docs/overview",
+    "lastVerified": "2026-10-17",
+    "prompt": "An engineer proposes moving an on-premises SQL Server database to Cloud SQL for SQL Server by creating a Datastream stream whose destination is the Cloud SQL instance. What should the architect advise?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Approve it, because Datastream replicates continuously and Cloud SQL is a supported destination for SQL Server source databases",
+        "rationale": "Datastream's direct destinations are BigQuery and Cloud Storage. Cloud SQL is reachable only through Dataflow templates, so the proposed stream cannot be created as described."
+      },
+      {
+        "id": "b",
+        "text": "Use Database Migration Service, which documents SQL Server to Cloud SQL for SQL Server, and keep Datastream for analytics",
+        "rationale": "Database Migration Service is the database migration tool and lists SQL Server to Cloud SQL for SQL Server among its homogeneous paths. Datastream feeds BigQuery or Cloud Storage."
+      },
+      {
+        "id": "c",
+        "text": "Use BigQuery Data Transfer Service to load the tables into Cloud SQL on a schedule, then switch the application over to it",
+        "rationale": "BigQuery Data Transfer Service moves data into BigQuery, not out of it into Cloud SQL, and it is not a database migration tool."
+      },
+      {
+        "id": "d",
+        "text": "Copy the database files to Cloud Storage with Storage Transfer Service and attach the bucket as the data disk of the Cloud SQL instance",
+        "rationale": "Cloud SQL data disks are managed by the service and cannot be replaced with a bucket. Storage Transfer Service moves objects and does not migrate databases."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "Datastream is CDC into analytics targets, not a migration path into Cloud SQL. Database Migration Service covers MySQL, PostgreSQL, SQL Server and Oracle sources.",
+    "difficulty": 1,
+    "examOnly": true
+  },
+  {
+    "id": "q-design-plan-212",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "migration-tooling",
+      "bigquery",
+      "migration-planning"
+    ],
+    "subObjective": "design-plan.4",
+    "sourceUrl": "https://docs.cloud.google.com/bigquery/docs/migration-intro",
+    "lastVerified": "2026-10-17",
+    "prompt": "Corvid Insurance is moving a Teradata warehouse to BigQuery. Analysts have about 4,000 saved SQL scripts written in Teradata's dialect. The team wants a migration assessment before planning the work, and an automated first conversion of the scripts instead of rewriting them by hand. Which Google Cloud capability fits?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "BigQuery Migration Service, which provides migration assessment and SQL translation from Teradata's dialect to GoogleSQL",
+        "rationale": "BigQuery Migration Service covers assessment, SQL translation through batch, interactive or API translators, and data transfer, and Teradata is a listed source."
+      },
+      {
+        "id": "b",
+        "text": "BigQuery Data Transfer Service, which converts the SQL dialect of each script while it loads the tables on a schedule",
+        "rationale": "Data Transfer Service automates scheduled data movement into BigQuery. It does not translate SQL scripts."
+      },
+      {
+        "id": "c",
+        "text": "Database Migration Service, using a conversion workspace to turn the Teradata scripts into PostgreSQL syntax",
+        "rationale": "Conversion workspaces serve heterogeneous database migrations such as Oracle to PostgreSQL, and the target is a Cloud SQL or AlloyDB database, not BigQuery. Teradata is not a listed source."
+      },
+      {
+        "id": "d",
+        "text": "Datastream, which captures the Teradata query history and rewrites each statement in GoogleSQL as it replicates it",
+        "rationale": "Datastream is change data capture from databases into BigQuery or Cloud Storage. It neither reads query history nor rewrites SQL."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "Warehouse migrations use BigQuery Migration Service for assessment and SQL translation. Data Transfer Service moves data, and Database Migration Service moves operational databases.",
+    "difficulty": 1,
+    "examOnly": true
+  },
+  {
+    "id": "q-design-plan-213",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "migration-tooling",
+      "testing-validation",
+      "bigquery"
+    ],
+    "subObjective": "design-plan.4",
+    "sourceUrl": "https://docs.cloud.google.com/bigquery/docs/migration/migration-overview",
+    "lastVerified": "2026-10-17",
+    "prompt": "A team has loaded 600 tables from an Oracle data warehouse into BigQuery, and every transfer job reported success. The finance director will approve switching off the Oracle system only with evidence that source and destination tables match. What should the team do?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Treat the successful job status as the evidence, because the transfer verifies each row against the source before it completes successfully",
+        "rationale": "A completed transfer shows that data moved, not that it matches. No transfer service is documented as comparing every value against the source."
+      },
+      {
+        "id": "b",
+        "text": "Compare row counts for ten sampled tables in the console and then switch off the source, since matching counts imply matching data",
+        "rationale": "Counts on a sample miss untested tables and value-level differences such as truncated strings, rounding or type changes."
+      },
+      {
+        "id": "c",
+        "text": "Run Dual Run to replay production events against both systems and compare the outputs before the source is switched off",
+        "rationale": "Dual Run is the parallel-run validation tool for mainframe modernization, not for comparing warehouse tables."
+      },
+      {
+        "id": "d",
+        "text": "Run the open-source Data Validation Tool to compare counts, aggregates, row hashes and schema across the tables, then fix mismatches",
+        "rationale": "Google's migration guide tells you to run the data validation tool to validate that source and destination tables match. It supports column, row, schema and custom-query validations and works across heterogeneous systems."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "explanation": "Successful transfers are not validation. Use the Data Validation Tool for table-level proof before decommissioning the source warehouse.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-design-plan-214",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "migration-planning",
+      "migration-tooling",
+      "workload-disposition"
+    ],
+    "subObjective": "design-plan.4",
+    "sourceUrl": "https://docs.cloud.google.com/mainframe-assessment-tool/docs/mainframe-modernization-overview",
+    "lastVerified": "2026-10-17",
+    "prompt": "Rowan Freight has about 8 million lines of COBOL across 600 programs and almost no current documentation. Before choosing a modernization approach, leadership wants the dependencies between programs, the embedded business logic and the project scope understood. Which Google Cloud mainframe tool belongs to this first phase?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Dual Run, which runs the mainframe and the Google Cloud version side by side and compares their outputs",
+        "rationale": "Dual Run belongs to the validate phase. It needs a modernized application to compare against, so it cannot be the first step."
+      },
+      {
+        "id": "b",
+        "text": "Mainframe Connector, which handles the conversion and migration of mainframe data to Google Cloud",
+        "rationale": "The connector is for data conversion and migration. It does not analyze program dependencies or business logic."
+      },
+      {
+        "id": "c",
+        "text": "Mainframe Assessment Tool, which analyzes the existing environment, its dependencies and its business logic to define scope",
+        "rationale": "The overview assigns the assess phase to Mainframe Assessment Tool: analyze applications, understand dependencies, extract business logic and define scope."
+      },
+      {
+        "id": "d",
+        "text": "Migration Center, which discovers servers and databases and produces TCO reports for moving them to Google Cloud",
+        "rationale": "Migration Center inventories servers and databases and estimates cost. The documented tool for analyzing mainframe code and its dependencies is Mainframe Assessment Tool."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "Google's mainframe journey is assess, modernize, validate. Mainframe Assessment Tool supports assess, Mainframe Connector supports data conversion and migration, and Dual Run supports validation before cutover.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-design-plan-215",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "integration-patterns",
+      "pubsub",
+      "serverless"
+    ],
+    "subObjective": "design-plan.3",
+    "sourceUrl": "https://docs.cloud.google.com/pubsub/docs/push",
+    "lastVerified": "2026-10-17",
+    "prompt": "Linnet Retail receives about 200 order-status messages a minute on a Pub/Sub topic. For each message, a small piece of code must call an internal pricing API, add the result to the message and write a row to BigQuery. Nothing is aggregated across messages, traffic drops to almost zero overnight, and the team wants minimal operations and cost. Which design fits best?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "A streaming Dataflow pipeline, because Dataflow is the standard Google Cloud service for transforming data that arrives on Pub/Sub topics",
+        "rationale": "A streaming job runs continuously, so a trickle of 200 messages a minute with no windows, joins or deduplication pays for capacity it does not need. Dataflow earns its place at sustained volume or with stateful processing."
+      },
+      {
+        "id": "b",
+        "text": "A Cloud Run service behind a Pub/Sub push subscription that enriches each message, writes the row and scales to zero overnight",
+        "rationale": "Push subscriptions work well with serverless services such as Cloud Run. Per-message logic that calls another service fits a small handler, and idle time costs nothing."
+      },
+      {
+        "id": "c",
+        "text": "A BigQuery subscription on the topic by itself, which writes every message to the table exactly as it is received",
+        "rationale": "A BigQuery subscription lands messages as received. It does not run custom code that calls a pricing API, so the enrichment step would be missing."
+      },
+      {
+        "id": "d",
+        "text": "A Managed Service for Apache Airflow DAG that polls the subscription every minute and loads the enriched rows in batches",
+        "rationale": "Airflow orchestrates scheduled pipelines. Using it as a message processor adds an always-on environment and minute-level latency to a simple per-event task."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "Right-size the pipeline: low-volume, per-event logic that calls other services is a Cloud Run job. Reserve Dataflow for sustained volume and stateful processing.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-design-plan-216",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "pubsub",
+      "integration-patterns",
+      "bigquery"
+    ],
+    "subObjective": "design-plan.3",
+    "sourceUrl": "https://docs.cloud.google.com/pubsub/docs/bigquery",
+    "lastVerified": "2026-10-17",
+    "prompt": "Telemetry events from partner kiosks arrive on a Pub/Sub topic as JSON whose fields already match the columns of an existing BigQuery table. No change to the data is needed, and the team does not want to deploy or maintain any subscriber code or pipeline. What is the simplest design?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "A Dataflow streaming job that uses the Pub/Sub to BigQuery template and runs continuously",
+        "rationale": "The template avoids pipeline code, but it is still a job to launch, size and monitor. A built-in subscription type makes it unnecessary when no transformation is needed."
+      },
+      {
+        "id": "b",
+        "text": "A Cloud Run service on a push subscription that inserts each message with the BigQuery client library",
+        "rationale": "It works, but the team owns code, a deployment and error handling, which the requirements say to avoid."
+      },
+      {
+        "id": "c",
+        "text": "A Cloud Data Fusion streaming pipeline with a Pub/Sub source and a BigQuery sink, designed in the web interface",
+        "rationale": "Data Fusion removes code but adds an instance and pipeline runs that run on Spark clusters to operate. It is built for visual ETL, not for a straight copy."
+      },
+      {
+        "id": "d",
+        "text": "A BigQuery subscription on the topic, which writes each message to the existing table as it is received",
+        "rationale": "BigQuery subscriptions are export subscriptions that write messages to a table with no separate subscriber to run. Delivery is at-least-once, so duplicates must be handled if they matter."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "explanation": "When no transformation is needed, a BigQuery subscription is the lowest-operations option. Move to Cloud Run or Dataflow only when the data must change or be aggregated.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-design-plan-217",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "integration-patterns",
+      "pubsub",
+      "scalability"
+    ],
+    "subObjective": "design-plan.3",
+    "sourceUrl": "https://docs.cloud.google.com/pubsub/docs/smts/smts-overview",
+    "lastVerified": "2026-10-17",
+    "prompt": "Orrin Mobility ingests about 25,000 vehicle events per second on Pub/Sub. The business needs a per-region count of events in five-minute tumbling windows, with duplicates removed before counting and results written to BigQuery so that each event is counted exactly once even when the pipeline restarts. Which design should the architect choose?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "A streaming Dataflow pipeline that applies five-minute windows, deduplicates by event ID and writes to BigQuery with exactly-once processing",
+        "rationale": "Dataflow supports tumbling windows, watermarks and triggers, and provides exactly-once processing of every record by default. The volume and the stateful requirements are what justify an always-on pipeline."
+      },
+      {
+        "id": "b",
+        "text": "A single message transform on the topic that counts events per region, followed by a BigQuery subscription for the output",
+        "rationale": "A single message transform operates on one message and cannot aggregate several, so it cannot count across a window."
+      },
+      {
+        "id": "c",
+        "text": "A Cloud Run function on a push subscription that keeps the window counters in memory and writes them when each window closes",
+        "rationale": "Counters in memory are lost on restart and split across instances as the service scales. Delivery is at-least-once, so nothing here guarantees that each event is counted once."
+      },
+      {
+        "id": "d",
+        "text": "A BigQuery subscription that writes the raw events to a table, relying on the subscription to guarantee exactly-once delivery",
+        "rationale": "The BigQuery subscription supports at-least-once delivery only, so duplicates can occur. It also performs no windowing or counting."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "Windowing across messages, deduplication and exactly-once at high volume are the cases that justify Dataflow. Simpler options are right only when those requirements are absent.",
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "id": "q-design-plan-218",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "integration-patterns",
+      "design-tradeoffs",
+      "bigquery"
+    ],
+    "subObjective": "design-plan.3",
+    "sourceUrl": "https://docs.cloud.google.com/data-fusion/docs/concepts/overview",
+    "lastVerified": "2026-10-17",
+    "prompt": "The analytics team at Pavo Foods has strong SQL skills but nobody who writes Java or Python. They must build a nightly batch pipeline that reads files from Cloud Storage, cleans and joins columns and loads the result into BigQuery. They want to design and maintain it in a visual interface with prebuilt connectors and transformations, without managing clusters. Which service fits?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Dataflow with a custom Apache Beam pipeline that the team writes in Python and deploys as a batch job",
+        "rationale": "A custom Beam pipeline is code-based. The team has no Java or Python skills and asked for a visual interface."
+      },
+      {
+        "id": "b",
+        "text": "Dataform, with SQLX files that read the files from Cloud Storage and load the cleaned result into BigQuery",
+        "rationale": "Dataform is the transform step of ELT for data already in BigQuery. It does not extract or load data, and it is not a visual pipeline designer."
+      },
+      {
+        "id": "c",
+        "text": "Cloud Data Fusion, building the pipeline in its web interface from source, transform and sink plugins",
+        "rationale": "Cloud Data Fusion is a managed, code-free data integration service. It runs each pipeline on an ephemeral cluster that it creates and deletes, so there are no clusters to manage."
+      },
+      {
+        "id": "d",
+        "text": "Dataproc with a persistent cluster that runs Spark jobs the team writes by hand and schedules with cron",
+        "rationale": "This needs Spark code and a cluster to run, patch and pay for continuously, which are the two things the team wants to avoid."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "Visual, code-free ETL with prebuilt plugins is Cloud Data Fusion. Dataflow and Dataproc need code, and Dataform only transforms data that is already in BigQuery.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-design-plan-219",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "licensing",
+      "sole-tenant-nodes",
+      "migration-planning"
+    ],
+    "subObjective": "design-plan.4",
+    "sourceUrl": "https://docs.cloud.google.com/compute/docs/instances/windows/ms-licensing-faq",
+    "lastVerified": "2026-10-17",
+    "prompt": "Fenwick Mutual is moving a claims database from its data center to Compute Engine. It owns SQL Server Enterprise core licenses under a Microsoft volume agreement with active Software Assurance that includes License Mobility, and it wants to pay only for infrastructure. Auditors ask whether the database VMs must run on dedicated hardware. What should the architect advise?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Create sole-tenant nodes, because every bring-your-own SQL Server license has to run on dedicated physical servers",
+        "rationale": "Dedicated servers are required for software brought under Outsourcing Software Management Rights, not for SQL Server covered by Software Assurance with License Mobility. Adding sole-tenancy here only adds the node premium."
+      },
+      {
+        "id": "b",
+        "text": "Use pay-as-you-go SQL Server images and set the owned licenses aside, because SQL Server cannot be brought to Compute Engine",
+        "rationale": "SQL Server with Software Assurance and License Mobility is an eligible bring-your-own case. Paying the hourly license fee as well would pay for the same software twice."
+      },
+      {
+        "id": "c",
+        "text": "Run it on default multi-tenant VMs under License Mobility and pay only for the Compute Engine capacity those VMs use",
+        "rationale": "The licensing FAQ says SQL Server with Software Assurance and License Mobility can run on default multi-tenant instances as long as the operating system does not itself require sole-tenant nodes. A bring-your-own license is billed for infrastructure only."
+      },
+      {
+        "id": "d",
+        "text": "Buy resource-based committed use discounts for the VMs, because those commitments are what discount SQL Server license charges",
+        "rationale": "Hardware commitments cover vCPU and memory, and the documented license commitments cover only SLES, SLES for SAP and RHEL images. A bring-your-own SQL Server license carries no Google license charge to discount in the first place."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "Tenancy follows the licensing rights: Software Assurance with License Mobility allows SQL Server on shared hosts, while Outsourcing Software Management Rights and per-core Windows Server licensing need sole-tenant nodes.",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "id": "q-design-plan-220",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "licensing",
+      "sole-tenant-nodes",
+      "migration-planning"
+    ],
+    "subObjective": "design-plan.4",
+    "sourceUrl": "https://docs.cloud.google.com/compute/docs/instances/windows/ms-licensing-faq",
+    "lastVerified": "2026-10-17",
+    "prompt": "Calloway Systems wants to bring its own Windows Server 2016 Datacenter licenses to Compute Engine. They were acquired under an enrollment that took effect in 2017 and carry no Software Assurance. An engineer plans to run the VMs on default multi-tenant hosts under License Mobility so the company avoids the sole-tenant premium. What is the correct assessment?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Proceed on multi-tenant hosts, because License Mobility covers Windows Server whenever the enrollment predates October 2019",
+        "rationale": "License Mobility applies to server applications such as SQL Server, not to the Windows Server operating system, and these licenses have no Software Assurance anyway."
+      },
+      {
+        "id": "b",
+        "text": "Upgrade the guests to Windows Server 2022 first, since newer versions qualify for bring-your-own rights on shared hosts",
+        "rationale": "Versions released on or after October 1, 2019, such as Windows Server 2022, are not eligible under Outsourcing Software Management Rights, so the upgrade would remove the bring-your-own option."
+      },
+      {
+        "id": "c",
+        "text": "Use pay-as-you-go Windows Server images and apply the owned licenses as a credit against the hourly license fee",
+        "rationale": "The on-demand hourly fee bundles the Microsoft license with compute. A bring-your-own license is billed for infrastructure only, and there is no documented way to credit one against the other."
+      },
+      {
+        "id": "d",
+        "text": "Use sole-tenant nodes, because Windows Server is outside License Mobility and these older licenses need dedicated servers",
+        "rationale": "Windows Server is not covered by License Mobility. A pre-October 2019 version and enrollment can qualify under Outsourcing Software Management Rights, which Microsoft does not allow in a multi-tenant environment, so dedicated servers are required."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "explanation": "Reflexively reaching for License Mobility fails for Windows Server: eligible older licenses are brought under Outsourcing Software Management Rights and need sole-tenant nodes.",
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "id": "q-design-plan-221",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "licensing",
+      "migration-planning"
+    ],
+    "subObjective": "design-plan.4",
+    "sourceUrl": "https://docs.cloud.google.com/compute/docs/instances/windows/ms-licensing",
+    "lastVerified": "2026-10-17",
+    "prompt": "Bramley Outfitters needs a three-month proof of concept on a Windows Server VM running SQL Server. The company owns no Microsoft licenses and wants no upfront purchase and no separate licensing agreement with Microsoft. How should the VM be licensed?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Purchase Software Assurance first so License Mobility can supply the licenses for the proof of concept",
+        "rationale": "This is an upfront purchase and a separate agreement, which the team wants to avoid. License Mobility only helps when licenses already exist under a volume agreement."
+      },
+      {
+        "id": "b",
+        "text": "Create the VM from a Google-provided SQL Server image, so the Windows and SQL Server licenses are billed hourly with compute",
+        "rationale": "On-demand licenses come with the prebuilt images, need no upfront investment and no separate agreement, and suit short-term projects and testing. The hourly fee covers compute and license together."
+      },
+      {
+        "id": "c",
+        "text": "Provision sole-tenant nodes and buy per-core licenses to bring to them, which keeps the proof of concept compliant",
+        "rationale": "Sole-tenant nodes serve license terms that need dedicated hardware. Buying per-core licenses is an upfront purchase for a three-month test and adds a node premium."
+      },
+      {
+        "id": "d",
+        "text": "Create the VM and buy a three-year compute commitment, which includes the SQL Server license for the machine",
+        "rationale": "A compute commitment discounts vCPU and memory on a one- or three-year term. It does not supply a license, and a three-year term is mismatched to a three-month test."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "With no existing licenses and a short horizon, on-demand (pay-as-you-go) images are the simplest compliant choice.",
+    "difficulty": 1,
+    "examOnly": true
+  },
+  {
+    "id": "q-design-plan-222",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "licensing",
+      "migration-planning"
+    ],
+    "subObjective": "design-plan.4",
+    "sourceUrl": "https://docs.cloud.google.com/compute/docs/instances/windows/ms-licensing",
+    "lastVerified": "2026-10-17",
+    "prompt": "Hartwell Bank runs SQL Server on its own licenses, covered by Software Assurance with License Mobility, in europe-west1. A disaster recovery proposal would move the same core licenses to us-east1 whenever a quarterly drill makes that region the primary, then move them back two weeks later. Which constraint breaks the proposal?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "A license deployed in one region cannot move to another region for 90 days, so each region needs its own licensing",
+        "rationale": "The licensing guide states that after a license is deployed in a region it cannot move to another region for 90 days. A two-week swing violates that, so licenses (owned or on-demand) are needed in both regions."
+      },
+      {
+        "id": "b",
+        "text": "License Mobility applies within a single project, so the licenses cannot be used by VMs created in a second project",
+        "rationale": "No such project-level limit is documented. The documented region restriction is the one that breaks this plan."
+      },
+      {
+        "id": "c",
+        "text": "Bring-your-own SQL Server can only be deployed on sole-tenant nodes outside the region where the licenses were bought",
+        "rationale": "SQL Server under License Mobility can run on default multi-tenant instances. Sole-tenancy is not tied to the purchase region."
+      },
+      {
+        "id": "d",
+        "text": "Software Assurance lapses whenever the licensed VMs are stopped, which a failover drill requires",
+        "rationale": "Software Assurance coverage must be maintained under the Microsoft agreement, but stopping a VM does not end it. It is a contract status, not a runtime state."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "Plan licenses per region: the 90-day rule makes moving them back and forth for drills non-compliant.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-design-plan-223",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "spot-vms",
+      "compute-provisioning"
+    ],
+    "subObjective": "design-plan.3",
+    "sourceUrl": "https://docs.cloud.google.com/compute/docs/disks/local-ssd",
+    "lastVerified": "2026-10-17",
+    "prompt": "Quillan Bio runs a protein-folding job on Spot VMs, each with two Local SSD disks. The job writes a checkpoint to the Local SSD every ten minutes. Spot VMs are preempted a few times a day, and every replacement VM restarts the job from step zero. Which change lets the job resume from its last checkpoint?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Set the termination action to STOP so the preempted VM keeps its Local SSD contents until it restarts",
+        "rationale": "STOP keeps the VM and its persistent disks, but data on Local SSD does not persist when a Spot VM goes through the preemption process."
+      },
+      {
+        "id": "b",
+        "text": "Opt in to preserving Local SSD data on stop, so a preempted VM saves its checkpoints during shutdown",
+        "rationale": "That option is a Preview feature, and for Spot VMs the Local SSD data is still lost if the VM is preempted during the stop operation."
+      },
+      {
+        "id": "c",
+        "text": "Raise the preemption notice to 120 seconds so the job can snapshot each Local SSD disk before the VM stops",
+        "rationale": "Local SSD data cannot be backed up with standard snapshots, disk images or disk clones, so a longer notice does not make this possible."
+      },
+      {
+        "id": "d",
+        "text": "Write checkpoints to a Persistent Disk, Hyperdisk or Cloud Storage, and keep Local SSD for scratch data",
+        "rationale": "Persistent disks and Cloud Storage outlive a preempted VM, whereas Local SSD is temporary storage. Data that is not temporary belongs on durable storage, and Local SSD stays useful for scratch."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "explanation": "Fast local storage does not make a checkpoint durable: anything the job must resume from goes to disk or object storage that survives preemption.",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "id": "q-design-plan-224",
+    "type": "multiple",
+    "domainId": "design-plan",
+    "concepts": [
+      "compute-provisioning"
+    ],
+    "subObjective": "design-plan.3",
+    "sourceUrl": "https://docs.cloud.google.com/compute/docs/disks/local-ssd",
+    "lastVerified": "2026-10-17",
+    "prompt": "A team is attaching Local SSD disks to a Compute Engine VM for the first time. Which two kinds of data are an appropriate fit for them? Choose two.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Shuffle and spill files for an analytics job whose inputs and final results live in Cloud Storage",
+        "rationale": "Scratch processing space for HPC and data analytics is a documented Local SSD use. The data is reproducible, so losing it on a stop costs only a rerun."
+      },
+      {
+        "id": "b",
+        "text": "The only copy of customer orders that are waiting for the nightly export to the warehouse",
+        "rationale": "Local SSD is not replicated and its data may be lost if the instance stops or is terminated, so the only copy of business data must not sit there."
+      },
+      {
+        "id": "c",
+        "text": "A cache of lookup tables that the VM can rebuild from Cloud Storage after a restart",
+        "rationale": "Caches and transient data are the other documented use. Rebuilding from durable storage makes a lost cache an inconvenience, and Local SSD latency makes it worth having."
+      },
+      {
+        "id": "d",
+        "text": "The final trained model file that a long run produces and that nothing else stores",
+        "rationale": "Results that are not temporary or ephemeral belong on Hyperdisk, Persistent Disk or Cloud Storage, not on storage that disappears with the host."
+      }
+    ],
+    "correct": [
+      "a",
+      "c"
+    ],
+    "explanation": "Local SSD is for caches, scratch space and transient data such as the SQL Server tempdb; durable data goes elsewhere.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-design-plan-225",
+    "type": "multiple",
+    "domainId": "design-plan",
+    "concepts": [
+      "integration-patterns",
+      "cloud-run",
+      "pubsub"
+    ],
+    "subObjective": "design-plan.1",
+    "sourceUrl": "https://docs.cloud.google.com/run/docs/triggering/https-request",
+    "lastVerified": "2026-10-17",
+    "prompt": "Tidewater Freight runs a job every two minutes from Cloud Scheduler that calls a carrier's REST API for each of 30,000 open shipments and updates a database. Most polls find no change, the carrier throttles the job, and customers see statuses up to two minutes late. The carrier can send a signed HTTPS webhook on every status change but offers no Google Cloud integration. Notifications, billing and analytics services each need to react to every status change independently. Which two actions form the right design? Choose two.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Create an Eventarc trigger for the carrier's events and route it to a Cloud Run service that updates the database",
+        "rationale": "Eventarc third-party sources are a short list of approved vendors, and in Standard they are Preview. An arbitrary carrier's webhook is not an Eventarc event source."
+      },
+      {
+        "id": "b",
+        "text": "Shorten the schedule to every 15 seconds and add Cloud NAT egress addresses that the carrier can allowlist",
+        "rationale": "A shorter interval multiplies empty calls and throttling. Static egress addresses do not change that polling is the wrong pattern."
+      },
+      {
+        "id": "c",
+        "text": "Keep the two-minute poll but put an Apigee proxy with response caching in front of the carrier's API",
+        "rationale": "Apigee exposes and governs APIs. Caching the carrier's responses still leaves a scheduled poll that cannot see a change until the next interval."
+      },
+      {
+        "id": "d",
+        "text": "Give the carrier a public Cloud Run URL as the webhook target and verify each signature in the handler",
+        "rationale": "Every Cloud Run service has a stable HTTPS endpoint that can allow public access. Push removes the empty polls and the lag, and the handler authenticates the caller itself."
+      },
+      {
+        "id": "e",
+        "text": "Have the handler publish each update to a Pub/Sub topic that the downstream services subscribe to",
+        "rationale": "Pub/Sub decouples the consumers from the carrier and from the endpoint, so each can scale and fail independently and new subscribers need no change to the sender."
+      }
+    ],
+    "correct": [
+      "d",
+      "e"
+    ],
+    "explanation": "When a provider can push, replace the schedule with a webhook receiver. Eventarc routes Google sources and a few approved partners, not arbitrary webhooks.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-design-plan-226",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "integration-patterns"
+    ],
+    "subObjective": "design-plan.1",
+    "sourceUrl": "https://docs.cloud.google.com/application-integration/docs/overview",
+    "lastVerified": "2026-10-17",
+    "prompt": "Brindle Home Goods' sales operations team must copy each closed Salesforce opportunity into a MySQL database and publish a notice to Pub/Sub. Business analysts, not developers, will own the field mappings. They want a visual editor, prebuilt connectors and no custom API client code. Which Google Cloud service fits?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Workflows, with a YAML step for each Salesforce call and the field transformations written in expressions",
+        "rationale": "Workflows orchestrates Google Cloud APIs and HTTP calls, but the analysts would be hand-writing the API calls and mappings rather than using connectors and a visual mapping editor."
+      },
+      {
+        "id": "b",
+        "text": "Application Integration, using its Salesforce and MySQL connectors with the visual data mapping editor and triggers",
+        "rationale": "Application Integration is Google Cloud's iPaaS: a drag-and-drop editor, prebuilt connectors to business applications and databases, and visual data mapping, with little or no code."
+      },
+      {
+        "id": "c",
+        "text": "API Gateway, configured with an OpenAPI definition that fronts the Salesforce and MySQL endpoints",
+        "rationale": "API Gateway fronts your own backends with a REST interface. It exposes APIs rather than pulling and mapping data between SaaS systems."
+      },
+      {
+        "id": "d",
+        "text": "Pub/Sub, with a subscription per system so each application reads and writes the messages it needs",
+        "rationale": "Pub/Sub decouples producers and consumers, but it has no Salesforce connector or mapping editor, so someone still has to write the code on both sides."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "Pick by job: expose APIs (API Gateway, Apigee), move messages (Pub/Sub), orchestrate Google Cloud and HTTP calls (Workflows), connect SaaS and databases with connectors and mapping (Application Integration).",
+    "difficulty": 2
+  },
+  {
+    "id": "q-design-plan-227",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "integration-patterns",
+      "cloud-run",
+      "pubsub"
+    ],
+    "subObjective": "design-plan.1",
+    "sourceUrl": "https://docs.cloud.google.com/run/docs/triggering/https-request",
+    "lastVerified": "2026-10-17",
+    "prompt": "A Cloud Scheduler job polls a payment provider's API to learn when settlements finish. The exhibit shows a month of results. The team wants to cut the poll interval from five minutes to one minute to reduce staleness. The provider documents signed webhooks for settlement events. Which change addresses the design problem?",
+    "exhibit": {
+      "label": "Settlement poller, last 30 days",
+      "format": "table",
+      "content": "| Metric | Value |\n|---|---|\n| Poll interval | 5 min |\n| Polls per day | 288 |\n| Polls that found a new settlement | 4% |\n| HTTP 429 (throttled) responses | rising weekly |\n| Median age of a settlement when noticed | 2 min 30 s |"
+    },
+    "choices": [
+      {
+        "id": "a",
+        "text": "Drop the schedule and take the provider's signed webhooks on an HTTPS Cloud Run endpoint",
+        "rationale": "Push delivers each settlement when it happens, removes the empty polls and the throttling, and lets Cloud Run scale to zero between events."
+      },
+      {
+        "id": "b",
+        "text": "Cut the interval to one minute and add retry with exponential backoff for the throttled calls",
+        "rationale": "Five times as many calls would mostly find nothing and worsen the throttling. Backoff hides the symptom while latency stays tied to the interval."
+      },
+      {
+        "id": "c",
+        "text": "Replace Cloud Scheduler with a Cloud Composer DAG whose sensor waits for the settlement to appear",
+        "rationale": "A sensor still polls the provider's API on an interval, so it keeps the same wasted calls and throttling on heavier infrastructure."
+      },
+      {
+        "id": "d",
+        "text": "Insert a Pub/Sub topic between Cloud Scheduler and the poller so throttled runs are queued and retried later",
+        "rationale": "Queuing runs does not remove empty polls, because the poller still has to ask the provider. Pub/Sub helps once events are pushed, not as a cushion for polling."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "A 4 percent hit rate and rising throttling show polling is the wrong pattern; shortening the interval only makes it worse.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-design-plan-229",
+    "type": "single",
+    "domainId": "design-plan",
+    "concepts": [
+      "prebuilt-ai-apis"
+    ],
+    "subObjective": "design-plan.5",
+    "sourceUrl": "https://docs.cloud.google.com/natural-language/docs/basics",
+    "lastVerified": "2026-10-17",
+    "prompt": "Veridian Utilities' field inspectors upload photos of equipment nameplates with printed serial numbers and record spoken voice memos about faults. Managers want each serial number as text and a list of the equipment and places named in every memo. There is no labeled data and no ML team. Which mapping of input type to service is right?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Natural Language API on both the photos and the audio files, since it extracts entities from any content type",
+        "rationale": "The Natural Language API analyzes text only. Photos need OCR and audio needs speech recognition before any entity analysis can run."
+      },
+      {
+        "id": "b",
+        "text": "Vision API text detection for the photos, and Speech-to-Text alone for the memos, since transcripts already list the entities",
+        "rationale": "A transcript is plain text. Naming the equipment and places in it is entity analysis, which is a Natural Language API job, so this leaves the memo requirement unmet."
+      },
+      {
+        "id": "c",
+        "text": "Vision API text detection for the photos, and Speech-to-Text followed by Natural Language entity analysis for the memos",
+        "rationale": "Each input gets the service for its modality: OCR for text in images, speech recognition for audio, then entity analysis on the resulting text. All are prebuilt and need no training."
+      },
+      {
+        "id": "d",
+        "text": "Vision API on the photos and the audio files, then Document AI to pull equipment and places out of the memos",
+        "rationale": "The Vision API analyzes images and cannot transcribe audio. Document AI processes documents, not spoken recordings."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "Chain prebuilt APIs by modality: OCR (Vision) or speech recognition (Speech-to-Text) produce text, and the Natural Language API then analyzes that text.",
+    "difficulty": 2
   }
 ]

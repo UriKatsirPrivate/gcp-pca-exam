@@ -2404,5 +2404,798 @@
     ],
     "explanation": "Hypervisor-level metrics cover CPU and network only. For guest memory, disk space, processes and file-based logs on Compute Engine, run the Ops Agent and roll it out fleet-wide with an agent policy or automation.",
     "difficulty": 2
+  },
+  {
+    "id": "q-ops-excellence-125",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "cloud-observability",
+      "monitoring-logging"
+    ],
+    "subObjective": "ops-excellence.2",
+    "sourceUrl": "https://docs.cloud.google.com/stackdriver/bindplane",
+    "lastVerified": "2026-10-17",
+    "prompt": "Fjordline Freight runs 300 Linux VMs in two on-premises data centers under VMware. After moving its web tier to GKE, the SRE team wants the on-prem hosts' system metrics and application logs in Cloud Monitoring and Cloud Logging, so one set of alerting policies, dashboards and retention rules covers both estates. Which approach should the architect choose?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Deploy OpenTelemetry Collectors on the hosts, fleet-managed with Bindplane, exporting to Cloud Monitoring and Cloud Logging",
+        "rationale": "Correct. Bindplane is an OpenTelemetry-based pipeline that Google documents for hybrid and on-premises collection. It deploys and manages collectors that send telemetry to the Google Cloud APIs, so the on-prem data lands in the same dashboards, alerts and retention as the GKE data."
+      },
+      {
+        "id": "b",
+        "text": "Install the Ops Agent on each VM and authenticate it with a service account key, because it supports any Linux VM that can reach Google APIs",
+        "rationale": "The Ops Agent is a Compute Engine agent. Its documentation states it is not supported on Amazon EC2 instances or on-premises machines, so a key does not make an unsupported host supported. The misconception is that Ops Agent support is defined by network reachability."
+      },
+      {
+        "id": "c",
+        "text": "Keep the existing on-premises monitoring stack for those hosts and forward only its critical alerts to Cloud Monitoring through a webhook",
+        "rationale": "This leaves two alerting and retention planes and sends no metrics or logs to Google Cloud. It is the second-stack pattern the single-plane design is meant to avoid."
+      },
+      {
+        "id": "d",
+        "text": "Create public uptime checks against each on-premises service endpoint and treat their results as the host metrics and log source",
+        "rationale": "Uptime checks are outside-in availability probes. They produce no in-guest CPU, memory or disk metrics and no application logs, and public checks cannot reach private endpoints anyway."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "Match the collection path to where the workload runs: native collection on GKE, Cloud Run and App Engine, the Ops Agent on Compute Engine, and an OpenTelemetry Collector (optionally managed with Bindplane) for on-prem and other clouds.",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "id": "q-ops-excellence-126",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "cloud-observability",
+      "cloud-logging"
+    ],
+    "subObjective": "ops-excellence.2",
+    "sourceUrl": "https://docs.cloud.google.com/run/docs/logging",
+    "lastVerified": "2026-10-17",
+    "prompt": "A team deploys a new Cloud Run service that writes one JSON object per line to stdout. A reviewer insists that the container image must include a logging agent so the entries reach Cloud Logging. What should the architect advise?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "No agent is needed, because Cloud Run collects stdout and stderr natively and parses single-line JSON into jsonPayload fields",
+        "rationale": "Correct. Cloud Run's docs state it does not use logging agents because it has built-in log collection. Single-line JSON on stdout or stderr is picked up and placed in jsonPayload."
+      },
+      {
+        "id": "b",
+        "text": "Add the Ops Agent as a sidecar container, since it is the only supported way to ship container stdout to Cloud Logging",
+        "rationale": "The Ops Agent targets Compute Engine VMs and is not installed on managed platforms. Cloud Run already ships stdout and stderr; a sidecar logging agent would only duplicate that work."
+      },
+      {
+        "id": "c",
+        "text": "Run a Fluent Bit DaemonSet on the nodes that host the service, as is done for Kubernetes workloads outside Google Cloud",
+        "rationale": "Cloud Run exposes no nodes or DaemonSets to you. The DaemonSet pattern applies to attached or self-managed Kubernetes clusters, not to a serverless platform with integrated collection."
+      },
+      {
+        "id": "d",
+        "text": "Create a log sink with the service as its writer identity, because stdout lines are not routed to a bucket without one",
+        "rationale": "Sinks route entries that are already ingested to other destinations. Every project has a _Default sink that already stores the entries, so no sink is needed for them to appear in Logs Explorer."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "Cloud Run, Cloud Run functions, GKE and App Engine flexible collect stdout and stderr with an integrated agent. Only Compute Engine VMs need the Ops Agent.",
+    "difficulty": 1,
+    "examOnly": true
+  },
+  {
+    "id": "q-ops-excellence-128",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "monitoring-logging",
+      "alerting"
+    ],
+    "subObjective": "ops-excellence.2",
+    "sourceUrl": "https://docs.cloud.google.com/kubernetes-engine/docs/concepts/about-logs",
+    "lastVerified": "2026-10-17",
+    "prompt": "A Python payment service on GKE prints plain-text lines with print(). Its failures show up in Logs Explorer, but a log-based metric counting severity>=ERROR stays at zero and the paging alert never fires. The exhibit shows one failure entry. What is the best fix?",
+    "exhibit": {
+      "label": "Failure entry in Logs Explorer",
+      "format": "log",
+      "content": "severity: INFO\nlogName: projects/shop-prod/logs/stdout\nresource.type: k8s_container\ntextPayload: \"ERROR payment-service charge failed order=88213 reason=card_declined\""
+    },
+    "choices": [
+      {
+        "id": "a",
+        "text": "Emit each log line as single-line JSON with a severity property, for example through a structured logging formatter library",
+        "rationale": "Correct. The integrated GKE agent promotes the severity key of a single-line JSON record to the LogEntry severity field. Plain text on stdout stays textPayload at INFO, which is why the word ERROR in the text does not help."
+      },
+      {
+        "id": "b",
+        "text": "Grant roles/logging.logWriter to the node service account, because the entries are being recorded with the wrong severity",
+        "rationale": "Entries are already arriving, so write permission is not the problem. Missing permissions cause 401 or 403 errors and absent entries; they never alter the severity of entries that were written."
+      },
+      {
+        "id": "c",
+        "text": "Install the Ops Agent on the GKE nodes so it scans the text for error keywords and raises the severity automatically",
+        "rationale": "The Ops Agent is not installed on GKE nodes, which already use an integrated logging agent. Guessing severity from message text would also patch the symptom instead of fixing the log format at the source."
+      },
+      {
+        "id": "d",
+        "text": "Redirect the application's output to stderr, since the integrated agent classifies everything written there as ERROR",
+        "rationale": "On GKE stderr does map to ERROR, but for every line, so routine messages would also page the team. The fix is a per-entry severity, not a per-stream one."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "By default GKE records stdout as INFO and stderr as ERROR; only a severity field in structured JSON gives per-entry levels.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-ops-excellence-129",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "cloud-observability",
+      "cloud-logging"
+    ],
+    "subObjective": "ops-excellence.2",
+    "sourceUrl": "https://docs.cloud.google.com/run/docs/logging",
+    "lastVerified": "2026-10-17",
+    "prompt": "A Cloud Run service writes single-line JSON logs containing severity and message. In Logs Explorer, no application log lines are nested beneath the request log entries, even though every request carries the X-Cloud-Trace-Context header. The team will not adopt a Cloud Logging client library this quarter. What change correlates the container logs with the request logs?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Add a logging.googleapis.com/trace field to each JSON line, set to projects/PROJECT_ID/traces/TRACE_ID from the header",
+        "rationale": "Correct. Cloud Run's docs say container logs are correlated with request logs only through a client library or a JSON line carrying logging.googleapis.com/trace with the trace ID from the header. The prefixed key is promoted to the LogEntry trace field."
+      },
+      {
+        "id": "b",
+        "text": "Add a custom traceId property to each JSON line holding the trace ID that was extracted from the incoming request header",
+        "rationale": "Only the documented special keys are promoted. A custom traceId stays inside jsonPayload, so the LogEntry trace field is empty and Logs Explorer has nothing to group on."
+      },
+      {
+        "id": "c",
+        "text": "Run the Ops Agent as a sidecar so it stamps the trace context onto every line it forwards from the container",
+        "rationale": "Cloud Run needs no agent for log collection, and a sidecar does not know which request produced which line. The trace identifier has to come from the application."
+      },
+      {
+        "id": "d",
+        "text": "Grant the runtime service account roles/cloudtrace.agent so Logging can join its log lines to the spans it exports",
+        "rationale": "This confuses trace export permission with log correlation. Correlation depends on the trace field in each log entry, not on whether the service may write spans."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "The same prefixed special keys (logging.googleapis.com/trace, spanId, trace_sampled) drive correlation for any structured stdout logger.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-ops-excellence-130",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "cloud-observability",
+      "cloud-logging"
+    ],
+    "subObjective": "ops-excellence.2",
+    "sourceUrl": "https://docs.cloud.google.com/kubernetes-engine/docs/concepts/about-logs",
+    "lastVerified": "2026-10-17",
+    "prompt": "After a release, the new pods of one GKE Deployment produce no entries in Cloud Logging, while every other workload in the cluster still logs normally and the node service account has not changed. The application writes single-line JSON to stdout. The exhibit is a line the new version prints. What is the most likely cause, and the right fix?",
+    "exhibit": {
+      "label": "Line printed by the new version",
+      "format": "log",
+      "content": "{\"stream\":\"checkout-events\",\"severity\":\"INFO\",\"message\":\"order placed\",\"orderId\":\"88213\"}"
+    },
+    "choices": [
+      {
+        "id": "a",
+        "text": "The stream key is reserved in the GKE logging pipeline and can cause entries to be dropped, so rename that field in the log schema",
+        "rationale": "Correct. GKE's logging documentation lists stream as a reserved key whose presence in application JSON can cause unexpected behavior and dropped logs. Other pods logging normally points to the payload, not the platform."
+      },
+      {
+        "id": "b",
+        "text": "The node service account lost roles/logging.logWriter, which silently drops entries only for the newest Deployment's pods",
+        "rationale": "Node permissions apply to every pod on the node. Other workloads still log, so IAM is not the cause, and a permission failure shows up as 401 or 403 errors in the logging agent, not as a per-Deployment pattern."
+      },
+      {
+        "id": "c",
+        "text": "The INFO severity falls below the integrated agent's default threshold, so it discards the entries; raise the logged level to WARNING",
+        "rationale": "INFO is not discarded: stdout text from the other workloads is recorded at INFO by default and still arrives. The cause lies in the payload shape, not its level."
+      },
+      {
+        "id": "d",
+        "text": "Single-line JSON is parsed only by the Ops Agent, so the Deployment's nodes need it installed to forward these structured lines",
+        "rationale": "GKE's integrated logging agent already reads single-line JSON written to stdout or stderr and sends it as structured entries. The Ops Agent is for Compute Engine VMs."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "Entries that are missing entirely point to dropped payloads (reserved or duplicate JSON keys, oversized entries) or to permissions. Every other pod logging normally rules out permissions here.",
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "id": "q-ops-excellence-131",
+    "type": "multiple",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "cloud-logging",
+      "monitoring-logging"
+    ],
+    "subObjective": "ops-excellence.2",
+    "sourceUrl": "https://docs.cloud.google.com/logging/docs/agent/logging/configuration",
+    "lastVerified": "2026-10-17",
+    "prompt": "A Cloud Run service writes single-line JSON to stdout. Choose two top-level properties that Cloud Logging removes from jsonPayload and writes to the matching LogEntry field.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "severity, with a value such as WARNING, which sets the severity of the log entry",
+        "rationale": "Correct. A severity key is stripped from jsonPayload and appears as the entry's severity, so level filters and severity-based alerts work."
+      },
+      {
+        "id": "b",
+        "text": "httpRequest, holding a record such as requestMethod and status, which fills the LogEntry httpRequest field",
+        "rationale": "Correct. httpRequest is one of the special fields moved out of jsonPayload into the LogEntry httpRequest field when it is a structured record."
+      },
+      {
+        "id": "c",
+        "text": "level, with a value such as WARNING, which sets the severity of the log entry the same way",
+        "rationale": "Many logging frameworks default to a level key, but it is not a special field. It stays in jsonPayload and the entry keeps its default severity."
+      },
+      {
+        "id": "d",
+        "text": "traceId, holding the request's trace ID, which fills the LogEntry trace field used for correlation",
+        "rationale": "The promoted key is the prefixed logging.googleapis.com/trace. A plain traceId stays in jsonPayload and does not populate the trace field."
+      }
+    ],
+    "correct": [
+      "a",
+      "b"
+    ],
+    "difficulty": 1
+  },
+  {
+    "id": "q-ops-excellence-132",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "gitops",
+      "deployment-release-management",
+      "ci-cd"
+    ],
+    "subObjective": "ops-excellence.3",
+    "sourceUrl": "https://docs.cloud.google.com/kubernetes-engine/config-sync/docs/how-to/prevent-config-drift",
+    "lastVerified": "2026-10-17",
+    "prompt": "Brightwell Labs runs 14 GKE clusters. Last month its CI platform was down for two days, and on-call engineers edited Deployments by hand with kubectl. Nobody can now say which clusters differ from the manifests in Git. The platform lead wants every cluster to converge on Git even while CI is unavailable, and wants hand edits undone without anyone having to notice them first. Which delivery model fits?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Add a Cloud Build trigger that runs kubectl apply against all 14 production clusters on every merge, with each cluster's credentials kept in Secret Manager",
+        "rationale": "A push pipeline acts only when it is triggered. Hand edits stay in place until the next merge, and with CI down nothing reaches any cluster, which is the exact failure the team described."
+      },
+      {
+        "id": "b",
+        "text": "Create a Cloud Deploy pipeline with the 14 clusters as targets and promote every new release to all of them once CI is healthy again",
+        "rationale": "Cloud Deploy is called by CI to create a release and deploys when a promotion happens. It does not watch Git or the clusters, so it neither detects nor reverts hand edits and depends on CI being up."
+      },
+      {
+        "id": "c",
+        "text": "Install Config Sync on each cluster and point it at the Git repository, so a reconciler inside the cluster pulls and reapplies the source continuously",
+        "rationale": "Config Sync runs a reconciler in each cluster that pulls from Git, OCI or Helm sources. It automatically detects and reverts drift, and because it does not depend on a CI system, clusters keep converging during a CI outage."
+      },
+      {
+        "id": "d",
+        "text": "Turn on Binary Authorization for the clusters so that hand edits to Deployments are rejected unless a trusted attestor has signed them",
+        "rationale": "Binary Authorization enforces attestations on container images at deploy time. It does not compare cluster configuration with Git, and it neither reverts drift nor applies the repository to the clusters."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "Pull-based GitOps puts the reconciler inside the cluster, so convergence does not depend on a pipeline being available or triggered. Push pipelines act only when run.",
+    "difficulty": 1,
+    "examOnly": true
+  },
+  {
+    "id": "q-ops-excellence-133",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "deployment-release-management",
+      "ci-cd",
+      "canary"
+    ],
+    "subObjective": "ops-excellence.3",
+    "sourceUrl": "https://docs.cloud.google.com/deploy/docs/overview",
+    "lastVerified": "2026-10-17",
+    "prompt": "Halden Insurance deploys its claims service to GKE in three targets: dev, staging and prod. Compliance requires that prod receive only a release that has already run in staging, that a named release manager approve the prod step, and that prod roll out in two traffic phases with a health check between them. Namespaces and policies on all clusters are already managed by Config Sync. How should the application release be delivered?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Define a Cloud Deploy delivery pipeline with dev, staging and prod targets, require approval on prod, and give prod a canary strategy plus a verify task",
+        "rationale": "Cloud Deploy models ordered targets, promotion of one release through them, an approval requirement on promotion to any target, a canary strategy, and verification tasks configured on a target. That covers the requirements and leaves Config Sync in charge of cluster configuration."
+      },
+      {
+        "id": "b",
+        "text": "Point each cluster's Config Sync at its own branch and have the release manager merge into the prod branch, treating the merge as the approval",
+        "rationale": "Config Sync reconciles whatever its source says as soon as the source changes. A merge applies at once with no traffic phases or health check between them, and nothing records that the same release passed staging."
+      },
+      {
+        "id": "c",
+        "text": "Use one Cloud Build trigger with an approval gate that deploys the image to the three clusters in sequence within a single build run",
+        "rationale": "A trigger approval gates one build run. It has no notion of a release moving through ordered targets or of canary phases, so staging evidence, phases and health checks would all be scripted by hand."
+      },
+      {
+        "id": "d",
+        "text": "Enable the Config Sync drift-prevention webhook on prod so that only changes approved in Git can reach the cluster",
+        "rationale": "The webhook blocks in-cluster changes that conflict with the source of truth. It is not an approval workflow, and it does not stage a release through environments or shift traffic in phases."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "Pull-based reconciliation keeps configuration converged; ordered promotion with approvals and phased rollout is what a delivery pipeline provides. The two answer different questions.",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "id": "q-ops-excellence-134",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "gitops",
+      "deployment-release-management",
+      "reliability-production"
+    ],
+    "subObjective": "ops-excellence.3",
+    "sourceUrl": "https://docs.cloud.google.com/kubernetes-engine/config-sync/docs/concepts/architecture",
+    "lastVerified": "2026-10-17",
+    "prompt": "A merged change to a Config Sync repository raised the memory limit of a payments Deployment to a value no node can satisfy, so new Pods are stuck Pending in every production cluster. The previous commit was healthy. An engineer proposes running kubectl rollout undo on the Deployment in each cluster. What is the best way to restore service?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Run kubectl rollout undo in each cluster, because Config Sync only applies new commits and ignores edits made directly in the cluster",
+        "rationale": "Config Sync's self-healing continuously monitors managed objects and reverses changes that deviate from the source. The memory limit is specified in Git, so the undo would be reconciled away within moments."
+      },
+      {
+        "id": "b",
+        "text": "Run kubectl edit on the Deployment in each cluster to lower the limit, then open a pull request later to bring Git back in line",
+        "rationale": "A hand edit to a field the source specifies is detected as drift and reverted to the bad value. Fixing the cluster first and Git later cannot work while the reconciler is active."
+      },
+      {
+        "id": "c",
+        "text": "Delete the Deployment in each cluster so that its controller recreates the Pods from the last healthy ReplicaSet",
+        "rationale": "Deleting the Deployment removes its ReplicaSet history, and the reconciler recreates the Deployment from the source, bad limit included. The Pods stay Pending."
+      },
+      {
+        "id": "d",
+        "text": "Revert the offending commit in the synced repository and let the reconcilers apply the previous manifest to every cluster",
+        "rationale": "In GitOps the repository is the source of truth, so rollback is a revert of the commit. Every reconciler pulls the healthy state, and the history shows what changed and why."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "explanation": "Under Config Sync, rollback happens in the source of truth. Stopping sync or marking an object unmanaged exist for break-glass cases, but they are not the normal recovery path.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-ops-excellence-135",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "deployment-release-management",
+      "reliability-production"
+    ],
+    "subObjective": "ops-excellence.3",
+    "sourceUrl": "https://docs.cloud.google.com/run/docs/rollouts-rollbacks-traffic-migration",
+    "lastVerified": "2026-10-17",
+    "prompt": "Ostrava Press deployed revision 18 of its Cloud Run article API, and the error rate doubled within minutes. Revision 17 still exists for the service and was healthy. What is the fastest way to restore service?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Revert the commit in the source repository and wait for the build pipeline to build, push and deploy a new image from the reverted code",
+        "rationale": "This works but is the slowest path, because it needs a build and a deployment. The healthy revision already exists, so no rebuild is needed to go back."
+      },
+      {
+        "id": "b",
+        "text": "Update the service's traffic so that revision 17 receives 100 percent, which takes effect immediately without a rebuild or a redeploy",
+        "rationale": "On Cloud Run a rollback is a traffic move to an existing revision. The routing change applies immediately and does not need a redeploy."
+      },
+      {
+        "id": "c",
+        "text": "Redeploy revision 17's container image as a new revision so that it passes a fresh deployment health check before it takes traffic",
+        "rationale": "This creates another revision and takes longer. It is unnecessary, because routing traffic back to an existing revision does not need the image redeployed."
+      },
+      {
+        "id": "d",
+        "text": "Split traffic evenly between revisions 17 and 18, then shift toward revision 17 in small steps while watching the error rate",
+        "rationale": "Gradual shifting is a rollout technique. In an incident it leaves half the requests on the faulty revision and prolongs the outage when the target revision is already known to be healthy."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "Cloud Run keeps prior revisions, so rollback is a traffic update, not a build. Note that routing back does not re-run deployment health checks, which is acceptable here because revision 17 was serving traffic.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-ops-excellence-136",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "feature-flags",
+      "deployment-release-management",
+      "canary"
+    ],
+    "subObjective": "ops-excellence.3",
+    "sourceUrl": "https://docs.cloud.google.com/saas-runtime/docs/flags/flags-overview",
+    "lastVerified": "2026-10-17",
+    "prompt": "Marlow Freight is rewriting its rate-quote engine inside an existing Cloud Run service. Under its contracts the new engine may be enabled first only for three named pilot customers, identified by a customer ID in each request, and widened to others after they sign off. If anything is wrong, the team must switch the engine off for those customers without redeploying. Which approach fits?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Deploy the new revision and send 10 percent of traffic to it with a Cloud Run traffic split, raising the share as pilots sign off",
+        "rationale": "A traffic split assigns requests by percentage, not by who sent them. Pilot customers might get the old engine, and other customers will get the new one, which breaks the contractual limit."
+      },
+      {
+        "id": "b",
+        "text": "Run a Cloud Deploy canary with phases at 5, 25 and 50 percent, and advance automatically when the verification job passes",
+        "rationale": "Canary phases are percentages of traffic or Pods. They give a safe build rollout but no way to name three customers, and exposure widens on a metric instead of on customer sign-off."
+      },
+      {
+        "id": "c",
+        "text": "Ship the engine dark behind a feature flag, with a targeting rule that matches the three pilot customer IDs, and widen the rule after sign-off",
+        "rationale": "A feature flag is evaluated by the application per request, and targeting rules can use request or user attributes such as a customer ID. Widening is a rule change, and switching it off is a flag change, with no redeployment."
+      },
+      {
+        "id": "d",
+        "text": "Publish the new engine as version 2 of the API and ask the three pilot customers to change their clients to call the new path",
+        "rationale": "An API version is chosen by the client, so exposure depends on customer code changes, and going back also needs client changes. It is a tool for breaking contract changes, not a server-side switch."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "Percentage tools (traffic splits, canary phases) cannot name a client. A flag with a targeting rule decides exposure per request in the application.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-ops-excellence-137",
+    "type": "multiple",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "feature-flags",
+      "canary",
+      "deployment-release-management"
+    ],
+    "subObjective": "ops-excellence.3",
+    "sourceUrl": "https://docs.cloud.google.com/deploy/docs/deployment-strategies/canary",
+    "lastVerified": "2026-10-17",
+    "prompt": "Orrin Health's patient-search service on GKE is about to ship one release containing two changes. First, a language-runtime upgrade that affects every code path and cannot be switched on or off per request. Second, a new ranking algorithm that should be visible to two named hospital tenants only, at first. Which two actions together manage the risk of both changes? Choose two.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Roll the build out through a Cloud Deploy canary, so that a faulty runtime is caught on a small share of traffic before it reaches every tenant",
+        "rationale": "The runtime upgrade is a property of the build, so the right control is a canary: the new build serves a small percentage of traffic first and is widened only if it behaves."
+      },
+      {
+        "id": "b",
+        "text": "Put the runtime upgrade behind a feature flag so that it can be switched off for individual tenants if latency rises",
+        "rationale": "A flag chooses between code paths inside one running build. A runtime upgrade changes every path and cannot be toggled per request, so there is nothing for the flag to select."
+      },
+      {
+        "id": "c",
+        "text": "Gate the new ranking algorithm behind a feature flag with a targeting rule that matches the two hospital tenant IDs",
+        "rationale": "The ranking change is a feature's behavior that must reach named tenants. A flag with targeting rules on a request attribute does that and can be turned off without a redeployment."
+      },
+      {
+        "id": "d",
+        "text": "Expose the new ranking algorithm through the canary percentage, starting at 5 percent and raising it weekly until both tenants are included",
+        "rationale": "A canary percentage selects requests at random, not tenants. The two hospitals may receive the old algorithm while unrelated tenants receive the new one."
+      }
+    ],
+    "correct": [
+      "a",
+      "c"
+    ],
+    "explanation": "Match the control to the risk: a canary for the risk in the build, a flag with targeting for the risk in one feature's behavior for a named cohort.",
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "id": "q-ops-excellence-138",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "gitops",
+      "reliability-production",
+      "operational-excellence"
+    ],
+    "subObjective": "ops-excellence.3",
+    "sourceUrl": "https://docs.cloud.google.com/kubernetes-engine/config-sync/docs/how-to/prevent-config-drift",
+    "lastVerified": "2026-10-17",
+    "prompt": "Config Sync syncs the namespace shop from the repository shown in the exhibit, and the drift-prevention webhook is not enabled. During an audit, an engineer made two hand edits to the live catalog Deployment: raising the memory limit to 1Gi, and adding the annotation owner=team-x. An hour later the memory limit is back at 512Mi, but the annotation is still there. Why did only one edit survive?",
+    "exhibit": {
+      "label": "Deployment manifest in the synced repository",
+      "format": "config",
+      "language": "yaml",
+      "content": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: catalog\n  namespace: shop\nspec:\n  replicas: 3\n  template:\n    spec:\n      containers:\n      - name: app\n        image: us-docker.pkg.dev/acme/shop/catalog:1.8.2\n        resources:\n          limits:\n            memory: 512Mi"
+    },
+    "choices": [
+      {
+        "id": "a",
+        "text": "Self-healing is optional and was not enabled, so the cluster reverted the memory edit only because the Deployment's Pods happened to restart",
+        "rationale": "Config Sync's self-healing cannot be disabled, and it is separate from the optional drift-prevention webhook. Neither a Pod restart nor the webhook explains the reversal."
+      },
+      {
+        "id": "b",
+        "text": "Self-healing reverts only fields the source specifies, and the manifest never mentions that annotation, so it is allowed to drift",
+        "rationale": "Config Sync's drift handling covers fields explicitly set in the source of truth, and unspecified fields may drift. The memory limit is specified in the manifest and was reverted. The annotation is not, so it stayed."
+      },
+      {
+        "id": "c",
+        "text": "Config Sync reconciles on a schedule, and the annotation edit simply happened after the last sync, so it will also be reverted at the next one",
+        "rationale": "Config Sync monitors managed objects continuously, and an hour is long enough for any pass to have run. A pending schedule does not explain why the two edits ended differently."
+      },
+      {
+        "id": "d",
+        "text": "Annotations are metadata that Kubernetes controllers own, so Config Sync skips every metadata field when it reconciles an object",
+        "rationale": "Config Sync does not exempt metadata as a category. What is left alone is whatever the source does not specify, and an annotation key that the manifest does set would be reverted too."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "Auditors should not read 'Git is the source of truth' as 'the cluster equals Git': both self-healing and the drift-prevention webhook act only on fields the source specifies.",
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "id": "q-ops-excellence-139",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "cloud-observability",
+      "iac-terraform"
+    ],
+    "subObjective": "ops-excellence.2",
+    "sourceUrl": "https://docs.cloud.google.com/monitoring/charts/dashboards",
+    "lastVerified": "2026-10-17",
+    "prompt": "Tarn Analytics runs a separate Google Cloud project for each of its 40 enterprise customers, and each customer's engineers can open only their own project. The SRE team built a latency and error dashboard in one project's console and now needs the same dashboard in all 40 projects, identical after every change, with each change reviewed before it applies. What should the architect recommend?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Ask each customer project owner to paste the dashboard JSON into the console's JSON editor whenever the SRE team announces a change",
+        "rationale": "Copying through the JSON editor is a valid way to install a template once, but doing it by hand in 40 projects has no review step and the copies drift as owners miss or alter updates."
+      },
+      {
+        "id": "b",
+        "text": "Add all 40 projects to one metrics scope so that the original dashboard appears automatically inside each customer's own project",
+        "rationale": "Dashboards are stored in the scoping project, not in the monitored projects, so a metrics scope never copies a dashboard into them. Customer engineers would also need access to the shared scoping project, which the stem rules out."
+      },
+      {
+        "id": "c",
+        "text": "Keep the dashboard JSON in version control and let a reviewed pipeline apply it to every project with gcloud or Terraform",
+        "rationale": "Correct. A custom dashboard is a JSON template that can be exported, stored in a source repository and installed in other projects. Applying it from a pipeline through gcloud or the google_monitoring_dashboard resource gives review and identical copies."
+      },
+      {
+        "id": "d",
+        "text": "Have one engineer run a script from a laptop after each change that calls the Cloud Monitoring API to recreate the dashboard in each project",
+        "rationale": "The mechanism is sound, but a laptop script has no peer review or audit trail before the change applies, which the stem requires. The same API calls belong in a reviewed pipeline."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "Custom dashboards are JSON templates, not data. Export once, version the JSON, and apply it per project from a pipeline with gcloud or Terraform.",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "id": "q-ops-excellence-140",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "cloud-observability",
+      "iam"
+    ],
+    "subObjective": "ops-excellence.2",
+    "sourceUrl": "https://docs.cloud.google.com/monitoring/settings",
+    "lastVerified": "2026-10-17",
+    "prompt": "Halvorsen Pay has 30 production projects. Its SRE team wants one set of dashboards and alerting policies that covers all of them, but a security rule says SRE engineers must not hold any IAM role inside the production projects. Which design meets both requirements?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Create a dedicated scoping project, add the 30 projects to its metrics scope, and give the SRE group Monitoring Viewer on the scoping project only",
+        "rationale": "Correct. Dashboards and alerting policies live in the scoping project, and a user with Monitoring Viewer there can view the data of every monitored project without any other permission."
+      },
+      {
+        "id": "b",
+        "text": "Grant the SRE group Monitoring Viewer on every production project so that the scoping project can chart each project's metrics",
+        "rationale": "Viewing through a metrics scope needs the role on the scoping project only. This also puts the SRE group into the production projects' IAM policies, which breaks the stated rule."
+      },
+      {
+        "id": "c",
+        "text": "Give the SRE group Monitoring Admin on the scoping project and on every production project, because a metrics scope cannot function without those roles",
+        "rationale": "Monitoring Admin on both sides is what whoever adds or removes projects in a scope needs, typically a platform administrator once. Viewers do not need it, and granting it breaks the rule."
+      },
+      {
+        "id": "d",
+        "text": "Build a separate dashboard inside each production project and share its link with the SRE group in place of any IAM role",
+        "rationale": "Access to a project's dashboards is controlled with IAM, so a link does not give the SRE group access. It also leaves 30 separate dashboards and alerting policies instead of one."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "A metrics scope lets one scoping project chart many monitored projects. Only the permissions on the scoping project matter for viewing, so production IAM stays untouched.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-ops-excellence-141",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "slo-sli",
+      "monitoring-logging"
+    ],
+    "subObjective": "ops-excellence.2",
+    "sourceUrl": "https://docs.cloud.google.com/monitoring/custom-metrics",
+    "lastVerified": "2026-10-17",
+    "prompt": "Cobbler Commerce's checkout service met its 99.9% availability SLO and its latency SLO in every month last quarter, yet product leadership suspects that latency drifts inside the SLO still reduce completed purchases. They want evidence that ties service behavior to revenue. What should the SRE team do?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Tighten the availability SLO to 99.99% so that every small slowdown consumes error budget and exposes its effect on revenue",
+        "rationale": "An SLO measures reliability through its SLI. A tighter target changes how fast budget burns but adds no data about purchases, so the revenue link stays unmeasured."
+      },
+      {
+        "id": "b",
+        "text": "Add an uptime check on the checkout URL and compare its pass rate with the daily sales totals from the finance team",
+        "rationale": "An uptime check reports binary reachability from outside. A page can answer correctly while the purchase flow slows, so a pass rate says little about conversion."
+      },
+      {
+        "id": "c",
+        "text": "Export Cloud Billing data to BigQuery and correlate the daily cost lines for checkout with the latency charts in the dashboard",
+        "rationale": "Billing export records usage and cost, which is spend rather than revenue. Cost moves with traffic, not with whether customers complete purchases."
+      },
+      {
+        "id": "d",
+        "text": "Emit a completed-order metric as a custom metric or a counter log-based metric and chart it beside the latency and SLO charts",
+        "rationale": "Correct. Built-in metrics cannot report application events such as completed orders, but a user-defined or log-based metric can. Charting it next to latency and the SLO lets the team see whether orders fall as latency drifts."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "explanation": "SLOs answer whether the service meets its reliability target. To correlate with revenue or conversion, add a business metric and chart both.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-ops-excellence-142",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "chaos-engineering",
+      "ci-cd",
+      "reliability-production"
+    ],
+    "subObjective": "ops-excellence.4",
+    "sourceUrl": "https://docs.cloud.google.com/architecture/framework/reliability/perform-testing-for-recovery-from-failures",
+    "lastVerified": "2026-10-17",
+    "prompt": "Larkspur Travel delivers its booking service through a Cloud Deploy pipeline whose automation promotes a release from staging to prod after a successful staging rollout. Last month a release that removed retry logic passed every unit and integration test, then caused a booking outage when one zone's database replica failed over. The team holds a zone-failure game day once a year. They want to catch this class of regression before production, without depending on anyone remembering to run a test. What should they do?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Inject zone failures directly in production after every release and skip the staging run, since real traffic gives the most realistic result",
+        "rationale": "Google recommends running failure tests preferably in a staging environment that replicates production, with safety measures if production is used. Skipping pre-production exposes customers to the regression first."
+      },
+      {
+        "id": "b",
+        "text": "Add a verify task on the staging target that drains a zone under replayed load, checks error ratio and recovery time, and exits non-zero on a breach",
+        "rationale": "Correct. A non-zero exit code fails verification and the rollout, and Cloud Deploy automation promotes only upon a successful rollout, so the regression stops in staging. Google advises automating failover tests in CI/CD and adding load to the failure."
+      },
+      {
+        "id": "c",
+        "text": "Add a staging load test at three times peak traffic with every zone healthy and require it to pass before the release is promoted",
+        "rationale": "Load testing and failure testing answer different questions. The release would pass this test, because the defect only appears when a replica fails over under load."
+      },
+      {
+        "id": "d",
+        "text": "Run the game day every month and have the on-call lead sign off on each release after reading the most recent report",
+        "rationale": "A more frequent manual exercise still depends on people, and its report can predate the release being approved. The requirement is an automated check on every release."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "Run fault injection as an automated pre-production gate with steady-state assertions, so a failed check blocks promotion without human memory.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-ops-excellence-143",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "disaster-recovery",
+      "rto-rpo",
+      "testing-validation"
+    ],
+    "subObjective": "ops-excellence.4",
+    "sourceUrl": "https://docs.cloud.google.com/architecture/framework/reliability/perform-testing-for-recovery-from-failures",
+    "lastVerified": "2026-10-17",
+    "prompt": "Brantley Insurance rehearses disaster recovery twice a year. Each rehearsal takes two engineers a day of preparation, follows a wiki page by hand, and is often postponed. Leadership wants rehearsals every quarter at low effort that still count as credible evidence of the platform's 45-minute RTO. What should the architect recommend?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Drop the rehearsals and cite the published availability SLAs of the managed services, since those already cover regional recovery of the whole platform",
+        "rationale": "A service SLA describes the availability Google commits to for that service. It says nothing about whether your own runbook, access and traffic cutover meet your RTO."
+      },
+      {
+        "id": "b",
+        "text": "Restore the latest database backup into a scratch project every month and report that duration as the platform's recovery time",
+        "rationale": "A timed restore is a useful minimum, but it measures one step. Promotion, traffic cutover and validation stay untested, so the number understates real recovery time."
+      },
+      {
+        "id": "c",
+        "text": "Script the runbook end to end, from provisioning to traffic shift and validation, run it from a pipeline, and time each step against the RTO",
+        "rationale": "Correct. Google advises automating failover tests in CI/CD and provisioning the recovery environment with IaC. Timing the whole runbook against the RTO makes each quarterly run measured evidence at low effort."
+      },
+      {
+        "id": "d",
+        "text": "Keep a permanent hot standby in the second region so that the platform no longer needs a rehearsal to prove it recovers in time",
+        "rationale": "A hot standby can shorten recovery, but untested failover steps, access and data integrity can still fail. Google's guidance is to test recovery periodically whatever the pattern, and a hot standby costs the most."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "An automated, timed rehearsal of the real runbook end to end turns DR testing into repeatable evidence of RTO instead of an effort-heavy ritual.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-ops-excellence-144",
+    "type": "single",
+    "domainId": "ops-excellence",
+    "concepts": [
+      "cloud-observability",
+      "iac-terraform"
+    ],
+    "subObjective": "ops-excellence.2",
+    "sourceUrl": "https://docs.cloud.google.com/monitoring/dashboards",
+    "lastVerified": "2026-10-17",
+    "prompt": "Cloud Monitoring installed the Google-managed VM Instances dashboard in a project automatically. The platform team wants that dashboard managed as code with two extra charts. Which approach works?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Create a custom dashboard, copy the needed charts into it from the VM Instances dashboard, and manage its JSON with gcloud or Terraform",
+        "rationale": "Correct. Service-specific dashboards cannot be modified or copied, but their charts can be copied into a custom dashboard, and custom dashboards are the ones the API and Terraform manage."
+      },
+      {
+        "id": "b",
+        "text": "Download the VM Instances dashboard's JSON through the Dashboards API, add the two charts, and create the result as a new custom dashboard",
+        "rationale": "The Dashboards API cannot retrieve, edit or delete predefined dashboards, so there is no JSON to download. The charts have to be copied into a custom dashboard first."
+      },
+      {
+        "id": "c",
+        "text": "Import the VM Instances dashboard into a google_monitoring_dashboard resource and then edit its dashboard_json to add the two new charts",
+        "rationale": "Terraform manages dashboards through the same API, which cannot retrieve predefined dashboards, so the managed dashboard has no definition to import. Service-specific dashboards also cannot be modified or copied."
+      },
+      {
+        "id": "d",
+        "text": "Edit the VM Instances dashboard in the console to add the two charts, then save a JSON template of it for the pipeline",
+        "rationale": "Service-specific dashboards cannot be modified in the console, so there is no edited version to save. Only a custom dashboard can carry the extra charts."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "Predefined dashboards are read-only templates for you. Build a custom dashboard from copied charts, then manage that dashboard's JSON as code.",
+    "difficulty": 1
   }
 ]

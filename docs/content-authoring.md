@@ -62,7 +62,7 @@ How exam questions, modules and takeaways are written, validated and shipped. Ev
 
 ## Modules (`content/modules/<domainId>/mod-<domain>-NN.json`)
 
-- Keep `id`, `domainId`, `title`, `order`, `quizId`. Rewrite `bodyMarkdown` to **1,500–2,200 words**: `##` sections, comparison tables, concrete limits and defaults, an anti-patterns section, and **end with a `## Exam tips` section — a bullet list** (the loader throws on a module without one; it feeds `/review`).
+- Keep `id`, `domainId`, `title`, `order`, `quizId`. Rewrite `bodyMarkdown` to **1,500–3,300 words** (raised from 2,200 in the October 2026 gap rounds because trimming to the old cap removed existing lessons; never delete an existing lesson to make room, only supersede it with a verified correction; trim redundancy rather than letting a module bloat further): `##` sections, comparison tables, concrete limits and defaults, an anti-patterns section, and **end with a `## Exam tips` section — a bullet list** (the loader throws on a module without one; it feeds `/review`).
 - 1–2 Mermaid diagrams in `diagrams[]` (not inline in the body); they must render.
 - Link authoritative docs inline (`https://cloud.google.com/...`) where a claim could drift; fetch each page first.
 - `estMinutes` is recomputed at load from word count — put any plausible integer.

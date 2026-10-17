@@ -2739,5 +2739,911 @@
     "explanation": "Business continuity is wider than DR infrastructure: a drill is only passed when the people, runbook, dependencies and communications work as well as the platform does.",
     "difficulty": 3,
     "examOnly": true
+  },
+  {
+    "id": "q-optimize-process-115",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "rca",
+      "network-design"
+    ],
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://docs.cloud.google.com/network-intelligence-center/docs/connectivity-tests/concepts/overview",
+    "lastVerified": "2026-10-17",
+    "prompt": "Brightwell Logistics runs a billing service on VMs in the prod-core VPC network. It calls a ledger API on an internal IP address in a peered ledger-net VPC network. After a change window in which three teams edited custom routes and firewall rules in both networks, the calls time out. Nobody can say which change is responsible, and the team wants the specific route or rule that breaks the path. What should they do first?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Enable VPC Flow Logs on both subnets, retry the calls for a while, and search the sampled entries for the route or rule that dropped the connection",
+        "rationale": "Flow Logs record sampled flow metadata, not a configuration trace, and since VPC Flow Logs does not capture every packet, the failing attempts may not even appear. It shows traffic, not which route or rule is responsible."
+      },
+      {
+        "id": "b",
+        "text": "Create a Packet Mirroring policy on the billing VMs and inspect the captured packets to find the hop that discards the ledger requests",
+        "rationale": "Mirrored packets show what the VM sent, not why the network discarded it. Packet Mirroring also needs a collector behind an internal load balancer and is billed per data processed, so it is slow and costly for a routing question."
+      },
+      {
+        "id": "c",
+        "text": "Run a Connectivity Tests test from a billing VM to the ledger IP address and read the analyzed path for the route or firewall rule that stops it",
+        "rationale": "Connectivity Tests analyzes your configuration and simulates the expected forwarding path through VPC networks and peering, so the trace points at the route or rule that breaks the path without waiting for real failures."
+      },
+      {
+        "id": "d",
+        "text": "Add uptime checks against the ledger endpoint from several regions, then roll back the three change sets one at a time until the checks pass",
+        "rationale": "An uptime check only reports that an endpoint is failing, not which route or rule is responsible. Bisecting by rollback is slow and risks reverting unrelated changes."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "Match the tool to the question: \"is the configured path open and what breaks it\" is Connectivity Tests. Flow Logs, mirroring and uptime checks all observe symptoms rather than analyze the configured path.",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "id": "q-optimize-process-116",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "firewall",
+      "rca"
+    ],
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://docs.cloud.google.com/vpc/docs/firewall-rules-logging",
+    "lastVerified": "2026-10-17",
+    "prompt": "A database VM cannot receive TCP connections on port 5432 from a partner subnet that reaches the VPC network over Cloud VPN. Several teams have added ingress rules, and engineers suspect one explicit deny rule. They need log records showing which rule matched each blocked connection attempt. What should they enable?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "VPC Flow Logs on the database subnet with secondary sampling raised to 100 percent, then filter for the partner address range",
+        "rationale": "Raising secondary sampling keeps all sampled entries, but the primary sampling rate is dynamic and VPC Flow Logs does not capture every packet, so it cannot prove each blocked attempt or name the rule."
+      },
+      {
+        "id": "b",
+        "text": "Firewall Rules Logging on the suspected deny rule, then read the Cloud Logging entries that reference the rule that applied",
+        "rationale": "Each firewall log record carries the addresses, protocol, ports and a reference to the rule that applied, and denied connections are logged per unique 5-tuple, so it directly answers which rule is dropping the traffic."
+      },
+      {
+        "id": "c",
+        "text": "A Packet Mirroring policy on the database VM that sends the partner traffic to a collector, then review the captured packets",
+        "rationale": "A packet capture shows the traffic that arrived but not which firewall rule matched it, and it adds a collector, load balancer and per-GB processing charges for a rule-attribution question."
+      },
+      {
+        "id": "d",
+        "text": "Cloud Armor request logging on the project, then filter the logs for the partner address range and the blocked port",
+        "rationale": "Cloud Armor logs requests that pass through external Application and proxy Network Load Balancers. Partner traffic arriving over Cloud VPN to a VM never crosses that edge, so nothing is logged there."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "Firewall Rules Logging is the tool for \"which rule allowed or denied this connection\". Remember that implied rules cannot be logged, and only TCP and UDP connections are recorded.",
+    "difficulty": 1,
+    "examOnly": true
+  },
+  {
+    "id": "q-optimize-process-117",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "rca",
+      "network-design"
+    ],
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://docs.cloud.google.com/vpc/docs/packet-mirroring",
+    "lastVerified": "2026-10-17",
+    "prompt": "A payments company runs 12 Compute Engine VMs tagged card-edge in us-central1. A compliance vendor's analyzer, licensed as a group of appliance VMs, must examine the full payloads of inbound TCP traffic to those VMs. The appliances currently sit in a hub VPC network in europe-west4 that is peered with the production network. Extra appliance deployments are acceptable. Which design meets the requirement?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Keep the appliances in europe-west4 and point a Packet Mirroring policy for the card-edge tag at their internal load balancer through the peered hub network",
+        "rationale": "Peering lets a collector sit in a connected VPC network, but it does not relax the same-region rule. A europe-west4 collector cannot receive traffic mirrored from us-central1 sources."
+      },
+      {
+        "id": "b",
+        "text": "Enable VPC Flow Logs on the subnet with 100 percent secondary sampling and a 5-second interval, then stream the entries to the vendor analyzer",
+        "rationale": "Flow Logs record sampled flow metadata only, never payload, and the primary sampling rate cannot be set by the user. No setting turns them into a source of full payloads."
+      },
+      {
+        "id": "c",
+        "text": "Create a Cloud IDS endpoint in us-central1 and export its threat logs to the vendor analyzer for payload-level review of the card-edge traffic",
+        "rationale": "Cloud IDS is managed signature-based detection that emits threat findings, not a feed of raw packets. The vendor analyzer needs the full payload stream, which only a mirroring collector receives."
+      },
+      {
+        "id": "d",
+        "text": "Deploy an appliance group in us-central1 behind an internal passthrough Network Load Balancer and mirror ingress TCP traffic for the card-edge tag to it",
+        "rationale": "Packet Mirroring clones headers and payloads to a collector behind an internal passthrough load balancer, and the collector must be in the same region as the mirrored sources, so a us-central1 appliance group is required."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "explanation": "Custom payload inspection means Packet Mirroring with a self-run collector in the sources' region. Peering helps with VPC placement, not region placement.",
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "id": "q-optimize-process-118",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "rca",
+      "firewall"
+    ],
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://docs.cloud.google.com/intrusion-detection-system/docs/overview",
+    "lastVerified": "2026-10-17",
+    "prompt": "A three-person security team at an online retailer wants alerts when VMs in several zones of one region exchange traffic that matches known malware, spyware or command-and-control signatures, including VM-to-VM lateral movement. They cannot staff collector VMs or tune analysis software, and detection without blocking is acceptable. Which approach fits?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Deploy a Cloud IDS endpoint in the region and review the threat findings it reports for north-south and east-west traffic",
+        "rationale": "Cloud IDS is managed threat detection built on Packet Mirroring with Google-managed inspection VMs, so no collector is needed. It covers east-west traffic and alerts without blocking, which matches the stated acceptance of detection only."
+      },
+      {
+        "id": "b",
+        "text": "Mirror the VMs' traffic with Packet Mirroring to an open-source IDS on an instance group behind an internal load balancer",
+        "rationale": "This works technically but means building and tuning the collector fleet and rule sets yourself, which is exactly the capacity the team lacks. Managed detection removes that burden."
+      },
+      {
+        "id": "c",
+        "text": "Attach a Cloud Armor security policy with preconfigured WAF rules to the backend services and review the blocked-request logs",
+        "rationale": "Cloud Armor enforces policy on requests reaching external load balancers. It has no view of VM-to-VM traffic inside the VPC network, so it cannot detect lateral movement."
+      },
+      {
+        "id": "d",
+        "text": "Turn on VPC Flow Logs for every subnet and create log-based alerts in Cloud Monitoring for unusual byte counts between VMs",
+        "rationale": "Flow Logs hold sampled metadata, not payload, so they cannot match threat signatures. Volume anomalies are not signature-based malware or command-and-control detection."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "When the requirement is managed signature-based detection, Cloud IDS beats a self-run Packet Mirroring pipeline. Pick Packet Mirroring only when you need the raw packets for your own tooling.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-optimize-process-119",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "observability",
+      "rca"
+    ],
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://docs.cloud.google.com/network-intelligence-center/docs/performance-dashboard/concepts/overview",
+    "lastVerified": "2026-10-17",
+    "prompt": "Users of an analytics app on Compute Engine VMs in two zones of us-east1 report intermittent slowness over the past week. Before opening an application investigation, the SRE lead wants to know whether packet loss or latency between the zones where the company runs VMs differed from what the Google Cloud network normally shows. They want history and no new infrastructure to deploy. What should they check?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Connectivity Tests between a VM in each zone, repeated several times, to see whether the path is healthy for the traffic between them",
+        "rationale": "Connectivity Tests mainly checks whether the configured path allows traffic, with optional live probes for a point-in-time sample. It gives no history of last week's loss and latency to compare against."
+      },
+      {
+        "id": "b",
+        "text": "Packet Mirroring on the VMs in both zones, with collectors in the region that compute round-trip times from the captured packets",
+        "rationale": "This needs collectors and an internal load balancer, charges for data processed, and only reflects traffic you mirror going forward. It also gives no baseline of Google's network for the past week."
+      },
+      {
+        "id": "c",
+        "text": "Performance Dashboard in Network Intelligence Center, comparing the project view with the Google Cloud-wide zone-to-zone view",
+        "rationale": "Performance Dashboard shows packet loss and latency for zones where your project has VMs, alongside zone-to-zone metrics across Google Cloud, with weeks of history. That separates a network cause from an application cause."
+      },
+      {
+        "id": "d",
+        "text": "Firewall Insights, to find overly permissive or shadowed rules that could be slowing traffic between the zones where the VMs run",
+        "rationale": "Firewall Insights helps understand and optimize firewall rules. It does not measure latency or packet loss, so it cannot show whether the network was degraded."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "\"Is the network slow or lossy\" is a Performance Dashboard question. Connectivity Tests, Flow Logs and Packet Mirroring answer reachability, traffic and payload questions.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-optimize-process-120",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "rca",
+      "network-design"
+    ],
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://docs.cloud.google.com/network-intelligence-center/docs/connectivity-tests/concepts/overview",
+    "lastVerified": "2026-10-17",
+    "exhibit": {
+      "label": "Connectivity Tests result (simplified)",
+      "format": "log",
+      "content": "Test:   web-vm-01 -> db-vm-01, tcp/5432, same VPC network\nResult: Packet could be delivered\nTrace:  web-vm-01 -> local subnet route -> ingress allow rule (tcp/5432) -> db-vm-01"
+    },
+    "prompt": "The database VM is running, yet the web application still times out when it connects on TCP 5432 even though the Connectivity Tests result shown in the exhibit looks clean. What is the most plausible reading, and what should the team do next?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "The tool only evaluates firewall rules and ignores routes, so a missing route to the database subnet is the likely cause and should be added to the VPC network",
+        "rationale": "Connectivity Tests simulates the forwarding path through the VPC network, including routes, and the trace already shows a matching subnet route. Adding another route would not fix a path that is already analyzed as routable."
+      },
+      {
+        "id": "b",
+        "text": "The analysis covers configuration only and guarantees nothing, so check what it cannot see, such as the listener or a guest firewall, and use live probes or logs",
+        "rationale": "Configuration analysis does not model the real data plane, performs no firewall connection tracking, and \"Packet could be delivered\" does not guarantee traffic can pass. Issues inside the VM are invisible to it."
+      },
+      {
+        "id": "c",
+        "text": "A delivered verdict means a live packet reached the database VM, so the fault must be in the client code and the network investigation can be closed",
+        "rationale": "A configuration-analysis verdict is not proof that a packet arrived. Treating it as a live result confuses simulated path analysis with data plane probing and ends the investigation prematurely."
+      },
+      {
+        "id": "d",
+        "text": "Only paths that cross VPC peering or hybrid links are simulated, so a same-network verdict is unreliable and must be repeated against the external IP",
+        "rationale": "The tool simulates forwarding within a single VPC network as well as across peering, VPN and VLAN attachments. Testing the external IP changes the path being checked rather than improving confidence in this one."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "Connectivity Tests is excellent for configuration questions, but a clean result narrows the search rather than ending it. Look at the guest OS, the listener and live probe or log evidence next.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-optimize-process-121",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "cost-resource-optimization",
+      "storage-classes",
+      "data-lifecycle"
+    ],
+    "subObjective": "optimize-process.2",
+    "sourceUrl": "https://docs.cloud.google.com/storage/docs/soft-delete",
+    "lastVerified": "2026-10-17",
+    "prompt": "Vantage Render writes intermediate frames to a Standard-class Cloud Storage bucket, and its pipeline deletes each frame within hours. The bucket's object listing never looks large, yet its storage charges are several times what the listing suggests. The exhibit summarizes the bucket. What explains the charges, and what is the best fix?",
+    "exhibit": {
+      "label": "Bucket summary",
+      "format": "table",
+      "content": "| Setting or measure | Value |\n|---|---|\n| Live object bytes, daily average | 2.1 TB |\n| Bytes written per day | 18 TB |\n| Lifetime of each object | under 8 hours, deleted by the pipeline |\n| Storage class | Standard |\n| Object versioning | Off |\n| Soft delete retention | 7 days (bucket default) |"
+    },
+    "choices": [
+      {
+        "id": "a",
+        "text": "Deleted frames are soft-deleted and keep accruing storage charges for 7 days, so move this scratch data to a bucket with soft delete disabled",
+        "rationale": "Soft-deleted objects are hidden from listings but continue to accrue storage charges until the retention period expires. Google advises keeping temporary objects in buckets that have soft delete turned off."
+      },
+      {
+        "id": "b",
+        "text": "Noncurrent versions of every frame are piling up, so add a lifecycle rule that deletes all but the newest version of each object",
+        "rationale": "The exhibit shows versioning is off, so there are no noncurrent versions. The extra bytes are the soft-deleted objects, which a versioning rule cannot touch."
+      },
+      {
+        "id": "c",
+        "text": "Early deletion charges are being applied because the frames are removed before the Standard class minimum storage duration has passed",
+        "rationale": "Standard storage has no minimum storage duration, and early deletion charges do not apply to objects that were stored in Standard. The charges come from retained deleted bytes instead."
+      },
+      {
+        "id": "d",
+        "text": "Add a lifecycle rule that permanently deletes soft-deleted frames one day after deletion, so that they stop accruing storage charges after 24 hours",
+        "rationale": "Lifecycle rules do not affect soft-deleted objects and cannot permanently delete them or change their class. Only the retention duration, or not having soft delete, ends the charges."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "At roughly 18 TB written and deleted daily with 7 days of retention, the retained deleted bytes can far exceed the live bytes. Separating high-churn scratch data from data that needs deletion protection removes the cost.",
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "id": "q-optimize-process-122",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "cost-resource-optimization",
+      "data-lifecycle",
+      "storage-classes"
+    ],
+    "subObjective": "optimize-process.2",
+    "sourceUrl": "https://docs.cloud.google.com/storage/docs/soft-delete",
+    "lastVerified": "2026-10-17",
+    "prompt": "Cobalt Ledger keeps account statements in a Cloud Storage bucket with Object Versioning on. To control cost, the team added a lifecycle rule that deletes noncurrent versions after 14 days. The bucket was created with default settings. Finance still sees those deleted versions billed for about a week beyond the 14 days. What explains the billing tail?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Noncurrent versions deleted by a lifecycle rule are billed at a penalty rate until the end of the current monthly billing cycle",
+        "rationale": "No such penalty exists. Noncurrent versions are charged at the rate they had when live, and the tail has a different cause."
+      },
+      {
+        "id": "b",
+        "text": "Object Versioning keeps a hidden second copy of each noncurrent object that lifecycle rules cannot see, until a separate cleanup runs",
+        "rationale": "Versioning does not keep a second hidden copy. A noncurrent version is itself the stored object, and the lifecycle rule did act on it."
+      },
+      {
+        "id": "c",
+        "text": "The deleted noncurrent versions became soft-deleted, so they keep accruing storage charges for the retention duration, 7 days by default",
+        "rationale": "With versioning on, a deleted noncurrent object becomes soft-deleted. Soft-deleted objects continue to accrue storage charges until retention expires, and lifecycle rules cannot purge them, so the tail equals the retention window."
+      },
+      {
+        "id": "d",
+        "text": "Noncurrent versions always sit in a colder class, so early deletion charges apply whenever they are removed before the class minimum",
+        "rationale": "A noncurrent version keeps the class it had when live, and it is charged at that rate. Early deletion only applies to cold classes within their minimum duration, and it does not explain a tail that matches the soft delete window."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "A lifecycle rule moves a deleted noncurrent object into soft delete rather than erasing it. Where the data is reproducible, lower the retention or disable soft delete on the bucket; otherwise accept the window as the price of recovery.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-optimize-process-123",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "cost-resource-optimization",
+      "data-lifecycle"
+    ],
+    "subObjective": "optimize-process.2",
+    "sourceUrl": "https://docs.cloud.google.com/storage/docs/soft-delete",
+    "lastVerified": "2026-10-17",
+    "prompt": "A FinOps review of a company's Cloud Storage buckets, all on the 7 day default soft delete, finds that one bucket's cost is dominated by deleted bytes. Which bucket is the strongest candidate for disabling soft delete?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "A bucket of signed customer contracts that are almost never deleted but are occasionally restored after an accidental deletion",
+        "rationale": "This bucket has little deleted data, so soft delete costs it almost nothing, and its restore value is real. It is the case where the retention window is worth keeping."
+      },
+      {
+        "id": "b",
+        "text": "A bucket of intermediate batch files that each live a few hours and are rewritten many times a day by an automated job",
+        "rationale": "Short-lived, high-churn temporary objects are the case Google warns about: every deleted object keeps accruing storage charges for the retention period. They are also easy to regenerate, so protection adds little."
+      },
+      {
+        "id": "c",
+        "text": "A bucket of regulated records protected by Object Retention Lock, where deletes are blocked until each retention period ends",
+        "rationale": "Retention Lock stops deletion before the period ends, so little deleted data accumulates in this bucket. Soft delete also adds a recovery layer after the lock expires, so it is not where the cost is."
+      },
+      {
+        "id": "d",
+        "text": "A bucket of customer profile photos from which a small fraction is deleted each month after account-closure requests from users",
+        "rationale": "Only a small share of the bytes is deleted, so the retained deleted bytes are a minor part of the bucket cost. Disabling soft delete would save little and remove a safety net."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "Soft delete costs scale with how many bytes are deleted per retention window. Temporary, regenerable, high-churn data is where it is least valuable and most expensive.",
+    "difficulty": 1,
+    "examOnly": true
+  },
+  {
+    "id": "q-optimize-process-124",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "cost-resource-optimization",
+      "bigquery"
+    ],
+    "subObjective": "optimize-process.2",
+    "sourceUrl": "https://docs.cloud.google.com/bigquery/docs/slots-autoscaling-intro",
+    "lastVerified": "2026-10-17",
+    "prompt": "Lumen Analytics runs continuous ELT jobs and BI dashboards on BigQuery. Demand sits near 1,200 slots around the clock and briefly reaches about 2,000 slots at month end. The on-demand bill varies from month to month and finance wants predictable spend with the lowest practical cost. Which setup fits?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Stay on-demand and add custom query quotas, because on-demand pricing is the cheapest model for any workload that runs continuously",
+        "rationale": "Google's guidance is on-demand for variable, unpredictable use and capacity for predictable, sustained work. Quotas cap spend, but they do not make the bill predictable for a workload that is constantly busy."
+      },
+      {
+        "id": "b",
+        "text": "Create a capacity reservation with baseline slots set to the 2,000-slot month-end peak, so that no query ever waits for capacity",
+        "rationale": "Baseline slots are always allocated and always charged, used or not. Sizing the baseline to a brief peak pays for roughly 800 idle slots for the rest of the month."
+      },
+      {
+        "id": "c",
+        "text": "Create a reservation with a baseline of zero and let autoscaling carry the entire load, because autoscaled slots are only billed when used",
+        "rationale": "Autoscaled slots are billed for the slots scaled up, not the slots used, at capacity compute pricing while scaling. A steady load would sit on autoscaling all day instead of on a baseline that a slot commitment can discount."
+      },
+      {
+        "id": "d",
+        "text": "Use an Enterprise edition reservation with baseline slots near the steady 1,200 and an autoscaling maximum that covers the month-end peak",
+        "rationale": "Baseline slots serve the predictable floor at predictable cost, and a slot commitment can discount them. Autoscaling then adds capacity only while the peak lasts and is billed only while scaled up."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "explanation": "Size the always-billed baseline to the floor you are sure to use, and let autoscaling, which is billed only while scaled up, absorb the peak.",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "id": "q-optimize-process-125",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "cost-resource-optimization",
+      "bigquery"
+    ],
+    "subObjective": "optimize-process.2",
+    "sourceUrl": "https://docs.cloud.google.com/bigquery/docs/slots-autoscaling-intro",
+    "lastVerified": "2026-10-17",
+    "prompt": "Pinecrest Health moved its BigQuery workloads to an Enterprise edition reservation. A nightly pipeline needs about 1,500 slots for 90 minutes, and the rest of the day only a few dozen slots of ad hoc queries run. Someone set the reservation baseline to 1,500 slots, and the monthly bill is far above forecast. Which change cuts cost without slowing the nightly run?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Lower the baseline to roughly the daytime need and set an autoscaling maximum of about 1,500 slots so capacity is billed only while scaled up",
+        "rationale": "Baseline slots are always charged, so only the slots needed all day belong in the baseline. Autoscaled slots are charged only while scaling up, with a one-minute minimum, so the 90-minute run pays for itself."
+      },
+      {
+        "id": "b",
+        "text": "Raise the autoscaling maximum well above 1,500 slots, so that jobs finish sooner and the reservation spends less time at high capacity",
+        "rationale": "The maximum only limits how far autoscaling may go. It does not reduce the always-billed baseline, which is the source of the overspend, and extra autoscaled slots add cost."
+      },
+      {
+        "id": "c",
+        "text": "Buy a three-year slot commitment for the 1,500 slots, since the commitment discount applies to the whole baseline and lowers its price",
+        "rationale": "A commitment discounts capacity but still bills it for the whole term. Committing to a peak that is used 90 minutes a day locks in the same idle capacity, for years."
+      },
+      {
+        "id": "d",
+        "text": "Turn on idle slot sharing, so that baseline slots left unused during the day are not charged to the reservation",
+        "rationale": "Idle slot sharing lets other reservations use unused slots, but baseline slots are charged whether or not they are used. It does not remove the baseline charge."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "A baseline of zero is allowed. For a workload that is idle most of the day, a small baseline plus an autoscaling maximum is the cost-efficient shape.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-optimize-process-126",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "committed-use-discounts",
+      "cost-resource-optimization"
+    ],
+    "subObjective": "optimize-process.2",
+    "sourceUrl": "https://docs.cloud.google.com/compute/docs/instances/signing-up-committed-use-discounts",
+    "lastVerified": "2026-10-17",
+    "prompt": "Kestrel Media runs 300 N2 VMs, about 2,400 vCPUs, in europe-west1. Leadership has already decided to replace them with Cloud Run services over the next seven months. Procurement wants a three-year resource-based commitment for all 2,400 vCPUs, because the quote shows the deepest discount. What should the architect advise?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Buy it now and cancel the unused part of the commitment as each VM is retired, so that the discount shrinks along with the fleet",
+        "rationale": "A resource-based commitment cannot be cancelled after purchase, and you pay for it until the end date whether or not the resources exist. It does not shrink as VMs are retired."
+      },
+      {
+        "id": "b",
+        "text": "Buy a three-year resource-based commitment for half of the vCPUs as a hedge, since half the fleet may still remain after the migration",
+        "rationale": "The decision is already made, so no part of this fleet is a safe long-term base. A commitment tied to the N2 series and the region strands its full amount when the VMs go."
+      },
+      {
+        "id": "c",
+        "text": "Skip the long resource commitment, and consider a flexible commitment sized to the post-migration spend floor, leaving the rest on-demand",
+        "rationale": "A flexible commitment is a minimum hourly spend that applies across machine series, projects and regions, and covers Cloud Run as well as Compute Engine. Sizing it to the post-migration floor avoids paying for a fleet that is going away."
+      },
+      {
+        "id": "d",
+        "text": "Move the whole fleet to Spot VMs during the migration instead of using any commitment, because Spot discounts always exceed commitment discounts",
+        "rationale": "Spot VMs can be preempted and have no availability guarantee, so they are not a safe base for a steady production fleet. Spot is a different lever, not a substitute for sizing a commitment."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "Commitment risk follows what the commitment is tied to. A resource-based commitment is tied to a machine series, region and project and cannot be cancelled, so it does not suit capacity that is about to be replaced.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-optimize-process-127",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "committed-use-discounts",
+      "cost-resource-optimization"
+    ],
+    "subObjective": "optimize-process.2",
+    "sourceUrl": "https://docs.cloud.google.com/compute/docs/instances/committed-use-discounts-overview",
+    "lastVerified": "2026-10-17",
+    "prompt": "Brightpath Games runs a steady 600 vCPUs of general-purpose VMs in us-central1 and expects to move the workload to europe-west4 within the year for data-residency reasons. Finance wants a committed use discount for the stable baseline now. Which choice keeps the discount useful after the move?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "A three-year resource-based commitment in us-central1, since the region is only a billing label and the discount follows the VMs",
+        "rationale": "A resource-based commitment is linked to a region and project. Once the VMs run in europe-west4, the us-central1 commitment is still billed but has nothing to apply to."
+      },
+      {
+        "id": "b",
+        "text": "One-year resource-based commitments in both regions, so whichever region runs the VMs during the transition is covered",
+        "rationale": "Each commitment is billed in full for its term whether or not matching resources run, so this guarantees that half of the purchased capacity is idle at any time."
+      },
+      {
+        "id": "c",
+        "text": "A resource-based commitment in europe-west4 bought today, because the commitment will automatically cover the current VMs in us-central1 until the move",
+        "rationale": "A regional commitment applies only to resources in its own region. It would bill from the start of its term while the VMs are still in us-central1 and earn no discount."
+      },
+      {
+        "id": "d",
+        "text": "A compute flexible commitment sized to the hourly spend of the stable baseline, which applies across machine series, projects and regions",
+        "rationale": "A flexible commitment is a minimum hourly spend that applies to eligible usage regardless of project or region, so the discount follows the workload from us-central1 to europe-west4."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "explanation": "When the shape, series or region may change, commit spend rather than a specific resource in a specific place.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-optimize-process-128",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "migration-center",
+      "cost-resource-optimization",
+      "migration-planning"
+    ],
+    "subObjective": "optimize-process.2",
+    "sourceUrl": "https://docs.cloud.google.com/migration-center/docs/migration-center-overview",
+    "lastVerified": "2026-10-17",
+    "prompt": "Northgate Retail's CFO wants an assessment of the company's real on-premises estate before any workload moves: an inventory of the discovered servers and databases, suggested Google Cloud target products, and a TCO report to compare with current costs. Which tool should the cloud team use?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Google Cloud Pricing Calculator, with an engineer typing in each server's size and an estimated use for every target service",
+        "rationale": "The calculator prices a configuration you enter by hand. It does not discover the estate, suggest target products or build a TCO report."
+      },
+      {
+        "id": "b",
+        "text": "Migration Center, collecting the estate with its discovery client or an export and generating an assessment and TCO reports from it",
+        "rationale": "Migration Center discovers assets, assesses fit for Google Cloud products, estimates costs and produces TCO reports, which is the combination the CFO requested."
+      },
+      {
+        "id": "c",
+        "text": "Cloud Billing reports, filtered by label across the last twelve months, to read what the existing estate costs to run today",
+        "rationale": "Billing reports show costs for Google Cloud usage already incurred. An on-premises estate that has not moved produces no Google Cloud usage to report."
+      },
+      {
+        "id": "d",
+        "text": "Active Assist Recommender, using its rightsizing and idle-resource suggestions to size the target environment from current utilization",
+        "rationale": "Recommender analyzes resources that run on Google Cloud. It has no visibility of on-premises servers and does not produce a migration cost comparison."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "Estimate from configuration with the Pricing Calculator, discover and assess an existing estate with Migration Center, and use billing reports and Recommender only for what already runs on Google Cloud.",
+    "difficulty": 1,
+    "examOnly": true
+  },
+  {
+    "id": "q-optimize-process-129",
+    "type": "multiple",
+    "domainId": "optimize-process",
+    "concepts": [
+      "capex-opex",
+      "cost-resource-optimization",
+      "kpi-roi"
+    ],
+    "subObjective": "optimize-process.2",
+    "sourceUrl": "https://docs.cloud.google.com/migration-center/docs/quick_tco_estimator",
+    "lastVerified": "2026-10-17",
+    "prompt": "A board asks for a five-year total cost of ownership comparison between keeping 800 VMs in two owned data centers and running them on Compute Engine. The finance lead wants the comparison to be fair to the on-premises side. Which two items belong in the on-premises cost baseline? Choose two.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "The Compute Engine network egress charges that the same workloads are expected to incur once they have moved",
+        "rationale": "Egress charged by Google Cloud is a cost of the target environment, so it belongs in the Google Cloud estimate rather than in the on-premises baseline."
+      },
+      {
+        "id": "b",
+        "text": "Server hardware amortized over its useful life, including the cost of refreshing it when it reaches end of life",
+        "rationale": "Hardware amortization over its useful lifespan is a core component of the on-premises side. Leaving it out understates what the status quo costs."
+      },
+      {
+        "id": "c",
+        "text": "The committed use discount percentage that the company expects to receive on its Compute Engine purchases",
+        "rationale": "A discount rate is an input to the Google Cloud cost estimate, not a cost of operating the current data centers."
+      },
+      {
+        "id": "d",
+        "text": "Rack space, power and cooling in the data centers, together with the IT operations staff who administer the hosts",
+        "rationale": "Facility costs and operations staffing are part of what it costs to run the estate. A TCO that compares cloud list prices with only the server purchase price flatters the status quo."
+      }
+    ],
+    "correct": [
+      "b",
+      "d"
+    ],
+    "explanation": "A fair TCO counts both sides fully: on-premises hardware, facilities, staff and licenses on one side, and Google Cloud usage, discounts and migration effort on the other.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-optimize-process-130",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "dora-metrics",
+      "ci-cd"
+    ],
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://docs.cloud.google.com/deploy/docs/metrics",
+    "lastVerified": "2026-10-17",
+    "prompt": "Wexford Bank delivers its payments service through a Cloud Deploy delivery pipeline with dev, staging and prod targets. The VP of engineering wants to start a DORA report and asks the platform team which delivery metrics the Cloud Deploy console already shows without extra tooling. Which statement is accurate?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Change lead time for each release, measured from the commit that triggered the build until the rollout reaches the prod target",
+        "rationale": "Cloud Deploy's metrics cover deployments, not commits. Lead time starts when a change is committed to version control, so it needs source-control data that Cloud Deploy does not show."
+      },
+      {
+        "id": "b",
+        "text": "Deployment frequency for the prod target of each delivery pipeline, counted in deployment days over a rolling 30-day period",
+        "rationale": "Correct. Cloud Deploy shows Deployments, Deployment frequency and Deployment failure rate, per delivery pipeline, for the production (final) target over a rolling 30 days. Frequency counts deployment days, not deployments."
+      },
+      {
+        "id": "c",
+        "text": "Failed deployment recovery time, measured from a failed rollout until the next successful rollout on the same target",
+        "rationale": "Recovery time is not among the metrics Cloud Deploy lists. Recovery from a failing deployment usually depends on incident records the pipeline never sees."
+      },
+      {
+        "id": "d",
+        "text": "Deployment rework rate, measured as the share of rollouts started by the repair or rollback automation of the pipeline",
+        "rationale": "Rework rate counts unplanned deployments caused by production incidents, and Cloud Deploy does not report it. Its failure-rate metric is a different measure: the percentage of deployment attempts that failed."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "Cloud Deploy reports deployments, deployment frequency and deployment failure rate for the production target over 30 days. Lead time needs commit data and recovery time needs incident data.",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "id": "q-optimize-process-131",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "dora-metrics",
+      "sdlc",
+      "stakeholder-management"
+    ],
+    "subObjective": "optimize-process.1",
+    "sourceUrl": "https://dora.dev/guides/dora-metrics-four-keys/",
+    "lastVerified": "2026-10-17",
+    "prompt": "Orrin Group's CTO asks for one company-wide DORA score: the five metrics averaged across all 120 services, from a mainframe billing system to mobile apps, with business units ranked by it and a year-end target of daily deployments for every service. What should the architect advise?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Measure each service against its own baseline, share all five metrics with development, operations and release teams, and avoid targets",
+        "rationale": "Correct. DORA says the metrics fit one application or service at a time, warns that blending very different systems misleads, and lists metrics as goals and siloed ownership among the common pitfalls."
+      },
+      {
+        "id": "b",
+        "text": "Go ahead, because top performers do well on all five metrics, so a blended score reliably separates the strongest business units in the group",
+        "rationale": "Top performers doing well across all five is a finding about individual services. DORA warns that blending metrics across very different contexts is problematic, so an average hides the differences that matter."
+      },
+      {
+        "id": "c",
+        "text": "Rank on change lead time alone, since it best captures delivery speed for every kind of system and is simple to explain to executives",
+        "rationale": "Relying on a single metric is a named pitfall. DORA recommends several metrics, including some in tension with each other, such as throughput against instability."
+      },
+      {
+        "id": "d",
+        "text": "Go ahead, and publish the league table monthly so that business units compete and keep improving their delivery performance over the year",
+        "rationale": "Competing is another listed pitfall. The goal is improvement over time for each team, and turning the numbers into a contest invites gaming them."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "Use DORA metrics per service, as trends, to find bottlenecks. Company-wide blended scores, single-metric rankings and league tables are the documented pitfalls.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-optimize-process-132",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "support-operations",
+      "cost-resource-optimization"
+    ],
+    "subObjective": "optimize-process.2",
+    "sourceUrl": "https://cloud.google.com/terms/tssg",
+    "lastVerified": "2026-10-17",
+    "prompt": "Marrow Health runs a production patient-scheduling platform. Its contract requires a first meaningful response within one hour on P1 cases at any hour, and the company wants the lowest-cost Google Cloud Customer Care tier that documents that response. Which tier fits?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Standard Support, filing every case as P1 so that Google answers each of them within the hour at any time of day",
+        "rationale": "Standard has no P1 response target (its P2 target is four hours in business hours). Choosing the P1 priority does not create a target the tier does not offer."
+      },
+      {
+        "id": "b",
+        "text": "Premium Support, because only the Premium tier provides 24/7 coverage for urgent cases of any kind in production",
+        "rationale": "Enhanced Support also provides 24/7 coverage for cases of certain priority. Premium shortens P1 to 15 minutes, which the requirement does not need, and it costs considerably more."
+      },
+      {
+        "id": "c",
+        "text": "Enhanced Support, which documents a one-hour first meaningful response on P1 cases and 24/7 availability for higher priorities",
+        "rationale": "Correct. Enhanced is the lowest tier with a documented P1 response target (one hour) and 24/7 availability for higher priorities, so it meets the contract at the lowest cost."
+      },
+      {
+        "id": "d",
+        "text": "Enhanced Support plus Planned Event Support, because the add-on is needed to obtain any P1 response target at all",
+        "rationale": "Enhanced already documents the one-hour P1 response. Planned Event Support is a one-time add-on for events lasting up to five days, so it adds cost without being needed."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "Pick the lowest tier whose documented P1 target meets the requirement: Standard has none, Enhanced is one hour, Premium is 15 minutes.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-optimize-process-133",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "support-operations",
+      "cost-resource-optimization"
+    ],
+    "subObjective": "optimize-process.2",
+    "sourceUrl": "https://docs.cloud.google.com/support/docs/enhanced",
+    "lastVerified": "2026-10-17",
+    "prompt": "Pelham Tickets sells concert tickets on Google Cloud. A one-hour first response on P1 cases is acceptable for most of the year, but its two 2-day on-sales each need a 15-minute P1 response. Finance wants the lowest annual support cost that meets both needs. Which plan should the architect choose?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Premium Support for the whole year, because a 15-minute P1 response is only available as a permanent feature of that tier",
+        "rationale": "A 15-minute P1 response is also documented for Planned Event Support during an event. Premium has a much higher minimum monthly spend, so paying it all year for two short peaks is the costliest option."
+      },
+      {
+        "id": "b",
+        "text": "Standard Support all year, buying Planned Event Support before each on-sale to cover the 15-minute response during the event",
+        "rationale": "Standard has no P1 response target for the other months, and Planned Event Support is documented as a value-add service for Enhanced Support customers."
+      },
+      {
+        "id": "c",
+        "text": "Enhanced Support with the Technical Account Advisor service, which adds a faster P1 response during the busiest weeks of the year",
+        "rationale": "The advisor service provides onboarding, guidance on case escalation and periodic reviews. The 15-minute P1 response is documented for Premium and for Planned Event Support, not for this add-on."
+      },
+      {
+        "id": "d",
+        "text": "Enhanced Support all year, adding Planned Event Support for each on-sale to get a 15-minute P1 response during the event",
+        "rationale": "Correct. Enhanced meets the one-hour need. Planned Event Support covers events of up to five days with a 15-minute P1 response, an architecture review and a one-time fee, up to three times a year."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "explanation": "Premium is not the only route to a 15-minute P1 response. Enhanced Support plus Planned Event Support covers short, planned peaks at lower cost.",
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "id": "q-optimize-process-134",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "support-operations",
+      "customer-success"
+    ],
+    "subObjective": "optimize-process.2",
+    "sourceUrl": "https://docs.cloud.google.com/support/docs/best-practices",
+    "lastVerified": "2026-10-17",
+    "prompt": "A Cloud SQL instance has been intermittently refusing connections since this morning. The on-call engineer opens a Customer Care case. Which description lets the support specialist start investigating fastest?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Connection refused errors began at 2026-10-17T06:42:10+00:00 and recur every few minutes; project orders-prod-4821, instance ledger-sql-1, zone us-central1-b; app log error text attached",
+        "rationale": "Correct. It gives an ISO 8601 start time with an offset, the alphanumeric project ID, instance and zone, the problem type and the actual error text, which are the details the best-practices guide asks for."
+      },
+      {
+        "id": "b",
+        "text": "Since early this morning one of our Cloud SQL databases in the Orders Prod project drops connections now and then; we think a recent change broke it, so please escalate it right away and keep us posted",
+        "rationale": "Relative times such as this morning are ambiguous for a specialist in another time zone, and a project name does not identify the project. The case names no instance, zone or error text."
+      },
+      {
+        "id": "c",
+        "text": "The database has been unreachable since the 17th and a console screenshot is attached; the project is called Orders Production, so please set this case to P1 and answer quickly",
+        "rationale": "A date without a time or zone is ambiguous, and the project name is not the project ID. Priority should be chosen by business impact and explained, and setting P1 here does not replace the missing identifiers."
+      },
+      {
+        "id": "d",
+        "text": "We cannot connect to Cloud SQL from the internet and gcloud returns an error, so please inspect all of our projects and tell us what is wrong before today's release",
+        "rationale": "It names no project, instance, time or error text, and the vague command description cannot be reproduced. It also folds several possible issues into one case, whereas Google asks for one case per issue."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "A good case states when it started in ISO 8601, the product and feature, the region and zone, the project ID and other identifiers, the artifacts, and the problem type.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-optimize-process-135",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "support-operations",
+      "audit-logs",
+      "compliance-monitoring"
+    ],
+    "subObjective": "optimize-process.2",
+    "sourceUrl": "https://docs.cloud.google.com/assured-workloads/access-approval/docs/overview",
+    "lastVerified": "2026-10-17",
+    "prompt": "Kestrel Insurance's compliance policy says no Google employee may read claims data in its Cloud SQL and BigQuery projects unless Kestrel's security lead authorizes that specific access, and Kestrel must be able to audit afterwards what Google personnel did. Which approach meets this?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Grant Google's support group the Cloud SQL Viewer and BigQuery Data Viewer roles on the projects and remove them again after each support case",
+        "rationale": "IAM is not how access by Google personnel is controlled. Grants like these are manual, leave windows of standing access and give no per-request approval or record of what the staff did."
+      },
+      {
+        "id": "b",
+        "text": "Enroll the services in Access Approval so each request waits for Kestrel's approvers, and review Access Transparency logs afterwards",
+        "rationale": "Correct. Access Approval requires explicit customer approval before Customer Care or engineering can access Customer Data, and Access Transparency logs record what Google personnel did."
+      },
+      {
+        "id": "c",
+        "text": "Enable Data Access audit logs on both services and review them regularly for entries made by Google personnel",
+        "rationale": "Cloud Audit Logs record actions by members of your own organization. Actions by Google personnel are recorded in Access Transparency logs, and audit logs neither request nor block that access."
+      },
+      {
+        "id": "d",
+        "text": "Buy Premium Support so that the Technical Account Manager approves or blocks each access by Google engineers",
+        "rationale": "A Technical Account Manager guides onboarding, reviews and best practices. It is not a control over personnel access to Customer Data, which is what Access Approval provides."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "Access Approval gates Google personnel access to Customer Data, and Access Transparency provides the audit trail. Response time grows by the time Customer Care waits for approval.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-optimize-process-136",
+    "type": "single",
+    "domainId": "optimize-process",
+    "concepts": [
+      "sustainability",
+      "cost-resource-optimization"
+    ],
+    "subObjective": "optimize-process.2",
+    "sourceUrl": "https://docs.cloud.google.com/carbon-footprint/docs/methodology",
+    "lastVerified": "2026-10-17",
+    "prompt": "Alder Freight's FinOps lead will use Carbon Footprint for two jobs: deciding where and at what time its flexible batch jobs should run to cut emissions, and compiling the annual scope 3 inventory for its sustainability report. Which pairing of scope 2 views is correct?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Market-based for both jobs, because it includes Google's carbon-free electricity purchases and so reflects the real emissions",
+        "rationale": "Market-based data uses annual emission factors, which suit inventories. It is not the view recommended for deciding where and when to run workloads."
+      },
+      {
+        "id": "b",
+        "text": "Market-based for choosing where and when to run jobs, and location-based for the annual inventory",
+        "rationale": "This swaps the views. Location-based data uses hourly emission factors suited to placement and timing, while market-based data is the one likely to be most useful for scope 3 inventories."
+      },
+      {
+        "id": "c",
+        "text": "Location-based for choosing where and when to run jobs, and market-based for the annual scope 3 inventory",
+        "rationale": "Correct. Location-based uses hourly emission factors and ignores Google's carbon-free electricity contracts, which suits optimizing workload location and timing. Market-based uses annual factors and suits scope 3 inventories."
+      },
+      {
+        "id": "d",
+        "text": "Location-based for both jobs, because hourly emission factors are more precise than the annual ones",
+        "rationale": "Precision is not the criterion for an inventory. Market-based data includes the effect of Google's carbon-free electricity purchases and annual factors, which is what Google says suits annual scope 3 reporting."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "Location-based (hourly factors) guides where and when to run workloads. Market-based (annual factors, includes Google's purchases) feeds annual scope 3 inventories.",
+    "difficulty": 2
   }
 ]

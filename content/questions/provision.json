@@ -2882,7 +2882,7 @@
     "caseStudyId": "altostrat-media",
     "subObjective": "provision.5",
     "sourceUrl": "https://docs.cloud.google.com/video-intelligence/docs/feature-explicit-content",
-    "lastVerified": "2026-10-01",
+    "lastVerified": "2026-10-17",
     "prompt": "Altostrat's metadata pipeline calls the Video Intelligence API to flag explicit content in video. Leadership also wants concise summaries of videos and podcasts, richer metadata and an auditable explanation for each flag, all over media already in Cloud Storage. The Video Intelligence API is now deprecated, with shutdown in September 2027. What should the architect recommend?",
     "choices": [
       {
@@ -3775,5 +3775,2092 @@
     ],
     "explanation": "For a Cloud Storage trigger to Cloud Run, three identities matter. The Cloud Storage service agent needs pubsub.publisher, the trigger's service account needs eventarc.eventReceiver and run.invoker, and the runtime identity is unrelated to delivery. Compare each binding with the identity that performs the action.",
     "difficulty": 3
+  },
+  {
+    "id": "q-provision-161",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "load-balancing",
+      "regional-external-alb",
+      "data-residency"
+    ],
+    "subObjective": "provision.1",
+    "sourceUrl": "https://docs.cloud.google.com/load-balancing/docs/choosing-load-balancer",
+    "lastVerified": "2026-10-17",
+    "prompt": "Kedem Insurance serves policyholders only in Israel and has a single Google Cloud region there, me-west1. Its regulator requires that client TLS sessions terminate inside the country. The team also wants URL-based HTTP(S) routing and managed certificates. Which design meets the mandate?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "A global external Application Load Balancer with every backend instance group placed in me-west1",
+        "rationale": "Global load balancers terminate TLS at locations distributed worldwide, so placing all backends in one region does not confine where client handshakes end."
+      },
+      {
+        "id": "b",
+        "text": "A regional external Application Load Balancer deployed in me-west1, with backends in the same region",
+        "rationale": "A regional external Application Load Balancer is the documented way to guarantee that TLS terminates only in the region where it is deployed, while still giving URL maps and certificates."
+      },
+      {
+        "id": "c",
+        "text": "A global external Application Load Balancer protected by a Cloud Armor policy that allows only Israeli IP ranges",
+        "rationale": "Cloud Armor geo and IP rules filter which requests are admitted. They do not change where the load balancer terminates the connection."
+      },
+      {
+        "id": "d",
+        "text": "A global external Application Load Balancer, with the resource locations organization policy limited to me-west1",
+        "rationale": "The resource locations constraint controls only where resources are created. It is not a statement about where a global load balancer terminates client connections."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "When a mandate is about where the TLS handshake ends, load balancer scope decides the answer. Backend location, edge filtering and resource-creation policies do not.",
+    "difficulty": 1,
+    "examOnly": true
+  },
+  {
+    "id": "q-provision-162",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "global-load-balancing",
+      "data-residency",
+      "cloud-cdn"
+    ],
+    "subObjective": "provision.1",
+    "sourceUrl": "https://docs.cloud.google.com/load-balancing/docs/features",
+    "lastVerified": "2026-10-17",
+    "prompt": "Almog Health serves patients across the EU and must keep patient records stored and processed on infrastructure located in the EU. Its regulator's written guidance covers where data is stored and where application code runs, and says nothing about where encrypted client connections end. Almog wants one anycast IP, Cloud CDN for static assets and automatic failover between europe-west1 and europe-west4. Which design fits?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "A regional external Application Load Balancer in each EU region, with DNS records Almog manages to steer clients",
+        "rationale": "This solves a termination-location rule that the regulator never wrote, and it gives up the single anycast IP, Cloud CDN and automatic failover Almog asked for."
+      },
+      {
+        "id": "b",
+        "text": "One regional external Application Load Balancer in europe-west4 with backends in both europe-west1 and europe-west4",
+        "rationale": "A regional load balancer connects only to backends in its own region, so it cannot front both EU regions and fail over between them."
+      },
+      {
+        "id": "c",
+        "text": "A global external Application Load Balancer with backends only in europe-west1 and europe-west4, plus EU data stores",
+        "rationale": "Storage and processing stay in the EU through the backends and data stores, and the global scope supplies the anycast IP, Cloud CDN and cross-region failover the stem asks for."
+      },
+      {
+        "id": "d",
+        "text": "A global external Application Load Balancer on Standard Network Service Tier, so that all traffic stays inside the EU",
+        "rationale": "Global external Application Load Balancers run on Premium Tier only, and the network tier is not a data-residency control."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "Regional is not automatically right for residency. It is right when the rule is about TLS termination location. Here the rule covers storage and processing, which the backends and data stores satisfy.",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "id": "q-provision-163",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "load-balancing",
+      "regional-external-alb",
+      "ha-failover"
+    ],
+    "subObjective": "provision.1",
+    "sourceUrl": "https://docs.cloud.google.com/load-balancing/docs/choosing-load-balancer",
+    "lastVerified": "2026-10-17",
+    "prompt": "Kedem's regulated claims portal runs behind a regional external Application Load Balancer in me-west1, chosen so that TLS terminates in the country. The reliability lead now asks for a single IP address that automatically fails over to europe-west1 if me-west1 is lost. The compliance officer confirms that the in-country termination mandate has no exception for outages. What should the architect recommend?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Add europe-west1 instance groups as extra backends of the same regional load balancer, so it can fail over when needed",
+        "rationale": "A regional load balancer can connect only to backends in its own region, so this configuration is not available."
+      },
+      {
+        "id": "b",
+        "text": "Replace it with a global external Application Load Balancer and add Cloud Armor geo rules that favor Israeli clients",
+        "rationale": "The global load balancer terminates TLS at locations distributed worldwide, and geo rules do not move the handshake, so the mandate is broken."
+      },
+      {
+        "id": "c",
+        "text": "Publish a DNS failover record that sends clients to a second regional load balancer in europe-west1 when health checks fail",
+        "rationale": "This does provide cross-region failover, but clients would then terminate TLS in Belgium, which is exactly what the mandate forbids."
+      },
+      {
+        "id": "d",
+        "text": "Keep the regional load balancer, use every zone of me-west1, and explain that failing over abroad would break the mandate",
+        "rationale": "Zonal resilience inside the region respects the mandate. A single-IP regional failover to another country is not possible, and moving traffic abroad would end TLS outside the territory."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "explanation": "The regional load balancer trades away the global VIP and cross-region failover. When the mandate has no outage exception, that trade-off is intentional, and the answer is resilience inside the territory.",
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "id": "q-provision-164",
+    "type": "multiple",
+    "domainId": "provision",
+    "concepts": [
+      "cloud-run",
+      "websockets",
+      "serverless"
+    ],
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/run/docs/triggering/websockets",
+    "lastVerified": "2026-10-17",
+    "prompt": "Tallis Auctions runs a live bidding room as a Cloud Run service over WebSockets. Room membership and the current top bid are held in instance memory, session affinity is enabled and minimum instances is set to 3. During scale-in and new revisions, bidders report dropped connections and rooms that reset to an empty state. Which two changes fix the root cause? Choose two.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Keep room state in Memorystore for Redis and use Redis Pub/Sub to coordinate updates between instances",
+        "rationale": "Instances are disposable, so room state must live outside them. Redis Pub/Sub also lets every instance see updates made on any other instance."
+      },
+      {
+        "id": "b",
+        "text": "Raise minimum instances so that the instances holding live rooms are never shut down or replaced during scale-in",
+        "rationale": "Minimum instances reduce cold starts. Cloud Run can still shut down and replace any instance, including those it keeps warm."
+      },
+      {
+        "id": "c",
+        "text": "Make the client library reconnect automatically after a drop and resume the room from the stored state",
+        "rationale": "Connections end at the timeout and when instances are replaced, so clients must reconnect and rebuild their view from external state."
+      },
+      {
+        "id": "d",
+        "text": "Raise maximum concurrency so that every bidder of a room lands on the same instance through session affinity",
+        "rationale": "Session affinity is best effort and breaks when an instance terminates or reaches its limits, so it cannot be the only place room state lives."
+      }
+    ],
+    "correct": [
+      "a",
+      "c"
+    ],
+    "explanation": "WebSockets are supported on Cloud Run, but instances are replaceable and affinity is best effort. The durable design externalizes state and reconnects clients.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-165",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "cloud-run",
+      "compute-selection",
+      "load-balancing"
+    ],
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/load-balancing/docs/network",
+    "lastVerified": "2026-10-17",
+    "prompt": "Brightwave Games is moving multiplayer game servers to Google Cloud. Game clients exchange custom binary packets over UDP, the server must see each player's real source IP for anti-cheat checks, and a small operations team scales the fleet by region. A developer proposes Cloud Run because the team prefers serverless. Which platform meets the protocol requirement?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "A Cloud Run service with WebSockets enabled, behind a global external Application Load Balancer using a serverless NEG",
+        "rationale": "Cloud Run services and Application Load Balancers handle HTTP-family traffic. Raw UDP from game clients cannot be carried over them."
+      },
+      {
+        "id": "b",
+        "text": "A Cloud Run worker pool with instance-based billing and minimum instances, scaled manually in each region",
+        "rationale": "Worker pools run pull-based background work and do not expose a public endpoint for client packets, so they are not a UDP front end."
+      },
+      {
+        "id": "c",
+        "text": "Compute Engine instances in a managed instance group behind a regional external passthrough Network Load Balancer",
+        "rationale": "A passthrough Network Load Balancer carries UDP and delivers packets with the client source IP unchanged to instance-group backends."
+      },
+      {
+        "id": "d",
+        "text": "GKE Autopilot Pods published through the Gateway API, with an HTTPRoute defined for each game server",
+        "rationale": "Gateway API HTTPRoutes provision HTTP(S) routing, not UDP passthrough, so game packets would not reach the Pods."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "Serverless is the reflex here, but the protocol decides. Raw TCP or UDP workloads belong on Compute Engine or GKE behind a passthrough Network Load Balancer.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-provision-166",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "cloud-run",
+      "websockets",
+      "serverless"
+    ],
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/run/docs/configuring/request-timeout",
+    "lastVerified": "2026-10-17",
+    "prompt": "A collaborative whiteboard on Cloud Run keeps each user's WebSocket open for sessions that often last three hours. The team sets the request timeout to its maximum and expects every connection to survive the whole session. What must the design still include?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Nothing more, because the maximum timeout setting is large enough to cover three-hour sessions once WebSockets are enabled",
+        "rationale": "The maximum is 60 minutes, so the three-hour sessions in the stem exceed it even though the team set the timeout as high as it goes."
+      },
+      {
+        "id": "b",
+        "text": "Client logic that reconnects and resumes, because a connection can end at the 60-minute cap or on instance replacement",
+        "rationale": "Cloud Run closes connections at the configured timeout, which cannot exceed 60 minutes, so a three-hour session needs reconnect and resume."
+      },
+      {
+        "id": "c",
+        "text": "A plan to get the request timeout raised beyond its documented maximum when the service is deployed to production",
+        "rationale": "The documented ceiling is 60 minutes, so a design that depends on a higher value rests on an assumption the docs do not support."
+      },
+      {
+        "id": "d",
+        "text": "Minimum instances set high enough that no instance is ever shut down or replaced while a session is running",
+        "rationale": "Minimum instances keep instances warm to cut cold starts. They do not stop Cloud Run from shutting down and replacing instances."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "difficulty": 1
+  },
+  {
+    "id": "q-provision-167",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "gemini-agent-platform",
+      "conversational-agents",
+      "dialogflow-cx"
+    ],
+    "caseStudyId": "cymbal-retail",
+    "subObjective": "provision.5",
+    "sourceUrl": "https://docs.cloud.google.com/dialogflow/docs",
+    "lastVerified": "2026-10-17",
+    "prompt": "Cymbal's IVR routes calls to human agents, who key in orders for customers who cannot self-serve, and the business wants lower call-center staffing costs. A consultant must recommend what to build so that fewer calls reach an agent at all. Which recommendation fits that goal?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Deploy Agent Assist so that its real-time suggestions answer callers directly and keep their calls from ever reaching an agent",
+        "rationale": "Agent Assist gives real-time suggestions to human agents during live conversations. It does not talk to callers, so it cannot deflect calls."
+      },
+      {
+        "id": "b",
+        "text": "Train a custom intent classifier on the Agent Platform and use it to route each caller to the most suitable department sooner",
+        "rationale": "Better routing still delivers the call to a person. It shortens misrouting but does not resolve requests without an agent."
+      },
+      {
+        "id": "c",
+        "text": "Send every call transcript to Gemini after the call ends to produce summaries that agents read before they return calls",
+        "rationale": "Post-call summaries help agents work faster but add no self-service step, so call volume reaching agents is unchanged."
+      },
+      {
+        "id": "d",
+        "text": "Replace the IVR menu with a Conversational Agents (Dialogflow CX) virtual agent that resolves routine requests itself",
+        "rationale": "A virtual agent talks to the caller and resolves requests, which is what keeps calls from reaching a human, and handoff covers the cases it cannot finish."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-168",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "gemini-agent-platform",
+      "conversational-agents",
+      "dialogflow-cx"
+    ],
+    "subObjective": "provision.5",
+    "sourceUrl": "https://docs.cloud.google.com/dialogflow/cx/docs/concept/webhook",
+    "lastVerified": "2026-10-17",
+    "prompt": "A support virtual agent in Conversational Agents (Dialogflow CX) is called by a mobile chat app and by the telephony platform, both through the agent's API. Phone traffic spikes every Monday and the shared fulfillment webhook slows, so chat users hit timeouts too. The team wants to isolate the two channels without maintaining two copies of the agent. What should they do?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Create an environment per channel with its own webhook URL and authentication, and point each caller at its environment",
+        "rationale": "Environments can carry environment-specific webhook settings, and API callers can name the environment they use, so each channel gets its own backend from one agent."
+      },
+      {
+        "id": "b",
+        "text": "Export the agent and import it as a second agent for phone, so that each of the two copies points at its own webhook",
+        "rationale": "This isolates the backends but creates two agents that drift apart, which is the maintenance burden the team wants to avoid."
+      },
+      {
+        "id": "c",
+        "text": "Raise the webhook timeout so that slow Monday responses finish before the request is treated as failed by the agent",
+        "rationale": "The timeout applies to each request attempt and a retry can double the delay. A longer wait does not separate the two channels' load."
+      },
+      {
+        "id": "d",
+        "text": "Move the webhook to Cloud Run with a few minimum instances configured, and keep a single shared URL for both channels",
+        "rationale": "Warm instances remove cold starts, but both channels still share one backend, so a Monday phone spike can still slow chat."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-169",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "gemini-agent-platform",
+      "conversational-agents",
+      "cloud-run"
+    ],
+    "subObjective": "provision.5",
+    "sourceUrl": "https://docs.cloud.google.com/dialogflow/docs/editions",
+    "lastVerified": "2026-10-17",
+    "prompt": "Northbeam Software wants a Summarize this ticket button inside its web app. One click sends the ticket text to Gemini and shows a short summary. There are no phone or chat channels, no multi-turn dialog, no human handoff and no conversation state to manage. Which approach is the best fit?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "A Conversational Agents (Dialogflow CX) agent with a playbook, called through its API for each click of the button",
+        "rationale": "CX adds channels, state, flows and handoff that this single-turn feature does not need. It is overbuilt for one generative call."
+      },
+      {
+        "id": "b",
+        "text": "A small Cloud Run service that calls Gemini once per click and returns the generated summary to the web app",
+        "rationale": "One stateless generative call needs no dialog framework, so a thin service is the simplest design that meets the stated requirements."
+      },
+      {
+        "id": "c",
+        "text": "A Dialogflow ES agent with one intent whose fulfillment webhook calls Gemini and returns the summary",
+        "rationale": "Intent matching and a webhook add moving parts for a task with no dialog, and nothing in the requirements needs them."
+      },
+      {
+        "id": "d",
+        "text": "Agent Assist with summarization enabled for the support team's live conversations with their customers",
+        "rationale": "Agent Assist supports human agents during customer conversations. It is not a way to embed a summary button in the application."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "Conversational Agents earns its cost when you need multi-turn flows, channels, environments or handoff. A single generative call inside your own product does not.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-170",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "gemini-agent-platform",
+      "feature-store",
+      "online-inference"
+    ],
+    "subObjective": "provision.4",
+    "sourceUrl": "https://docs.cloud.google.com/vertex-ai/docs/featurestore/latest/overview",
+    "lastVerified": "2026-10-17",
+    "prompt": "A fraud model on the Gemini Enterprise Agent Platform scores well offline but degrades in production. The 30-day spend feature is computed by a BigQuery SQL job for training, while the checkout service re-implements it in Java for online scoring, and the two disagree on refunds. Which change addresses the cause rather than the symptom?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Turn on Model Monitoring skew detection for the endpoint so the team is alerted when the distributions diverge",
+        "rationale": "Model Monitoring detects skew and alerts. It does not remove the duplicated feature logic that causes it."
+      },
+      {
+        "id": "b",
+        "text": "Retrain the model every night on logged serving inputs so that it adapts to whatever values the Java code produces",
+        "rationale": "Retraining on the flawed serving values bakes the inconsistent refund handling into the model instead of fixing the pipelines."
+      },
+      {
+        "id": "c",
+        "text": "Define the feature once in a BigQuery-backed Feature Store feature group and serve it online from a feature view",
+        "rationale": "The skew comes from two implementations of one feature. A single governed definition removes the divergence at its source."
+      },
+      {
+        "id": "d",
+        "text": "Copy the BigQuery feature tables into a Cloud Storage bucket every night so that both pipelines read identical files",
+        "rationale": "A nightly file copy adds a duplicate dataset, and the Java service would still recompute the feature in its own way."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "Prevention is shared feature definitions. Detection is Model Monitoring. A good design may use both, but only the first addresses the cause here.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-171",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "gemini-agent-platform",
+      "ml-pipelines",
+      "data-movement"
+    ],
+    "subObjective": "provision.4",
+    "sourceUrl": "https://docs.cloud.google.com/vertex-ai/docs/training/data-preparation-overview",
+    "lastVerified": "2026-10-17",
+    "prompt": "Orrin Logistics keeps eight years of shipment history in BigQuery. Its data science team schedules a nightly export of the whole table to CSV in Cloud Storage so that a custom training job can read it, and sync and storage problems keep recurring. What is the better pattern?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Replace the CSV export with a nightly Dataflow job that writes Parquet files to a second bucket for the training job",
+        "rationale": "This changes the file format but still maintains a second copy of the data that can go stale or fail to sync."
+      },
+      {
+        "id": "b",
+        "text": "Mount a Filestore share, copy the table there each night, and read the files from the training containers at run time",
+        "rationale": "Filestore adds another copy and another system to run. It does not remove the duplication the team is struggling with."
+      },
+      {
+        "id": "c",
+        "text": "Move the shipment history out of BigQuery into Cloud Storage permanently, since training can only read file-based data",
+        "rationale": "The premise is wrong: training can read BigQuery directly. Moving the system of record would also cost the team its analytics layer."
+      },
+      {
+        "id": "d",
+        "text": "Point the training job at the BigQuery table or view, for example via a managed dataset URI, and drop the export",
+        "rationale": "Training on the Agent Platform can use data directly from BigQuery, so the nightly copy and its failure modes are unnecessary."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "difficulty": 1
+  },
+  {
+    "id": "q-provision-172",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "storage-allocation",
+      "public-access-prevention",
+      "uniform-bucket-level-access"
+    ],
+    "subObjective": "provision.2",
+    "sourceUrl": "https://docs.cloud.google.com/storage/docs/public-access-prevention",
+    "lastVerified": "2026-10-17",
+    "prompt": "A review of Fenwick Media's buckets, which use fine-grained access, found allUsers READER ACLs on several objects that bucket-level IAM never mentioned. The CISO wants a guarantee that no bucket in the organization can expose data to anonymous users or to any signed-in Google account, now or later, while IAM sharing with named partner groups continues. What should the architect do?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Enforce public access prevention through the storage.publicAccessPrevention organization policy at the organization node",
+        "rationale": "Public access prevention blocks allUsers and allAuthenticatedUsers regardless of IAM or ACLs, overrides existing public grants and still allows named-principal IAM sharing."
+      },
+      {
+        "id": "b",
+        "text": "Require uniform bucket-level access through its organization policy, which removes ACLs and therefore every public path",
+        "rationale": "Disabling ACLs closes the ACL route only. Someone can still grant allUsers in an IAM policy, so exposure remains possible."
+      },
+      {
+        "id": "c",
+        "text": "Delete the offending ACL entries and repeat the audit every quarter, treating bucket IAM as the authoritative control",
+        "rationale": "ACLs and IAM are additive and new ACLs can be added at any time, so a periodic cleanup is a point-in-time fix and not a guarantee."
+      },
+      {
+        "id": "d",
+        "text": "Run Sensitive Data Protection scans across all buckets and alert on any objects that contain personal data",
+        "rationale": "Scanning detects sensitive content but prevents nothing, and it says nothing about whether an object is publicly readable."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-173",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "storage-allocation",
+      "uniform-bucket-level-access"
+    ],
+    "subObjective": "provision.2",
+    "sourceUrl": "https://docs.cloud.google.com/storage/docs/uniform-bucket-level-access",
+    "lastVerified": "2026-10-17",
+    "prompt": "Twelve days ago an engineer turned on uniform bucket-level access for a legacy bucket. A partner's upload integration, which relied on object ACLs, now fails with 400 Bad Request errors, and the partner cannot change it for a month. What is the supported way to restore it, and why does timing matter?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Re-create the partner's object ACLs with gcloud storage, which still accepts ACL changes while IAM-only access is on",
+        "rationale": "With uniform bucket-level access, requests to set, read or modify ACLs fail with 400 errors, so new ACLs cannot be created."
+      },
+      {
+        "id": "b",
+        "text": "Nothing can be done, because enabling uniform bucket-level access becomes permanent as soon as the setting is saved",
+        "rationale": "The setting becomes permanent only after 90 consecutive days. Within that window it can be disabled and the saved ACLs apply again."
+      },
+      {
+        "id": "c",
+        "text": "Disable uniform bucket-level access, which restores the saved ACLs; the option expires after 90 consecutive days",
+        "rationale": "Cloud Storage saves existing ACLs so the setting can be reverted, and reverting is possible only until the 90-consecutive-day mark."
+      },
+      {
+        "id": "d",
+        "text": "Enforce public access prevention on the bucket, which switches ACL evaluation back on for the named partner",
+        "rationale": "Public access prevention is an independent control that blocks public principals. It does not re-enable ACLs or help a named partner."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-174",
+    "type": "multiple",
+    "domainId": "provision",
+    "concepts": [
+      "data-retention",
+      "data-lifecycle",
+      "bigquery-expiration"
+    ],
+    "subObjective": "provision.2",
+    "sourceUrl": "https://docs.cloud.google.com/bigquery/docs/updating-datasets",
+    "lastVerified": "2026-10-17",
+    "prompt": "To meet a storage-limitation policy, Meridian Retail set a 30-day default table expiration on its raw_events dataset. A month later, auditors found all 600 existing tables still present. Which two actions together put every table, old and new, under an expiration? Choose two.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Save the dataset default again with a shorter value so that BigQuery re-evaluates every table already in the dataset",
+        "rationale": "When the default changes, existing tables keep their original expiration. Only tables created afterward pick up the new value."
+      },
+      {
+        "id": "b",
+        "text": "Set an expiration on each existing table, for example in a loop over the dataset, so that old tables are covered",
+        "rationale": "The dataset default applies to new tables only, so each existing table needs an expiration of its own."
+      },
+      {
+        "id": "c",
+        "text": "Keep the dataset default in place so that every table created from now on receives an expiration automatically",
+        "rationale": "The default is the right tool for future tables, because it applies at creation time to tables that do not set their own."
+      },
+      {
+        "id": "d",
+        "text": "Shorten the dataset's time travel window to two days so that old tables are purged sooner than they would be",
+        "rationale": "Time travel and fail-safe only govern how long deleted data stays recoverable. They never delete a live table."
+      }
+    ],
+    "correct": [
+      "b",
+      "c"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-175",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "data-retention",
+      "data-lifecycle",
+      "bigquery-expiration"
+    ],
+    "subObjective": "provision.2",
+    "sourceUrl": "https://docs.cloud.google.com/bigquery/docs/managing-partitioned-tables",
+    "lastVerified": "2026-10-17",
+    "prompt": "Lumen Telecom stores daily call-detail records in a BigQuery table partitioned by day. Compliance requires keeping about 13 months of data, and the table, its schema and its views must stay in place while older days disappear. Which setting does this?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "A table expiration of roughly 13 months set on the table, so that each day's data ages out on its own",
+        "rationale": "Table expiration deletes the entire table with all of its data once it passes, instead of removing partitions one day at a time."
+      },
+      {
+        "id": "b",
+        "text": "A default table expiration of roughly 13 months on the dataset, so that the old partitions are cleaned up",
+        "rationale": "A default table expiration also drops whole tables, and it applies only to tables created after it is set."
+      },
+      {
+        "id": "c",
+        "text": "A 13-month time travel window on the dataset, so that older days fall out of the table by themselves",
+        "rationale": "The time travel window lasts from 2 to 7 days and only enables recovery of deleted data. It does not remove old partitions."
+      },
+      {
+        "id": "d",
+        "text": "A partition expiration of about 13 months on the table, so that each daily partition is removed as it ages out",
+        "rationale": "Partition expiration rolls individual partitions off as they age while the table and its schema stay in place."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "difficulty": 1
+  },
+  {
+    "id": "q-provision-176",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "data-retention",
+      "bucket-lock",
+      "bigquery-expiration"
+    ],
+    "subObjective": "provision.2",
+    "sourceUrl": "https://docs.cloud.google.com/storage/docs/bucket-lock",
+    "lastVerified": "2026-10-17",
+    "prompt": "Quillon Capital must prove that trade records cannot be deleted or altered for seven years, and analysts must keep querying them in BigQuery. A junior engineer proposes a seven-year expiration on the BigQuery table plus the longest time travel window. What should the architect recommend instead?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Keep the BigQuery table for analysts and add a compliance copy in a bucket with a locked seven-year retention policy",
+        "rationale": "A locked retention policy cannot be removed or shortened, so it provides the WORM evidence, while analysts keep their BigQuery table."
+      },
+      {
+        "id": "b",
+        "text": "Accept the proposal, because a seven-year expiration prevents any deletion of the table before the seven years have passed",
+        "rationale": "Expiration is a deletion schedule. Anyone who can update the table can change or remove it, so it proves nothing about retention."
+      },
+      {
+        "id": "c",
+        "text": "Extend the time travel and fail-safe periods so that any deleted records stay recoverable for the full seven years",
+        "rationale": "Time travel lasts at most seven days, and both features only recover deleted data. Neither stops a deletion or an edit."
+      },
+      {
+        "id": "d",
+        "text": "Restrict table editors with IAM and export to a versioned bucket, since versioning keeps every earlier copy of each file",
+        "rationale": "Object Versioning is not WORM. A privileged user can still delete versions, which a locked retention policy would prevent."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "BigQuery expiration deletes data on a schedule and can be changed by editors. Immutability evidence needs a locked Cloud Storage retention policy.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-provision-177",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "gke",
+      "service-mesh",
+      "network-security"
+    ],
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/service-mesh/docs/security/security-overview",
+    "lastVerified": "2026-10-17",
+    "prompt": "Halvorsen Pay runs a payments API and an order service on an existing GKE Standard cluster that was created without Dataplane V2. An audit finding requires that traffic between the two be encrypted in transit and that the payments API accept calls only from the order service's identity, not from any other Pod. Rebuilding the cluster is not allowed this quarter. What should the architect recommend?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "VPC firewall rules allowing only nodes tagged for the order service to reach the payments nodes on the API port",
+        "rationale": "VPC firewall rules operate at the node level, so every Pod on those nodes shares the rule, and they do not encrypt Pod traffic or identify the calling workload."
+      },
+      {
+        "id": "b",
+        "text": "Turn on Dataplane V2 for the existing cluster and apply a Kubernetes NetworkPolicy for the order service",
+        "rationale": "Dataplane V2 can only be enabled when a cluster is created, so it cannot be switched on here, and NetworkPolicy filters by labels and ports without encrypting anything."
+      },
+      {
+        "id": "c",
+        "text": "Managed Cloud Service Mesh with STRICT mTLS and an AuthorizationPolicy for the order service principal",
+        "rationale": "mTLS encrypts service-to-service traffic and authenticates each workload, and an AuthorizationPolicy can then allow by identity. The mesh installs on an existing cluster without recreating it."
+      },
+      {
+        "id": "d",
+        "text": "Enable inter-node transparent encryption on the cluster and treat the encrypted tunnels as the access control",
+        "rationale": "It requires Dataplane V2, which this cluster lacks, and it only encrypts traffic between nodes. Encryption alone never decides which caller may reach the payments API."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "Encryption plus per-caller authorization on an existing cluster is the job of mesh mTLS and AuthorizationPolicy. Firewalls and NetworkPolicy filter at node or Pod level without identity or encryption.",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "id": "q-provision-178",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "gke",
+      "network-security",
+      "dataplane-v2"
+    ],
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/kubernetes-engine/docs/concepts/dataplane-v2",
+    "lastVerified": "2026-10-17",
+    "prompt": "Brightwave Retail created its GKE cluster with Dataplane V2. The batch and payments namespaces share the cluster, and security wants a plain rule that Pods in batch cannot open connections to Pods in payments, matched by labels, without deploying any sidecar proxies. What is the most direct mechanism?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "A VPC firewall rule targeting the node service account, denying traffic from the batch nodes to the payments nodes",
+        "rationale": "Nodes run Pods from many namespaces, so a node-level rule cannot separate batch Pods from payments Pods, and the scheduler can place them together."
+      },
+      {
+        "id": "b",
+        "text": "Kubernetes NetworkPolicy objects selecting the payments Pods, which Dataplane V2 enforces without extra add-ons",
+        "rationale": "NetworkPolicy is always on in Dataplane V2 clusters and gives Pod-level allow rules by label, namespace and port with no proxies."
+      },
+      {
+        "id": "c",
+        "text": "Recreate the cluster with the network policy add-on, because Dataplane V2 does not enforce NetworkPolicy by itself",
+        "rationale": "The add-on steps apply to clusters without Dataplane V2. Enforcement is built into Dataplane V2, so recreating the cluster is unnecessary."
+      },
+      {
+        "id": "d",
+        "text": "Cloud Service Mesh with STRICT mTLS and a namespace-based AuthorizationPolicy on the payments workloads",
+        "rationale": "This would work but needs sidecar proxies in every Pod, which the requirement rules out. Simple label-based L3/L4 isolation does not need a mesh."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "NetworkPolicy is the lightweight Pod-level L3/L4 control, built into Dataplane V2. Identity, encryption and L7 rules are where a mesh becomes worth its proxies.",
+    "difficulty": 1,
+    "examOnly": true
+  },
+  {
+    "id": "q-provision-179",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "gke",
+      "service-mesh",
+      "mtls"
+    ],
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/service-mesh/docs/security/configuring-mtls",
+    "lastVerified": "2026-10-17",
+    "exhibit": {
+      "label": "Penetration test notes",
+      "format": "log",
+      "content": "$ kubectl get peerauthentication,authorizationpolicy -A\nNo resources found\n\n# debug Pod in namespace 'scratch' (not labeled for sidecar injection)\n$ curl -s -o /dev/null -w '%{http_code}' http://ledger.ledger.svc.cluster.local/balance\n200"
+    },
+    "prompt": "Tessera Bank installed managed Cloud Service Mesh and labeled the ledger and reporting namespaces for sidecar injection. A pen tester's Pod in an unlabeled namespace can still read ledger responses over plain HTTP, as the exhibit shows. Security requires every ledger connection to be authenticated and encrypted with workload identity, not merely blocked from one namespace. Which change closes the gap?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Add an AuthorizationPolicy that allows only the reporting namespace, and keep the default PeerAuthentication mode",
+        "rationale": "Principal and namespace rules require STRICT mTLS to work from authenticated identity, and the default mode still accepts plain text."
+      },
+      {
+        "id": "b",
+        "text": "Add a NetworkPolicy that denies ingress to the ledger Pods from every namespace except the reporting namespace",
+        "rationale": "That blocks one path at L3/L4, but it does not authenticate callers or encrypt the allowed traffic, which the requirement asks for."
+      },
+      {
+        "id": "c",
+        "text": "Rely on auto mTLS, which already encrypts every connection made to the ledger Pods anywhere in the cluster",
+        "rationale": "Auto mTLS sends mTLS only to workloads that have sidecars and plain text to those without, and the server side still accepts plain text in the default mode."
+      },
+      {
+        "id": "d",
+        "text": "Set a mesh-wide PeerAuthentication to STRICT, then add principal-based AuthorizationPolicies for the ledger",
+        "rationale": "The default mode is PERMISSIVE. A STRICT policy makes sidecars refuse plain text, and identity rules then rest on authenticated mTLS."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "explanation": "Installing the mesh is not enforcement. The PeerAuthentication default is PERMISSIVE, so plain text is accepted until a STRICT policy is applied.",
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "id": "q-provision-180",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "gke",
+      "gke-upgrades",
+      "pod-disruption-budget"
+    ],
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/kubernetes-engine/docs/how-to/upgrading-a-cluster",
+    "lastVerified": "2026-10-17",
+    "prompt": "Corvid Logistics runs a tracking API as a two-replica Deployment on a regional GKE Standard cluster in the Regular channel. During node auto-upgrades some requests fail for a few seconds, because both replicas can briefly sit on nodes being replaced. The team wants to keep auto-upgrades for security patching. Which approach reduces the disruption?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Add replicas and a PodDisruptionBudget, readiness probes and graceful shutdown, and an off-peak maintenance window",
+        "rationale": "A PDB with spare replicas keeps capacity while nodes are drained, readiness and graceful shutdown protect in-flight requests, and a window moves the work off-peak."
+      },
+      {
+        "id": "b",
+        "text": "Set a PodDisruptionBudget with maxUnavailable of 0 so that no node is replaced until its Pods can be rescheduled",
+        "rationale": "GKE respects PDBs and termination grace for at most one hour per node upgrade, then proceeds even with maxUnavailable at 0."
+      },
+      {
+        "id": "c",
+        "text": "Apply a no-upgrades maintenance exclusion and renew it every quarter so the nodes stay on a fixed version",
+        "rationale": "The no-upgrades scope cannot exceed 90 days, and GKE can override exclusions for critical security fixes and end of support."
+      },
+      {
+        "id": "d",
+        "text": "Disable node auto-upgrade on the pool and upgrade the nodes manually during the quarterly change window",
+        "rationale": "Manual upgrades drain nodes the same way, so the gap remains. The team would also give up automatic security patching they wanted to keep."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "Disruption comes from how workloads tolerate drains, not from when upgrades run. Redundancy, a PDB, probes and graceful termination do the protecting, and a window only chooses the hour.",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "id": "q-provision-181",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "gke",
+      "gke-upgrades",
+      "autopilot"
+    ],
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/kubernetes-engine/docs/concepts/cluster-upgrades-autopilot",
+    "lastVerified": "2026-10-17",
+    "prompt": "Marigold Media's notification service runs two replicas on a GKE Autopilot cluster. After a node upgrade, users saw errors for a few seconds. The platform lead argues that Autopilot is fully managed and wants to switch the cluster's nodes to a blue-green strategy, with the drain given 30 minutes via terminationGracePeriodSeconds. What should the architect advise?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Pin the node version and switch the nodes to blue-green, which Autopilot lets each workload choose",
+        "rationale": "You cannot manage the node version on Autopilot, and Autopilot upgrades nodes with surge upgrades rather than a configurable strategy."
+      },
+      {
+        "id": "b",
+        "text": "Keep surge upgrades and raise terminationGracePeriodSeconds to 30 minutes so drains always complete",
+        "rationale": "On Autopilot the grace period is limited to 10 minutes for most Pods, so a longer value does not buy a longer drain."
+      },
+      {
+        "id": "c",
+        "text": "Add a PodDisruptionBudget, spread replicas and a maintenance window, since Autopilot still drains nodes",
+        "rationale": "Autopilot automates upgrades but still replaces nodes. PDBs are respected for up to an hour, so redundancy and a PDB protect availability."
+      },
+      {
+        "id": "d",
+        "text": "Make no change, since Autopilot guarantees zero downtime for every Deployment during upgrades, and open a support case",
+        "rationale": "Autopilot automates the upgrade, not your workload's availability. GKE may reschedule Pods and brief disruption is documented."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "Autopilot removes node management, not the need for workloads that survive a drain. Replicas and PDBs still matter, and blue-green, version pinning and long grace periods are unavailable.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-182",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "gke",
+      "gke-upgrades",
+      "release-channels"
+    ],
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/kubernetes-engine/docs/concepts/release-channels",
+    "lastVerified": "2026-10-17",
+    "prompt": "Dune Labs runs separate development and production GKE clusters. Developers want each new Kubernetes minor version as soon as GKE offers it. Production should receive a version only after it has been validated on earlier channels. Both clusters must keep receiving automatic upgrades. Which enrollment fits?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Enroll both clusters in the Regular channel and use maintenance exclusions to delay production",
+        "rationale": "Regular gives neither the earliest versions for development nor the last-validated versions for production, and exclusions are bounded delays."
+      },
+      {
+        "id": "b",
+        "text": "Enroll development in the Rapid channel and production in the Stable channel, both with auto-upgrade",
+        "rationale": "Rapid delivers new versions earliest, and Stable rolls them out last after validation on Rapid and Regular, with automatic upgrades on both."
+      },
+      {
+        "id": "c",
+        "text": "Enroll development in Rapid and production in the Extended channel, since Extended is the most conservative",
+        "rationale": "Extended is for long-term support on one minor version, with availability aligned to Regular. It is not the slowest rollout channel."
+      },
+      {
+        "id": "d",
+        "text": "Leave both clusters without a channel and upgrade them by hand to control exactly when versions arrive",
+        "rationale": "No channel is a deprecated option for existing customers, scheduled for removal, and manual upgrades give up the automation required."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "Channels order versions by validation: Rapid first, Regular next, Stable last. Extended is about support duration, and No channel is being removed.",
+    "difficulty": 1,
+    "examOnly": true
+  },
+  {
+    "id": "q-provision-183",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "gke",
+      "spot-vms",
+      "autopilot"
+    ],
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/kubernetes-engine/docs/how-to/autopilot-spot-pods",
+    "lastVerified": "2026-10-17",
+    "prompt": "Ravine Studio renders thumbnails with a stateless, interruption-tolerant Kubernetes Job on a GKE Autopilot cluster and wants discounted capacity for it. The platform team does not manage nodes. How should the Job request Spot capacity?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Create a node pool with the spot flag and add a matching taint that the Job's Pods tolerate",
+        "rationale": "Node pools are a Standard concept. On Autopilot, GKE provisions the nodes, and the workload asks for Spot capacity itself."
+      },
+      {
+        "id": "b",
+        "text": "Give the Job a low PriorityClass so that GKE places its Pods on discounted Spot capacity",
+        "rationale": "A PriorityClass only orders Pods for scheduling and preemption among themselves. It does not change what capacity is provisioned or its price."
+      },
+      {
+        "id": "c",
+        "text": "Change the cluster configuration so that every Pod in the whole cluster runs as a Spot Pod",
+        "rationale": "Spot Pods are requested by the workload through its Pod spec. Making every Pod interruptible would also put critical services at risk."
+      },
+      {
+        "id": "d",
+        "text": "Set the cloud.google.com/gke-spot=true label as a nodeSelector in the Job's Pod template spec",
+        "rationale": "Autopilot documents this label in a nodeSelector or node affinity as the way to run Pods as Spot Pods, with no node management."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "explanation": "On Autopilot, Spot is a Pod-level request. Node pools with a spot flag are the Standard equivalent.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-provision-184",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "gke",
+      "spot-vms",
+      "fault-tolerance"
+    ],
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/kubernetes-engine/docs/how-to/autopilot-spot-pods",
+    "lastVerified": "2026-10-17",
+    "prompt": "Luminar Studios transcodes video segments on GKE Autopilot Spot Pods. Each segment takes about 12 minutes, and evicted Pods lose their work. An engineer set terminationGracePeriodSeconds to 900 and expects evicted Pods to finish. The team wants to keep the Spot discount. Which design is correct?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Run the work as a Job of short, idempotent tasks that checkpoint to Cloud Storage and retry after eviction",
+        "rationale": "Spot preemption gives only seconds of grace, so work must survive loss. A controller-managed Job retries, and checkpoints bound what is lost."
+      },
+      {
+        "id": "b",
+        "text": "Keep terminationGracePeriodSeconds at 900 so that the evicted Pods have time to finish the segment",
+        "rationale": "The Spot Pods guide caps the grace period during preemption at 15 seconds, so asking for more does not grant it."
+      },
+      {
+        "id": "c",
+        "text": "Launch each segment as a standalone Pod with restartPolicy Always so that eviction restarts it automatically",
+        "rationale": "Pods without a controller are not rescheduled after eviction, so nothing recreates a standalone Pod once it is evicted."
+      },
+      {
+        "id": "d",
+        "text": "Request extended run time for the Spot Pods so that GKE does not evict them for seven days",
+        "rationale": "Extended run times cannot be requested for Spot Pods, and Spot capacity can be reclaimed at any time regardless."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "Spot tolerance is a design property of the workload: short idempotent units, checkpoints and a controller. Grace-period tuning cannot make a 12-minute task survive an eviction.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-185",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "gke",
+      "private-gke",
+      "cloud-nat"
+    ],
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/kubernetes-engine/docs/concepts/network-isolation",
+    "lastVerified": "2026-10-17",
+    "prompt": "Pelican Insurance's policy says no GKE node may have an external IP, and the control plane must have no internet access at all. Engineers administer from a jump host inside the VPC. The Pods must still call a fraud-scoring API on the public internet. Which design meets all of it?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Private nodes with no NAT, because GKE routes Pod egress to the internet through Google's default gateway",
+        "rationale": "Private nodes have only internal IPs, so internet egress needs Cloud NAT or a custom NAT solution. Without one, calls to the public API fail."
+      },
+      {
+        "id": "b",
+        "text": "Nodes with external IPs locked down by ingress deny firewall rules, plus authorized networks for the control plane",
+        "rationale": "Nodes holding external IPs violate the stated policy, however tightly ingress is filtered, and authorized networks still leave a public endpoint."
+      },
+      {
+        "id": "c",
+        "text": "Private nodes with Cloud NAT for egress, and a control plane that uses an internal-only IP endpoint",
+        "rationale": "Private nodes plus NAT meet the node rule and egress need. The internal-only endpoint prevents all internet access to the control plane."
+      },
+      {
+        "id": "d",
+        "text": "Private nodes with Cloud NAT, and a public control plane endpoint behind a Cloud Armor policy for office addresses",
+        "rationale": "Cloud Armor policies attach to supported load balancer backend services, not the API server, and a public endpoint breaks the no-internet rule."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "Node privacy and control-plane exposure are separate settings. Private nodes need NAT for egress, and an internal-only IP endpoint removes internet access to the API server.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-186",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "gke",
+      "private-gke",
+      "iam"
+    ],
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/kubernetes-engine/docs/concepts/network-isolation",
+    "lastVerified": "2026-10-17",
+    "prompt": "Sparrow Health has 300 remote engineers on residential connections with changing IP addresses. They need kubectl access to a GKE cluster with private nodes, without a VPN or bastion. Security refuses to maintain IP allowlists and wants access granted per engineer through IAM. Which approach fits?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Put a Cloud Armor policy that allows the engineers' country in front of the cluster's control plane",
+        "rationale": "Cloud Armor policies attach to supported load balancer backend services. They are not a control for the Kubernetes API server."
+      },
+      {
+        "id": "b",
+        "text": "List each engineer's current home address in authorized networks and update the list when addresses change",
+        "rationale": "Authorized networks hold at most 100 ranges, so 300 changing addresses do not fit, and they are IP lists, not per-engineer IAM grants."
+      },
+      {
+        "id": "c",
+        "text": "Switch to an internal-only IP endpoint and require every engineer to work from a bastion VM in the VPC",
+        "rationale": "It removes internet access, but the requirement rules out a bastion or VPN, so remote engineers could not reach the API."
+      },
+      {
+        "id": "d",
+        "text": "Enable the DNS-based endpoint and grant each engineer the IAM permissions needed, keeping the nodes private",
+        "rationale": "The DNS-based endpoint is reachable from any network that reaches Google Cloud APIs and authorizes with IAM, so no IP lists are needed."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "explanation": "The DNS-based endpoint is the recommended control plane access path when identity, not source IP, should decide access. Private nodes remain a separate setting.",
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "id": "q-provision-187",
+    "type": "single",
+    "domainId": "provision",
+    "caseStudyId": "altostrat-media",
+    "concepts": [
+      "cloud-cdn",
+      "media-cdn",
+      "caching"
+    ],
+    "subObjective": "provision.1",
+    "sourceUrl": "https://docs.cloud.google.com/media-cdn/docs/choose-cdn-product",
+    "lastVerified": "2026-10-17",
+    "prompt": "Altostrat Media will stream its Cloud Storage library as HLS and DASH at very high throughput. Its website, served through an existing global external Application Load Balancer, delivers small thumbnails and web assets. Which CDN approach follows Google's guidance?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Cloud CDN for the website and the video, with Media CDN reserved for live RTMP ingest",
+        "rationale": "Media CDN is recommended for HLS and DASH delivery, and RTMP delivery is listed as unsuitable for either CDN."
+      },
+      {
+        "id": "b",
+        "text": "Media CDN for the streaming video and Cloud CDN on the existing load balancer for the website",
+        "rationale": "Media CDN suits high-throughput HLS and DASH delivery, and Cloud CDN is the fit for sites and small objects. The two complement each other."
+      },
+      {
+        "id": "c",
+        "text": "Media CDN for everything, since it replaces Cloud CDN for all content once media traffic is large",
+        "rationale": "Media CDN complements Cloud CDN rather than replacing it, and Cloud CDN remains the recommended fit for small objects and websites."
+      },
+      {
+        "id": "d",
+        "text": "Cloud CDN for everything, since Media CDN only accepts origins that are inside Google Cloud",
+        "rationale": "Media CDN supports origins in Cloud Storage, in another cloud, or on-premises, so origin location does not rule it out."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "Match the product to the workload: Media CDN for streaming and very large downloads, Cloud CDN for web acceleration. Do not argue from price, which the guidance does not compare.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-188",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "cloud-cdn",
+      "caching",
+      "troubleshooting"
+    ],
+    "subObjective": "provision.1",
+    "sourceUrl": "https://docs.cloud.google.com/cdn/docs/using-ttl-overrides",
+    "lastVerified": "2026-10-17",
+    "exhibit": {
+      "label": "CDN policy and a log entry for game.js",
+      "format": "config",
+      "content": "cdnPolicy:\n  cacheMode: FORCE_CACHE_ALL\n  defaultTtl: 86400\n  clientTtl: 3600\n\norigin object Cache-Control: no-cache\n\nhttpRequest.status: 200\nhttpRequest.cacheLookup: true\nhttpRequest.cacheHit: true\njsonPayload.statusDetails: response_from_cache"
+    },
+    "prompt": "Fenwick Games serves a web game from a Cloud Storage backend bucket behind a global external Application Load Balancer with Cloud CDN. After a release, players still get the old game.js with HTTP 200, although the bucket holds the new object. Using the exhibit, which fix addresses the root cause?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Name assets per release and switch to USE_ORIGIN_HEADERS so origin Cache-Control is honored",
+        "rationale": "FORCE_CACHE_ALL overrides origin directives. Versioned names make new content a new cache key, and origin headers then govern caching."
+      },
+      {
+        "id": "b",
+        "text": "Make the origin send no-store on game.js so that Cloud CDN stops serving it from its edge cache",
+        "rationale": "The object already says no-cache and was cached anyway, because FORCE_CACHE_ALL overwrites TTLs and directives set by the origin."
+      },
+      {
+        "id": "c",
+        "text": "Run a full-cache invalidation after every single release as the permanent deployment step",
+        "rationale": "Invalidation is documented as a sparing last resort. Versioned URLs are the recommended default, and a full flush purges unrelated content too."
+      },
+      {
+        "id": "d",
+        "text": "Lower the client TTL to 60 seconds so that players' browsers fetch a fresh copy sooner",
+        "rationale": "Client TTL only limits what browsers cache. The edge cache keeps serving the stale object, and the log shows a cache hit."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "A 200 with cacheHit true points at the cache, not the origin. Check the cache mode first: FORCE_CACHE_ALL ignores the origin's headers.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-provision-189",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "cloud-storage-fuse",
+      "cloud-run",
+      "storage-selection"
+    ],
+    "subObjective": "provision.2",
+    "sourceUrl": "https://docs.cloud.google.com/run/docs/configuring/services/cloud-storage-volume-mounts",
+    "lastVerified": "2026-10-17",
+    "prompt": "Tallis Labs runs a Cloud Run service that reads a 600 MB lookup file and several template files from a Cloud Storage bucket. The code uses ordinary file paths, the team does not want to change the container image or add a Cloud Storage client library, and the bucket must remain the system of record. What should they do?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Install gcsfuse in the container image and start it as a background process before the application launches",
+        "rationale": "Cloud Run mounts buckets itself through Cloud Storage FUSE, and its documentation says you do not need to install FUSE in the container or modify the container to use the feature."
+      },
+      {
+        "id": "b",
+        "text": "Mount the bucket as a Cloud Storage volume so that its objects appear as files in the container",
+        "rationale": "Cloud Run presents the bucket content as files in the container file system through a volume mount, with no image change and the bucket still the source of truth."
+      },
+      {
+        "id": "c",
+        "text": "Create a Filestore instance, copy the bucket files into it, and mount that share into the service over NFS",
+        "rationale": "Filestore adds a second copy of the data and a separate file server to run, and the bucket would no longer be the system of record for these files."
+      },
+      {
+        "id": "d",
+        "text": "Copy the files into the container image at build time so that they are always available on the local disk",
+        "rationale": "Baking files into the image creates a copy that goes stale: every bucket change needs a rebuild and redeploy, and the bucket stops being the system of record."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "Cloud Run can mount a Cloud Storage bucket as a volume and presents its objects as files, so the code keeps using file paths with no installation or image change.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-provision-190",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "cloud-storage-fuse",
+      "filestore",
+      "storage-selection"
+    ],
+    "subObjective": "provision.2",
+    "sourceUrl": "https://docs.cloud.google.com/storage/docs/cloud-storage-fuse/overview",
+    "lastVerified": "2026-10-17",
+    "prompt": "Brightwell Games runs a build farm of 150 Compute Engine VMs that compile from one shared source tree of about 3 TB that will not grow past 5 TB. The build tools create hard links, rely on file locking, and need every VM to mount the tree read-write at the same time. Which storage should the architect provision?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "A Filestore instance in the Zonal or Regional tier, mounted read-write over NFS by every build VM",
+        "rationale": "Filestore is a shared NFS file system with POSIX behavior. Google's FUSE documentation points to Filestore or Managed Lustre when a POSIX file system is needed, and hard links and locking require one."
+      },
+      {
+        "id": "b",
+        "text": "A Cloud Storage bucket mounted on every VM with Cloud Storage FUSE and the file cache enabled",
+        "rationale": "Cloud Storage FUSE does not support hard links or file locking. The file cache speeds repeat reads but does not change those semantics."
+      },
+      {
+        "id": "c",
+        "text": "A Cloud Storage bucket with hierarchical namespace enabled, mounted on every VM with Cloud Storage FUSE",
+        "rationale": "Hierarchical namespace makes directory renames atomic, but the FUSE limits on hard links and file locking remain, so the build tools would still break."
+      },
+      {
+        "id": "d",
+        "text": "A Managed Lustre instance sized for the source tree and mounted read-write on every build VM",
+        "rationale": "Managed Lustre targets AI and HPC throughput and its capacity starts at 9,000 GiB, so a 3 TB shared tree is below its minimum. Filestore is the fit for a general shared POSIX tree."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "Cloud Storage FUSE is not POSIX compliant: no hard links and no file locking. A shared tree that needs both belongs on Filestore.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-191",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "cloud-storage-fuse",
+      "hierarchical-namespace",
+      "gke"
+    ],
+    "subObjective": "provision.2",
+    "sourceUrl": "https://docs.cloud.google.com/storage/docs/cloud-storage-fuse/performance",
+    "lastVerified": "2026-10-17",
+    "prompt": "A training job on GKE writes checkpoints to a flat-namespace bucket through the Cloud Storage FUSE CSI driver. It saves into a temporary directory, then renames the directory so that the restore job never sees a partial checkpoint. The team set rename-dir-limit so the renames succeed, yet the restore job has occasionally read a half-renamed checkpoint. Checkpoints must stay in Cloud Storage. What should the architect change?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Raise rename-dir-limit further so that each directory rename completes in a single pass",
+        "rationale": "On a flat bucket a directory rename renames and deletes each file individually. The limit only permits renames of larger directories; it does not make them atomic."
+      },
+      {
+        "id": "b",
+        "text": "Enable the file cache with parallel downloads on the restore pods so that reads come from local disk",
+        "rationale": "Caching speeds up reads of files. It does not make a directory rename atomic, so a restore can still observe a partial rename."
+      },
+      {
+        "id": "c",
+        "text": "Move the checkpoint directory to a Filestore volume mounted into the training and restore pods",
+        "rationale": "Filestore would give POSIX renames, but the requirement is that checkpoints stay in Cloud Storage, and it adds a second storage system to operate."
+      },
+      {
+        "id": "d",
+        "text": "Write checkpoints to a bucket with hierarchical namespace, where directory renames are atomic",
+        "rationale": "Google's guidance says hierarchical namespace provides the atomic directory renames that checkpointing relies on. Flat buckets can only offer non-atomic renames."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "explanation": "Directory rename is atomic only on hierarchical namespace buckets. The rename-dir-limit flag on a flat bucket is an accepted-risk workaround, not a fix for partial renames.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-provision-192",
+    "type": "multiple",
+    "domainId": "provision",
+    "concepts": [
+      "explainable-ai",
+      "model-monitoring",
+      "ml-lineage"
+    ],
+    "caseStudyId": "altostrat-media",
+    "subObjective": "provision.4",
+    "sourceUrl": "https://docs.cloud.google.com/vertex-ai/docs/ml-metadata/introduction",
+    "lastVerified": "2026-10-17",
+    "prompt": "Altostrat must keep its AI systems auditable with explainable decisions. A model on the Gemini Enterprise Agent Platform flags uploaded videos as potentially harmful, and an auditor will pick individual flagged videos and ask which input signals drove each flag and which dataset trained the model that made it. Which two capabilities answer those questions? Choose two.",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Model Monitoring skew and drift jobs, comparing production feature distributions with the training baseline",
+        "rationale": "Model Monitoring detects aggregate skew and drift against a baseline. It does not explain why one particular video was flagged."
+      },
+      {
+        "id": "b",
+        "text": "Feature attributions requested with the predictions, showing each input feature's contribution to a result",
+        "rationale": "Attributions give each feature's contribution to an individual prediction, which answers which signals drove a flag. Vertex Explainable AI is deprecated with APIs ending March 16, 2027, so plan the replacement."
+      },
+      {
+        "id": "c",
+        "text": "Cloud Audit Logs Data Access entries for the endpoint, recording the reason the model flagged each video",
+        "rationale": "Audit logs record that predict was called and by whom (Data Access logs must be enabled). They do not record why the model produced a result."
+      },
+      {
+        "id": "d",
+        "text": "ML Metadata lineage, tracing the deployed model back to the dataset and pipeline run that produced it",
+        "rationale": "ML Metadata lineage answers which dataset trained a given model and which pipeline run produced it."
+      }
+    ],
+    "correct": [
+      "b",
+      "d"
+    ],
+    "explanation": "Four tools answer four questions: attributions explain one decision, Model Monitoring reports aggregate drift, lineage shows what built the model, and audit logs show who called it.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-193",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "explainable-ai",
+      "gemini-agent-platform"
+    ],
+    "caseStudyId": "altostrat-media",
+    "subObjective": "provision.4",
+    "sourceUrl": "https://docs.cloud.google.com/vertex-ai/docs/deprecations",
+    "lastVerified": "2026-10-17",
+    "prompt": "Altostrat's harmful-content classifier launched in 2026 with per-prediction feature attributions from Vertex Explainable AI, and compliance wants per-decision explanations retained through 2028. According to Google's current deprecations page, what should the architect build into the design?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Keep the design unchanged, because the deprecation only freezes new features and the APIs stay available indefinitely",
+        "rationale": "The deprecation entry says that on March 16, 2027 the capability is fully sunset and its APIs are no longer available. Only new features stopped in March 2026."
+      },
+      {
+        "id": "b",
+        "text": "Replace attributions with Model Monitoring drift alerts, which also explain each individual decision to auditors",
+        "rationale": "Model Monitoring reports aggregate skew and drift. It cannot tell an auditor why one item was flagged."
+      },
+      {
+        "id": "c",
+        "text": "Attribution generation with open-source SHAP or LIME in the serving path before the March 2027 sunset, stored per decision",
+        "rationale": "The deprecation entry recommends open-source libraries such as SHAP and LIME, so keeping per-decision attributions means producing them yourselves before the sunset."
+      },
+      {
+        "id": "d",
+        "text": "A global feature importance chart published with each model release and treated as the explanation of every decision",
+        "rationale": "Global importance describes the model as a whole. It does not show what drove an individual decision, which is what auditors ask."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "Keep the requirement (per-decision explanations), not the product: the managed capability ends in March 2027, and Google points to SHAP and LIME.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-provision-194",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "image-generation",
+      "gemini-agent-platform",
+      "human-in-the-loop"
+    ],
+    "caseStudyId": "cymbal-retail",
+    "subObjective": "provision.5",
+    "sourceUrl": "https://docs.cloud.google.com/vertex-ai/generative-ai/docs/multimodal/gemini-edit-images",
+    "lastVerified": "2026-10-17",
+    "prompt": "Cymbal has one studio photo per product and needs color variants of the same item, a different background, and a promotional text overlay for each. Associates must approve every image before it updates the catalog. Which design fits?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Generate each variant from the product description alone with text-to-image, then queue the results for approval",
+        "rationale": "Without the supplied photo, text-to-image invents a new picture of a described product instead of varying the actual item, so the variants would not match the real product."
+      },
+      {
+        "id": "b",
+        "text": "Run the studio photos through the Vision API to recolor and replace backgrounds, then queue results for approval",
+        "rationale": "The Vision API analyzes images (labels, OCR, SafeSearch). It does not create or edit them."
+      },
+      {
+        "id": "c",
+        "text": "Send each studio photo with a text instruction to a Gemini image model and queue results for associate approval",
+        "rationale": "Gemini image models accept an image plus a text prompt and return an edited image, with multi-turn refinement. That matches variations of a supplied base image, and the queue satisfies the human review requirement."
+      },
+      {
+        "id": "d",
+        "text": "Train an AutoML image classification model on the catalog photos so that it produces variants of each product",
+        "rationale": "A classifier predicts labels for images. It does not generate or edit images."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "Text only in means generation. An existing image plus an instruction means editing, which current Gemini image models handle directly.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-195",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "prebuilt-ai-apis",
+      "image-generation"
+    ],
+    "caseStudyId": "altostrat-media",
+    "subObjective": "provision.5",
+    "sourceUrl": "https://docs.cloud.google.com/vision/docs/features-list",
+    "lastVerified": "2026-10-17",
+    "prompt": "Altostrat lets viewers upload thumbnails and must automatically flag explicit or violent images before they appear. The team has no labeled dataset and no ML engineers. Which approach should the architect choose?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Call the Cloud Vision API with SafeSearch detection on each upload and block the images it flags",
+        "rationale": "The Vision API provides explicit-content detection as a prebuilt SafeSearch feature, needing no training data and no ML team."
+      },
+      {
+        "id": "b",
+        "text": "Train an AutoML image classification model on thousands of thumbnails that moderators label as safe or unsafe",
+        "rationale": "AutoML can work, but it needs a labeled dataset the team does not have, and a prebuilt capability already covers explicit content."
+      },
+      {
+        "id": "c",
+        "text": "Ask a Gemini image model to edit every thumbnail so that any explicit region is blurred before display",
+        "rationale": "Editing produces a modified image. It does not produce a flag or decision about whether content is inappropriate."
+      },
+      {
+        "id": "d",
+        "text": "Run each thumbnail through a Document AI processor and reject files whose extracted text looks inappropriate",
+        "rationale": "Document AI processors digitize, extract from and classify documents. They are not an explicit-image detector."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "Prebuilt first: the Vision API analyzes images, including explicit-content detection, with no training. Analysis, classification and generation are different jobs.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-provision-196",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "image-generation",
+      "gemini-agent-platform"
+    ],
+    "caseStudyId": "cymbal-retail",
+    "subObjective": "provision.5",
+    "sourceUrl": "https://docs.cloud.google.com/vertex-ai/generative-ai/docs/release-notes",
+    "lastVerified": "2026-10-17",
+    "prompt": "A 2025 design document for Cymbal's image pipeline calls an Imagen 4 endpoint for text-to-image generation and plans a separate model for editing base photos. The team starts building in late 2026. What should the architect flag first?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Pin the Imagen model version in the code so that a later release cannot change image quality or break the build",
+        "rationale": "Pinning a version does not stop a model from being discontinued, and the deprecated endpoints had a fixed migration deadline."
+      },
+      {
+        "id": "b",
+        "text": "The Imagen endpoints were deprecated with a June 2026 deadline; Gemini image models generate and edit",
+        "rationale": "Google's release notes deprecate the Imagen 3 and 4 generation endpoints with a June 30, 2026 migration deadline to Gemini image models, which generate from text and edit a supplied image from a prompt."
+      },
+      {
+        "id": "c",
+        "text": "Keep Imagen for generation and add the Vision API for the editing step, since only Imagen can create images",
+        "rationale": "The Vision API analyzes images and cannot edit them, and the Imagen endpoints are the part being retired."
+      },
+      {
+        "id": "d",
+        "text": "Self-host an open-source diffusion model on GPUs, because no managed model can both generate and edit images",
+        "rationale": "Gemini image models are managed and support both text-to-image and editing of a supplied image, so self-hosting is unnecessary."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "Image models churn quickly. Learn the decision (generation versus editing) and check the current model lifecycle before building.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-197",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "gemini-enterprise",
+      "grounding"
+    ],
+    "subObjective": "provision.5",
+    "sourceUrl": "https://docs.cloud.google.com/gemini/enterprise/notebooklm-enterprise/docs/overview",
+    "lastVerified": "2026-10-17",
+    "prompt": "Corvane Legal has 35 compliance analysts who need answers with citations back to passages in about 200 contract PDFs and slide decks. The data must stay in the company's Google Cloud project under VPC Service Controls and CMEK, and there is no engineering capacity to build anything. Which option fits?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Build a retrieval pipeline with Vector Search and a Gemini model, plus a custom chat front end for the analysts",
+        "rationale": "A custom RAG stack can do this, but it means building and running retrieval, ranking and a UI, which the team has no capacity for."
+      },
+      {
+        "id": "b",
+        "text": "Fine-tune a Gemini model on the contract text, then let the analysts ask it questions through the console",
+        "rationale": "Fine-tuning teaches a model a task or style. It does not ground answers in, or cite, specific source passages."
+      },
+      {
+        "id": "c",
+        "text": "Gemini Notebook Enterprise (formerly NotebookLM Enterprise), with the contracts added as notebook sources",
+        "rationale": "It is the no-build option: it grounds responses in the documents users upload, keeps data in the Google Cloud project, and supports VPC Service Controls and CMEK."
+      },
+      {
+        "id": "d",
+        "text": "An Agent Search data store over the contracts, with a search widget that a developer embeds in an internal site",
+        "rationale": "Agent Search suits search inside an application but needs a developer to build and host the embedding, and here nobody can build anything."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "For a team asking questions of a fixed set of its own documents with no build, the managed notebook product is the buy answer.",
+    "difficulty": 1
+  },
+  {
+    "id": "q-provision-198",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "agent-search",
+      "gemini-enterprise",
+      "rag"
+    ],
+    "subObjective": "provision.5",
+    "sourceUrl": "https://docs.cloud.google.com/generative-ai-app-builder/docs/introduction",
+    "lastVerified": "2026-10-17",
+    "prompt": "Kedem Insurance wants customers to type questions into its public website and get answers grounded in about 3,000 help-center articles stored in a bucket. The web team can add a widget or call an API, but nobody wants to run a retrieval pipeline. Which product fits?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Agent Search over the articles in a data store, embedded in the website through its search widget or the API",
+        "rationale": "Agent Search is managed search with grounded answers over data stores, set up through the console or the Discovery Engine API with a search widget for websites, so no retrieval pipeline needs running."
+      },
+      {
+        "id": "b",
+        "text": "Gemini Enterprise, with the help-center articles connected as a source and customers invited to sign in",
+        "rationale": "Gemini Enterprise is an intranet search, assistant and agent product for an organization's knowledge workers, not a component for a public customer-facing site."
+      },
+      {
+        "id": "c",
+        "text": "Gemini Notebook Enterprise, with the articles uploaded to a notebook that customers are given access to",
+        "rationale": "Gemini Notebook Enterprise is for a team working with uploaded sources through a project- and region-specific URL. It is not a search component embedded in a public site."
+      },
+      {
+        "id": "d",
+        "text": "A custom RAG service built on Vector Search, an embedding pipeline and a Gemini model behind a Cloud Run API",
+        "rationale": "Custom RAG would work, but the team does not want to run a retrieval pipeline, and it takes on chunking, embedding and ranking that Agent Search manages."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "explanation": "Search or Q&A inside your own application points to Agent Search. Gemini Enterprise and Gemini Notebook Enterprise are user-facing products for an organization's own people.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-199",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "agent-vs-workflow",
+      "workflows",
+      "gemini-agent-platform"
+    ],
+    "subObjective": "provision.5",
+    "sourceUrl": "https://docs.cloud.google.com/architecture/choose-design-pattern-agentic-ai-system",
+    "lastVerified": "2026-10-17",
+    "prompt": "Larkspur Pharmacy runs a nightly refill job that calls an inventory API, then a pricing API, then a billing API, in that fixed order, applying fixed business rules and retrying on 5xx errors. Leadership asks whether to rebuild it as an AI agent that has the three APIs as tools. What should the architect recommend?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Build a single agent with the three APIs as tools so that the model chooses the order of calls each night",
+        "rationale": "A single agent adds model cost and run-to-run variance for a path that never changes. Google's guidance favors non-agentic solutions for predictable, highly structured workloads."
+      },
+      {
+        "id": "b",
+        "text": "Build one agent per API under a supervisor agent, so that each service gets its own specialized reasoning",
+        "rationale": "Multi-agent systems are for complex problems where a single agent degrades. Splitting a three-call sequence only multiplies cost and failure modes."
+      },
+      {
+        "id": "c",
+        "text": "Keep a deterministic workflow, for example in Workflows, with ordered steps and retry policies",
+        "rationale": "The steps are known in advance and the process does not change between runs, which is Google's definition of a deterministic workflow. An orchestrator gives explicit steps and retries without model cost."
+      },
+      {
+        "id": "d",
+        "text": "Use an agent, because any job that calls more than one external API needs a model to orchestrate it",
+        "rationale": "Calling several APIs does not require model orchestration. Predefined sequential steps are the deterministic pattern."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "explanation": "Fully specified steps and API calls go to a deterministic orchestrator. Use an agent only when steps need interpreting unstructured input or judgment across tools.",
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-200",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "workflows",
+      "human-in-the-loop",
+      "agent-vs-workflow"
+    ],
+    "subObjective": "provision.5",
+    "sourceUrl": "https://docs.cloud.google.com/workflows/docs/creating-callback-endpoints",
+    "lastVerified": "2026-10-17",
+    "prompt": "Quillon's expense workflow runs in Workflows and must pause after a request above a threshold until a manager approves it in an internal web app. Approval usually takes two to three days; if nobody answers, the request escalates to a director. Which design is correct?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Create a callback endpoint and await it with the default timeout, since an execution can wait for a callback indefinitely, however long the manager takes",
+        "rationale": "The default callback timeout is 12 hours. After that a TimeoutError is raised, so a two-to-three-day approval would fail the execution."
+      },
+      {
+        "id": "b",
+        "text": "Create a callback endpoint, hand its URL to the approval app, and await it with an explicit multi-day timeout, escalating on TimeoutError",
+        "rationale": "A callback pauses the execution until a request reaches the endpoint. Setting the timeout to cover the approval window and catching TimeoutError gives the escalation. The approval app needs permission to send callbacks."
+      },
+      {
+        "id": "c",
+        "text": "Create one callback endpoint in a shared workflow and have every later execution wait on that same URL for its manager's approval",
+        "rationale": "Callback endpoints can only be waited on in the execution that created them."
+      },
+      {
+        "id": "d",
+        "text": "Replace the pause with an AI agent that watches the manager's inbox and judges whether each reply counts as an approval",
+        "rationale": "Approval is a defined event, not unstructured input needing judgment. An agent adds cost and nondeterminism where a callback is the documented human-in-the-loop mechanism."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "explanation": "Human approval in a deterministic workflow is a callback with an explicit timeout, not polling, a shared endpoint, or an agent.",
+    "difficulty": 3
+  },
+  {
+    "id": "q-provision-201",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "hybrid-connectivity",
+      "multicloud"
+    ],
+    "subObjective": "provision.1",
+    "sourceUrl": "https://docs.cloud.google.com/network-connectivity/docs/interconnect/concepts/cci-overview",
+    "lastVerified": "2026-10-17",
+    "prompt": "Tern Logistics runs order processing in Google Cloud and its fulfillment platform in AWS. The two VPCs must exchange about 8 Gbps of steady application traffic over a private path that never crosses the public internet and carries a published availability SLA. Tern has no presence in any colocation facility and wants Google to handle the physical link. Which connectivity option fits?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "HA VPN tunnels to AWS, scaled out with extra tunnels until the combined throughput reaches the required level",
+        "rationale": "HA VPN runs IPsec over the public internet and each tunnel carries roughly 1 to 3 Gbps, so it fails the requirement for a private path that never crosses the internet."
+      },
+      {
+        "id": "b",
+        "text": "Cross-Cloud Interconnect, with ports bought from both providers and Google provisioning the physical connection between them",
+        "rationale": "Google provisions a dedicated physical link to AWS, Azure, OCI or Alibaba Cloud with no colocation facility or customer-owned router. It offers 10 and 100 Gbps (400 Gbps for AWS and OCI) and qualifies for an SLA with the documented redundant topology."
+      },
+      {
+        "id": "c",
+        "text": "Dedicated Interconnect from Tern's own router in a Google colocation facility, joined to AWS through a second provider link",
+        "rationale": "This is the do-it-yourself pattern: Tern would need colocation presence, its own routers and two sets of cross-connects, which is the burden Cross-Cloud Interconnect removes."
+      },
+      {
+        "id": "d",
+        "text": "BigQuery Omni, so that workloads in each cloud can query the other cloud's data without a dedicated network link",
+        "rationale": "BigQuery Omni is a query engine that runs where the data sits. It does not carry application traffic between two VPCs."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "id": "q-provision-202",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "hybrid-connectivity",
+      "network-design"
+    ],
+    "subObjective": "provision.1",
+    "sourceUrl": "https://docs.cloud.google.com/network-connectivity/docs/network-connectivity-center/concepts/overview",
+    "lastVerified": "2026-10-17",
+    "prompt": "Fabrikam's AWS workloads reach Google Cloud over a single HA VPN path of roughly 2 Gbps, and replication now saturates it. Management requires a private path of at least 10 Gbps to AWS. The network lead proposes creating a Network Connectivity Center hub and attaching the existing VPN tunnels as spokes to add the missing capacity. What should the architect advise?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Create the hub as proposed, because attaching tunnels as spokes aggregates their bandwidth into one larger logical link",
+        "rationale": "Network Connectivity Center is a routing and orchestration layer. Each spoke needs a backing resource and keeps that resource's own capacity, so the hub adds no bandwidth."
+      },
+      {
+        "id": "b",
+        "text": "Replace the HA VPN gateway with Classic VPN, since Classic tunnels carry more traffic per tunnel over static routes",
+        "rationale": "Classic VPN tunnels have the same packet-rate ceiling as HA VPN tunnels, still cross the internet, carry a lower SLA, and cannot be NCC spokes."
+      },
+      {
+        "id": "c",
+        "text": "Turn on MACsec for the existing tunnels, which lifts their capacity by moving encryption into the link layer",
+        "rationale": "MACsec is an option for Cloud Interconnect connections, not for VPN tunnels, and encryption does not add capacity."
+      },
+      {
+        "id": "d",
+        "text": "Order Cross-Cloud Interconnect for the private 10 Gbps path, and optionally add its attachments to a hub for routing",
+        "rationale": "The capacity must come from the underlay. Cross-Cloud Interconnect provides a private 10 or 100 Gbps link to AWS, and NCC can then route over its VLAN attachments as hybrid spokes."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "id": "q-provision-203",
+    "type": "multiple",
+    "domainId": "provision",
+    "concepts": [
+      "hybrid-connectivity",
+      "multicloud"
+    ],
+    "subObjective": "provision.1",
+    "sourceUrl": "https://docs.cloud.google.com/network-connectivity/docs/interconnect/concepts/cci-overview",
+    "lastVerified": "2026-10-17",
+    "prompt": "A platform team is comparing private connectivity options between Google Cloud and other clouds such as AWS, Azure, OCI and Alibaba Cloud. Which two statements are accurate? (Choose two.)",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Cross-Cloud Interconnect is usually provisioned within minutes, because Google keeps pre-built links to every provider",
+        "rationale": "Standard Cross-Cloud Interconnect involves physical ports and takes about 1 to 4 weeks. Minutes-scale provisioning is the claim made for the Partner variants."
+      },
+      {
+        "id": "b",
+        "text": "Cross-Cloud Interconnect offers 10 and 100 Gbps connections, and 400 Gbps is also available for AWS and OCI",
+        "rationale": "These are the documented port capacities: 10 and 100 Gbps for all four providers, plus 400 Gbps for AWS and OCI."
+      },
+      {
+        "id": "c",
+        "text": "Classic VPN tunnels can join a Network Connectivity Center hub as hybrid spokes when static routes are configured",
+        "rationale": "The documentation states that Classic VPN tunnels are not supported as hybrid spokes. HA VPN tunnels, Interconnect VLAN attachments and router appliances are."
+      },
+      {
+        "id": "d",
+        "text": "Network Connectivity Center hybrid spokes can reference Cross-Cloud Interconnect VLAN attachments, so the hub routes over them",
+        "rationale": "Hybrid spokes can reference VLAN attachments for Dedicated, Partner and Cross-Cloud Interconnect, in addition to HA VPN tunnels and router appliances."
+      }
+    ],
+    "correct": [
+      "b",
+      "d"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-204",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "hybrid-connectivity",
+      "multicloud"
+    ],
+    "subObjective": "provision.1",
+    "sourceUrl": "https://docs.cloud.google.com/network-connectivity/docs/vpn/concepts/overview",
+    "lastVerified": "2026-10-17",
+    "prompt": "Redwood Analytics must connect a Google Cloud VPC to an Azure virtual network within days. Peak traffic is about 1.5 Gbps, the traffic must be encrypted, and crossing the public internet is acceptable. Which option fits best?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Cross-Cloud Interconnect, buying ports from both providers so that Google can connect them physically",
+        "rationale": "Physical provisioning takes about 1 to 4 weeks, which misses the days-scale deadline, and a 10 Gbps port is far above the 1.5 Gbps need."
+      },
+      {
+        "id": "b",
+        "text": "BigQuery Omni, which moves traffic between the VPC and Azure by running BigQuery queries in an Azure region",
+        "rationale": "BigQuery Omni queries data in place. It is not a transport and cannot connect two virtual networks."
+      },
+      {
+        "id": "c",
+        "text": "HA VPN tunnels with Cloud Router and BGP, terminating on a VPN gateway in the Azure virtual network",
+        "rationale": "HA VPN uses IPsec over the internet, carries roughly 1 to 3 Gbps per tunnel, can be configured in days and is documented for Azure connections."
+      },
+      {
+        "id": "d",
+        "text": "A Network Connectivity Center hub with the Azure network added as a spoke, which creates the encrypted link",
+        "rationale": "NCC orchestrates routing between spokes that already have backing connectivity. It does not create a link, and an Azure network is not a Google Cloud spoke type."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "difficulty": 1
+  },
+  {
+    "id": "q-provision-206",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "vmware-engine",
+      "migration"
+    ],
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/vmware-engine/docs/workloads/howto-migrate-vms-using-hcx",
+    "lastVerified": "2026-10-17",
+    "prompt": "A retailer is migrating VMs to Google Cloud VMware Engine in several waves. Some applications have hard-coded IP addresses, and VMs that have already moved must still reach VMs that remain on-premises in the same subnet. Which approach addresses this?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Use Migrate to Virtual Machines to convert each VM into a Compute Engine instance inside a VPC subnet",
+        "rationale": "That path re-platforms VMs onto Compute Engine in VPC subnets. It does not stretch the on-premises subnet or keep VMware tooling."
+      },
+      {
+        "id": "b",
+        "text": "Extend the Layer 2 network with HCX so that migrated VMs keep their IP and MAC addresses in the same subnet",
+        "rationale": "HCX network extension stretches the on-premises Layer 2 segment to the private cloud, and HCX migrations leave IP and MAC addresses unchanged."
+      },
+      {
+        "id": "c",
+        "text": "Run cold migrations, which move powered-off VMs and rely on DNS updates to point clients at the new addresses",
+        "rationale": "Cold migration only describes moving powered-off VMs. It neither stretches the subnet nor protects hard-coded addresses."
+      },
+      {
+        "id": "d",
+        "text": "Use bulk migration alone, since each replica powers on in its original subnet at the scheduled switchover",
+        "rationale": "Bulk migration describes how VM data is replicated and switched over. Without a stretched network, the subnet exists only on-premises."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "difficulty": 1
+  },
+  {
+    "id": "q-provision-207",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "cloud-run",
+      "serverless"
+    ],
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/eventarc/docs/overview",
+    "lastVerified": "2026-10-17",
+    "prompt": "A partner of Harbor Pine Foods drops one CSV file per day into a Cloud Storage bucket at an unpredictable time. A container then needs 25 to 40 minutes to process it and exit. Processing should begin within a minute of arrival, with no idle compute, and the platform team standardizes on Eventarc Standard triggers rather than buses and pipelines. Which design works?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "An Eventarc Standard trigger on the finalized event whose destination is the Cloud Run job that runs the container",
+        "rationale": "Eventarc Standard destinations are Cloud Run functions and services, internal HTTP endpoints, GKE services and Workflows. Cloud Run jobs are a destination only in Eventarc Advanced."
+      },
+      {
+        "id": "b",
+        "text": "An Eventarc Standard trigger on the finalized event that starts a Workflow, which runs the job through the Cloud Run Admin API",
+        "rationale": "Standard triggers can start Workflows, and a workflow can run a Cloud Run job through the Cloud Run Admin API connector. The job then runs to completion and bills only while it runs."
+      },
+      {
+        "id": "c",
+        "text": "An Eventarc Standard trigger to a Cloud Run function that processes the file inline, with its timeout raised to 45 minutes",
+        "rationale": "Event-driven Cloud Run functions are limited to 9 minutes, so a 25 to 40 minute run is cut off however the timeout is configured."
+      },
+      {
+        "id": "d",
+        "text": "A Cloud Scheduler job every five minutes that runs the Cloud Run job to look for a new file and process it",
+        "rationale": "Polling can start the job up to five minutes late, and every empty run is billed for at least a minute. It fails the one-minute start and no-idle-compute requirements."
+      }
+    ],
+    "correct": [
+      "b"
+    ],
+    "difficulty": 3
+  },
+  {
+    "id": "q-provision-208",
+    "type": "multiple",
+    "domainId": "provision",
+    "concepts": [
+      "cloud-run",
+      "compute-selection"
+    ],
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/compute/docs/instances/schedule-instance-start-stop",
+    "lastVerified": "2026-10-17",
+    "prompt": "A team runs one containerized batch of about 35 minutes per day and is comparing a Cloud Run job with a Compute Engine VM started and stopped by an instance schedule. Which two statements are accurate? (Choose two.)",
+    "choices": [
+      {
+        "id": "a",
+        "text": "An instance schedule starts the VM at the scheduled second and guarantees the capacity, so the batch can never be delayed",
+        "rationale": "Scheduled operations can begin up to 15 minutes late, and schedules provide no capacity guarantee, so the VM may not start when scheduled."
+      },
+      {
+        "id": "b",
+        "text": "A Cloud Run job is billed only for the lifetime of the instances it starts, with a one-minute minimum",
+        "rationale": "Jobs are billed at the instance-based rate for the lifetime of each started instance, so there is no charge between daily runs."
+      },
+      {
+        "id": "c",
+        "text": "An instance schedule can stop VMs that have Local SSD disks, so scratch-heavy batches fit this model safely",
+        "rationale": "The documentation states that instance schedules cannot be used to stop an instance that has Local SSD disks."
+      },
+      {
+        "id": "d",
+        "text": "A scheduled VM start can lag its slot by up to 15 minutes, and persistent disks keep billing while the VM is stopped",
+        "rationale": "Both points are documented for instance schedules: a start or stop can begin up to 15 minutes late, and disks stay billable in the stopped state."
+      }
+    ],
+    "correct": [
+      "b",
+      "d"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-209",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "serverless",
+      "autoscaling"
+    ],
+    "subObjective": "provision.3",
+    "sourceUrl": "https://docs.cloud.google.com/appengine/docs/standard/how-instances-are-managed",
+    "lastVerified": "2026-10-17",
+    "prompt": "Quillfeather Books runs a Python app on App Engine standard with automatic scaling. A nightly report handler needs about 35 minutes even on the largest instance class, and the platform cuts it off at its request limit. Leadership wants to stay on App Engine standard and avoid introducing a new service type. What change fits?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Raise the request timeout of the automatic-scaling service to 45 minutes in its app.yaml configuration",
+        "rationale": "Under automatic scaling the limit is fixed at 10 minutes for requests and tasks, and app.yaml has no setting that raises it."
+      },
+      {
+        "id": "b",
+        "text": "Move the handler into a Pub/Sub-triggered Cloud Run function, which is designed for long background jobs",
+        "rationale": "Event-driven functions stop at 9 minutes, and the move would also break the stay-on-App-Engine constraint."
+      },
+      {
+        "id": "c",
+        "text": "Deploy the handler as its own service that uses basic scaling, which allows requests of up to 24 hours",
+        "rationale": "App Engine standard limits depend on the scaling type: 10 minutes under automatic scaling, 24 hours under basic or manual scaling. A separate service keeps the platform and meets the need."
+      },
+      {
+        "id": "d",
+        "text": "Switch the service to a larger instance class so the handler completes within the automatic-scaling limit",
+        "rationale": "The stem says the run still takes 35 minutes on the largest class. Instance size does not change the request limit, which depends on the scaling type."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "difficulty": 3
+  },
+  {
+    "id": "q-provision-210",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "prebuilt-ai-apis"
+    ],
+    "subObjective": "provision.5",
+    "sourceUrl": "https://docs.cloud.google.com/speech-to-text/docs/speech-to-text-requests",
+    "lastVerified": "2026-10-17",
+    "prompt": "Cedar Valley Clinics stores 90-minute recordings of patient-education webinars in Cloud Storage and wants text transcripts without training any model. Which approach fits?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Speech-to-Text synchronous recognition, which returns results directly for files of any length stored in Cloud Storage",
+        "rationale": "Synchronous requests are limited to audio of 1 minute or less, so a 90-minute recording is rejected."
+      },
+      {
+        "id": "b",
+        "text": "Natural Language API entity analysis, which extracts the speech from audio files and returns transcripts with entities",
+        "rationale": "The Natural Language API analyzes text, supplied directly or as a Cloud Storage URI. It does not transcribe audio."
+      },
+      {
+        "id": "c",
+        "text": "Speech-to-Text asynchronous recognition, which accepts audio up to 480 minutes and returns a long-running operation",
+        "rationale": "Asynchronous requests handle audio of any duration up to 480 minutes without blocking, which suits a 90-minute file."
+      },
+      {
+        "id": "d",
+        "text": "A Document AI OCR processor, since processors digitize any unstructured file into text regardless of its media type",
+        "rationale": "Document AI processors digitize and extract from documents such as scans and forms. They are not speech recognizers."
+      }
+    ],
+    "correct": [
+      "c"
+    ],
+    "difficulty": 1
+  },
+  {
+    "id": "q-provision-211",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "prebuilt-ai-apis",
+      "document-ai"
+    ],
+    "subObjective": "provision.5",
+    "sourceUrl": "https://docs.cloud.google.com/document-ai/docs/overview",
+    "lastVerified": "2026-10-17",
+    "prompt": "Tallis Procurement receives scanned supplier invoices as PDFs and needs the supplier name, invoice date, totals and line items as structured fields for its ERP system. The team has no labeled data and no ML engineers. Which service fits?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Cloud Vision API document text detection, which returns the page text and leaves the team to parse the fields",
+        "rationale": "Vision OCR returns recognized text, not typed invoice fields, so the team would still write and maintain the parsing logic."
+      },
+      {
+        "id": "b",
+        "text": "An AutoML image classification model trained on the scanned invoices to read each field from the pixels",
+        "rationale": "Classification assigns labels to whole images. It does not extract fields, and it needs labeled training data the team lacks."
+      },
+      {
+        "id": "c",
+        "text": "Natural Language API entity analysis run directly on the scanned PDFs to return invoice fields as typed entities",
+        "rationale": "The Natural Language API accepts plain text or HTML rather than scanned PDFs, and its entities are not invoice fields."
+      },
+      {
+        "id": "d",
+        "text": "Document AI with a pretrained invoice processor, which extracts the fields from invoices without any training",
+        "rationale": "Document AI turns unstructured documents into structured data, and its pretrained processors cover specialized documents such as invoices."
+      }
+    ],
+    "correct": [
+      "d"
+    ],
+    "difficulty": 2
+  },
+  {
+    "id": "q-provision-212",
+    "type": "single",
+    "domainId": "provision",
+    "concepts": [
+      "prebuilt-ai-apis"
+    ],
+    "subObjective": "provision.5",
+    "sourceUrl": "https://docs.cloud.google.com/natural-language/docs/basics",
+    "lastVerified": "2026-10-17",
+    "prompt": "Marlow Telecom has 400,000 customer-chat transcripts stored as text in Cloud Storage. Analysts want to know whether customers feel positively or negatively about each product they mention, without training a model. Which approach fits?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Natural Language API entity sentiment analysis, which attaches a sentiment score to each entity found in the text",
+        "rationale": "Entity sentiment analysis combines entity and sentiment analysis, so each product mention gets its own opinion score. The API reads text directly or from a Cloud Storage URI."
+      },
+      {
+        "id": "b",
+        "text": "Natural Language API sentiment analysis, which returns one overall score for each transcript as a whole",
+        "rationale": "Document-level sentiment reports the prevailing opinion of the whole text. A chat that praises one product and criticizes another blurs into one number."
+      },
+      {
+        "id": "c",
+        "text": "Document AI Form Parser, which extracts key-value pairs such as product and rating from every transcript",
+        "rationale": "Form Parser identifies key-value pairs in structured forms and tables. Free-text chat has no such fields, and it does not score opinion."
+      },
+      {
+        "id": "d",
+        "text": "A custom sentiment model trained on the transcripts with custom training on the Agent Platform",
+        "rationale": "A prebuilt API already covers this task, and the stem offers no labeled data. Training a model is the heavier path that the prebuilt-first rule avoids."
+      }
+    ],
+    "correct": [
+      "a"
+    ],
+    "difficulty": 2
   }
 ]
