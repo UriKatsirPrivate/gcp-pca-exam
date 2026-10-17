@@ -5,19 +5,26 @@ import { useRouter } from "next/navigation";
 import { Check, LayoutGrid } from "lucide-react";
 import { Badge, Button } from "@/components/ui";
 import { cn } from "@/lib/cn";
-import type { DomainId } from "@/lib/content/schema";
+import type { CaseStudyId, DomainId } from "@/lib/content/schema";
 
 export function DomainPicker({
   domains,
   countByDomain,
   unseenByDomain,
+  caseStudies,
+  countByCase,
+  unseenByCase,
 }: {
   domains: { id: DomainId; shortTitle: string }[];
   countByDomain: Partial<Record<DomainId, number>>;
   unseenByDomain: Partial<Record<DomainId, number>>;
+  caseStudies: { id: CaseStudyId; name: string }[];
+  countByCase: Partial<Record<CaseStudyId, number>>;
+  unseenByCase: Partial<Record<CaseStudyId, number>>;
 }) {
   const router = useRouter();
   const [selected, setSelected] = useState<Set<DomainId>>(new Set());
+  const [selectedCases, setSelectedCases] = useState<Set<CaseStudyId>>(new Set());
   const [unseenOnly, setUnseenOnly] = useState(false);
   const allSelected = selected.size === domains.length;
   const totalUnseen = domains.reduce((sum, d) => sum + (unseenByDomain[d.id] ?? 0), 0);
@@ -35,10 +42,22 @@ export function DomainPicker({
     setSelected(allSelected ? new Set() : new Set(domains.map((d) => d.id)));
   }
 
+  function toggleCase(id: CaseStudyId) {
+    setSelectedCases((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  const nothingSelected = selected.size === 0 && selectedCases.size === 0;
+
   function review() {
-    if (selected.size === 0) return;
+    if (nothingSelected) return;
     const params = new URLSearchParams();
     for (const id of selected) params.append("domain", id);
+    for (const id of selectedCases) params.append("case", id);
     if (unseenOnly) params.set("unseenOnly", "1");
     router.push(`/exam/pool?${params.toString()}`);
   }
@@ -124,13 +143,45 @@ export function DomainPicker({
         })}
       </div>
 
+      <h3 className="mb-2 mt-5 text-sm font-semibold">Case studies (optional)</h3>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {caseStudies.map((cs) => {
+          const isSelected = selectedCases.has(cs.id);
+          const count = countByCase[cs.id] ?? 0;
+          const unseen = unseenByCase[cs.id] ?? 0;
+          return (
+            <button
+              key={cs.id}
+              type="button"
+              onClick={() => toggleCase(cs.id)}
+              className={cn(
+                "flex items-center gap-3 rounded-lg border p-3 text-left text-sm transition-colors",
+                isSelected ? "border-brand-500 bg-brand-50" : "border-line hover:bg-surface-2",
+              )}
+            >
+              <span
+                className={cn(
+                  "flex h-5 w-5 shrink-0 items-center justify-center rounded-md border",
+                  isSelected ? "border-brand-500 bg-brand-500 text-background" : "border-line",
+                )}
+              >
+                {isSelected ? <Check size={13} /> : null}
+              </span>
+              <span className="flex-1">{cs.name}</span>
+              <Badge tone={unseen > 0 ? "success" : "neutral"}>{unseen} unseen</Badge>
+              <Badge tone="neutral">{count} total</Badge>
+            </button>
+          );
+        })}
+      </div>
+
       <div className="mt-4 flex items-center justify-between gap-3">
         <p className="text-xs text-muted">
-          {selected.size === 0
-            ? "Pick at least one domain."
-            : `${selected.size} of ${domains.length} domains selected.`}
+          {nothingSelected
+            ? "Pick at least one domain or case study."
+            : `${selected.size} of ${domains.length} domains, ${selectedCases.size} of ${caseStudies.length} case studies selected.`}
         </p>
-        <Button type="button" onClick={review} disabled={selected.size === 0}>
+        <Button type="button" onClick={review} disabled={nothingSelected}>
           Review selected
         </Button>
       </div>

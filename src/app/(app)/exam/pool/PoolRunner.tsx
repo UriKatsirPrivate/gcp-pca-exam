@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, CheckCircle2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, FileText } from "lucide-react";
+import { CaseStudyPanel, type CaseStudyData } from "@/components/CaseStudyPanel";
 import { QuestionCard } from "@/components/QuestionCard";
 import { Button, ProgressBar } from "@/components/ui";
 import { cn } from "@/lib/cn";
@@ -18,8 +19,15 @@ function localIsCorrect(correct: string[], selected: string[]): boolean {
   return correct.every((c) => s.has(c));
 }
 
-export function PoolRunner({ questions }: { questions: RevealQuestion[] }) {
+export function PoolRunner({
+  questions,
+  caseStudies,
+}: {
+  questions: RevealQuestion[];
+  caseStudies: Record<string, CaseStudyData>;
+}) {
   const router = useRouter();
+  const [openCases, setOpenCases] = useState<Set<string>>(new Set());
   const total = questions.length;
   const [selections, setSelections] = useState<Record<string, string[]>>({});
   const [revealed, setRevealed] = useState<Record<string, boolean>>({});
@@ -93,8 +101,43 @@ export function PoolRunner({ questions }: { questions: RevealQuestion[] }) {
               }
             : null;
 
+          const caseStudy = q.caseStudyId ? caseStudies[q.caseStudyId] : undefined;
+          const caseOpen = openCases.has(q.id);
+
           return (
             <div key={q.id}>
+              {caseStudy ? (
+                <div className="mb-3">
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-surface-2 px-4 py-2">
+                    <div className="flex items-center gap-2 text-sm">
+                      <FileText size={16} className="text-brand-600" />
+                      <span className="text-muted">Case study:</span>
+                      <span className="font-medium">{caseStudy.name}</span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      aria-expanded={caseOpen}
+                      onClick={() =>
+                        setOpenCases((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(q.id)) next.delete(q.id);
+                          else next.add(q.id);
+                          return next;
+                        })
+                      }
+                    >
+                      {caseOpen ? "Hide scenario" : "Show scenario"}
+                    </Button>
+                  </div>
+                  {caseOpen ? (
+                    <div className="mt-2">
+                      <CaseStudyPanel caseStudy={caseStudy} />
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
               <QuestionCard
                 question={q}
                 selected={selected}

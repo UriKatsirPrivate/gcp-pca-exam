@@ -1,7 +1,13 @@
 import { ArrowLeft, Layers } from "lucide-react";
+import type { CaseStudyData } from "@/components/CaseStudyPanel";
 import { ButtonLink, Card, CardBody, CardHeader, EmptyState } from "@/components/ui";
-import { DOMAINS, getExamOnlyQuestions, toRevealQuestion } from "@/lib/content";
-import type { DomainId, Question } from "@/lib/content/schema";
+import {
+  DOMAINS,
+  getCaseStudies,
+  getExamOnlyQuestions,
+  toRevealQuestion,
+} from "@/lib/content";
+import type { CaseStudyId, DomainId, Question } from "@/lib/content/schema";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
 import type { RevealQuestion } from "@/types/client";
@@ -13,20 +19,31 @@ export const dynamic = "force-dynamic";
 export default async function ExamPoolPage({
   searchParams,
 }: {
-  searchParams: Promise<{ domain?: string | string[]; unseenOnly?: string }>;
+  searchParams: Promise<{
+    domain?: string | string[];
+    case?: string | string[];
+    unseenOnly?: string;
+  }>;
 }) {
   const user = await requireUser();
-  const { domain, unseenOnly: unseenOnlyParam } = await searchParams;
+  const { domain, case: caseParam, unseenOnly: unseenOnlyParam } = await searchParams;
   const requested = Array.isArray(domain) ? domain : domain ? [domain] : [];
   const domainIds = DOMAINS.map((d) => d.id).filter((id) =>
     requested.includes(id),
   ) as DomainId[];
+  const requestedCases = Array.isArray(caseParam) ? caseParam : caseParam ? [caseParam] : [];
+  const caseStudies = getCaseStudies();
+  const caseIds = caseStudies
+    .map((c) => c.id)
+    .filter((id) => requestedCases.includes(id)) as CaseStudyId[];
   const unseenOnly = unseenOnlyParam === "1";
 
   const examOnly = getExamOnlyQuestions();
   const countByDomain: Partial<Record<DomainId, number>> = {};
+  const countByCase: Partial<Record<CaseStudyId, number>> = {};
   for (const q of examOnly) {
     countByDomain[q.domainId] = (countByDomain[q.domainId] ?? 0) + 1;
+    if (q.caseStudyId) countByCase[q.caseStudyId] = (countByCase[q.caseStudyId] ?? 0) + 1;
   }
 
   // "Unseen" mirrors generateExam's own definition — never answered by this
@@ -41,21 +58,25 @@ export default async function ExamPoolPage({
   const seenIds = new Set(seenRows.map((r) => r.questionId));
   let unseenTotal = 0;
   const unseenByDomain: Partial<Record<DomainId, number>> = {};
+  const unseenByCase: Partial<Record<CaseStudyId, number>> = {};
   for (const q of examOnly) {
     if (!seenIds.has(q.id)) {
       unseenTotal++;
       unseenByDomain[q.domainId] = (unseenByDomain[q.domainId] ?? 0) + 1;
+      if (q.caseStudyId) {
+        unseenByCase[q.caseStudyId] = (unseenByCase[q.caseStudyId] ?? 0) + 1;
+      }
     }
   }
 
-  if (domainIds.length === 0) {
+  if (domainIds.length === 0 && caseIds.length === 0) {
     return (
       <div className="space-y-6">
         <PoolHeader total={examOnly.length} unseen={unseenTotal} />
         <Card>
           <CardHeader
-            title="Pick one or more domains"
-            subtitle="Each domain's held-out set is small enough to review in one sitting — combine as many as you like."
+            title="Pick domains or case studies"
+            subtitle="Each domain's held-out set is small enough to review in one sitting — combine as many as you like. Selecting both narrows to questions in those domains that belong to those case studies."
             icon={<Layers className="h-5 w-5" />}
           />
           <CardBody>
@@ -63,6 +84,9 @@ export default async function ExamPoolPage({
               domains={DOMAINS}
               countByDomain={countByDomain}
               unseenByDomain={unseenByDomain}
+              caseStudies={caseStudies.map((c) => ({ id: c.id, name: c.name }))}
+              countByCase={countByCase}
+              unseenByCase={unseenByCase}
             />
           </CardBody>
         </Card>
@@ -72,9 +96,17 @@ export default async function ExamPoolPage({
 
   // A single domain reads in its authored order. Combining domains mixes them
   // like the simulation exam does, rather than showing one domain's block
-  // followed by the next.
-  const inDomains = examOnly.filter((q) => domainIds.includes(q.domainId));
-  const mixed = domainIds.length > 1 ? mixAcrossDomains(inDomains) : inDomains;
+  // followed by the next. Domains and case studies AND together; an empty
+  // group means "no restriction".
+  const inDomains = examOnly.filter(
+    (q) =>
+      (domainIds.length === 0 || domainIds.includes(q.domainId)) &&
+      (caseIds.length === 0 || (q.caseStudyId && caseIds.includes(q.caseStudyId))),
+  );
+  const mixed =
+    new Set(inDomains.map((q) => q.domainId)).size > 1
+      ? mixAcrossDomains(inDomains)
+      : inDomains;
   const filtered = unseenOnly ? filterUnseen(mixed, seenIds) : mixed;
   const picked = prioritizeUnseen(filtered, seenIds);
 
@@ -86,8 +118,8 @@ export default async function ExamPoolPage({
           title={unseenOnly ? "Nothing unseen left here" : "Nothing held out here"}
           body={
             unseenOnly
-              ? "You've answered every held-out question in these domains. Turn off \"Unseen only\" to review them again."
-              : "These domains have no examOnly questions."
+              ? "You've answered every held-out question in this selection. Turn off \"Unseen only\" to review them again."
+              : "This selection has no examOnly questions."
           }
         />
       </div>
@@ -98,9 +130,18 @@ export default async function ExamPoolPage({
     toRevealQuestion(q, { seed: user.id }),
   );
 
-  const domainTitle = DOMAINS.filter((d) => domainIds.includes(d.id))
-    .map((d) => d.shortTitle)
-    .join(", ");
+  const domainTitle = [
+    ...DOMAINS.filter((d) => domainIds.includes(d.id)).map((d) => d.shortTitle),
+    ...caseStudies.filter((c) => caseIds.includes(c.id)).map((c) => c.name),
+  ].join(", ");
+
+  // Only the scenarios actually referenced by the picked questions.
+  const caseStudyData: Record<string, CaseStudyData> = {};
+  for (const q of picked) {
+    if (!q.caseStudyId || caseStudyData[q.caseStudyId]) continue;
+    const cs = caseStudies.find((c) => c.id === q.caseStudyId);
+    if (cs) caseStudyData[cs.id] = { name: cs.name, sections: cs.sections };
+  }
   const unseenInSelection = picked.filter((q) => !seenIds.has(q.id)).length;
 
   return (
@@ -112,7 +153,7 @@ export default async function ExamPoolPage({
         selectionCount={picked.length}
         selectionUnseen={unseenInSelection}
       />
-      <PoolRunner questions={questions} />
+      <PoolRunner questions={questions} caseStudies={caseStudyData} />
     </div>
   );
 }
