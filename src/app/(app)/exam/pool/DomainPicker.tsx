@@ -78,7 +78,7 @@ export function DomainPicker({
           <span
             className={cn(
               "flex h-5 w-5 shrink-0 items-center justify-center rounded-md border",
-              allSelected ? "border-brand-500 bg-brand-500 text-background" : "border-line",
+              allSelected ? "border-brand-500 bg-brand-500 text-background" : "border-muted",
             )}
           >
             {allSelected ? <Check size={13} /> : null}
@@ -97,7 +97,7 @@ export function DomainPicker({
           <span
             className={cn(
               "flex h-5 w-5 shrink-0 items-center justify-center rounded-md border",
-              unseenOnly ? "border-brand-500 bg-brand-500 text-background" : "border-line",
+              unseenOnly ? "border-brand-500 bg-brand-500 text-background" : "border-muted",
             )}
           >
             {unseenOnly ? <Check size={13} /> : null}
@@ -130,7 +130,7 @@ export function DomainPicker({
               <span
                 className={cn(
                   "flex h-5 w-5 shrink-0 items-center justify-center rounded-md border",
-                  isSelected ? "border-brand-500 bg-brand-500 text-background" : "border-line",
+                  isSelected ? "border-brand-500 bg-brand-500 text-background" : "border-muted",
                 )}
               >
                 {isSelected ? <Check size={13} /> : null}
@@ -162,7 +162,7 @@ export function DomainPicker({
               <span
                 className={cn(
                   "flex h-5 w-5 shrink-0 items-center justify-center rounded-md border",
-                  isSelected ? "border-brand-500 bg-brand-500 text-background" : "border-line",
+                  isSelected ? "border-brand-500 bg-brand-500 text-background" : "border-muted",
                 )}
               >
                 {isSelected ? <Check size={13} /> : null}

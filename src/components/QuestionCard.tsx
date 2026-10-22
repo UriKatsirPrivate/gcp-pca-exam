@@ -81,7 +81,6 @@ export function QuestionCard({
         <Badge tone={isMulti ? "info" : "neutral"}>
           {isMulti ? "Select all that apply" : "Single answer"}
         </Badge>
-        <Badge tone="neutral">Difficulty {question.difficulty}</Badge>
       </div>
 
       <Markdown className="text-[15px]">{question.prompt}</Markdown>
