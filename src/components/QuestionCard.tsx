@@ -78,9 +78,6 @@ export function QuestionCard({
             Question {index + 1} of {total}
           </span>
         ) : null}
-        <Badge tone={isMulti ? "info" : "neutral"}>
-          {isMulti ? "Select all that apply" : "Single answer"}
-        </Badge>
       </div>
 
       <Markdown className="text-[15px]">{question.prompt}</Markdown>
