@@ -1,6 +1,9 @@
 // Deterministic, LLM-free pattern detection over a user's recent answers.
 // Pure functions only — safe to run anywhere (no DB, no network, no server-only).
 
+import { DOMAIN_BY_ID } from "../content/domains";
+import type { DomainId } from "../content/schema";
+
 export interface RuleInsight {
   kind: "pattern" | "tip" | "strength";
   concepts: string[];
@@ -148,12 +151,14 @@ export function analyzeAnswers(answers: AnswerLike[]): RuleInsight[] {
   for (const d of domainStats
     .filter((d) => d.total >= 3 && d.accuracy >= 0.8)
     .sort((a, b) => b.accuracy - a.accuracy)) {
+    const domain = DOMAIN_BY_ID[d.domainId as DomainId];
+    const label = domain ? `${domain.index}. ${domain.shortTitle}` : d.domainId;
     insights.push({
       kind: "strength",
       concepts: [],
       message: `Strong area: you're answering ${Math.round(
         d.accuracy * 100,
-      )}% correctly in this domain (${d.correct}/${d.total}). Keep this momentum and shift focus to weaker topics.`,
+      )}% correctly in ${label} (${d.correct}/${d.total}). Keep this momentum and shift focus to weaker topics.`,
     });
   }
 
