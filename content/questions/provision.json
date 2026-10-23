@@ -10,7 +10,7 @@
     "subObjective": "provision.1",
     "sourceUrl": "https://docs.cloud.google.com/network-connectivity/docs/interconnect/tutorials/dedicated-creating-9999-availability",
     "lastVerified": "2026-10-01",
-    "prompt": "A company runs an on-premises data center and wants a dedicated, private connection to Google Cloud with tens of Gbps of bandwidth that does **not** traverse the public internet. They want the topology for which Google publishes a 99.99% availability SLA. Which approach should the architect recommend?",
+    "prompt": "A company runs an on-premises data center and wants a dedicated, private connection to Google Cloud with tens of Gbps of bandwidth that does not traverse the public internet. They want the topology for which Google publishes a 99.99% availability SLA. Which approach should the architect recommend?",
     "choices": [
       {
         "id": "a",
@@ -50,7 +50,7 @@
     "subObjective": "provision.1",
     "sourceUrl": "https://docs.cloud.google.com/vpc/docs/private-service-connect",
     "lastVerified": "2026-10-01",
-    "prompt": "An architect is designing connectivity so that workloads in a consumer VPC can reach a SaaS provider's service and a published Google API **privately**, without external IPs and without VPC Peering's transitivity limits. Which statements about Private Service Connect (PSC) are correct? Choose two.",
+    "prompt": "An architect is designing connectivity so that workloads in a consumer VPC can reach a SaaS provider's service and a published Google API privately, without external IPs and without VPC Peering's transitivity limits. Which statements about Private Service Connect (PSC) are correct? Choose two.",
     "choices": [
       {
         "id": "c",
@@ -797,7 +797,7 @@
     "subObjective": "provision.3",
     "sourceUrl": "https://docs.cloud.google.com/compute/docs/instances/committed-use-discounts-overview",
     "lastVerified": "2026-10-08",
-    "prompt": "KnightMotives Automotive runs a 24/7 customer-facing telemetry ingestion service on Compute Engine with steady, predictable baseline load that rarely changes. The CFO wants the lowest sustainable cost for this always-on workload **without** risking interruptions. Which pricing/provisioning strategy is most appropriate?",
+    "prompt": "KnightMotives Automotive runs a 24/7 customer-facing telemetry ingestion service on Compute Engine with steady, predictable baseline load that rarely changes. The CFO wants the lowest sustainable cost for this always-on workload without risking interruptions. Which pricing/provisioning strategy is most appropriate?",
     "choices": [
       {
         "id": "c",
@@ -838,7 +838,7 @@
     "subObjective": "provision.1",
     "sourceUrl": "https://docs.cloud.google.com/vpc/docs/about-accessing-google-apis-endpoints",
     "lastVerified": "2026-10-01",
-    "prompt": "A retailer runs latency-sensitive services on-premises that must call Google Cloud APIs (BigQuery, Cloud Storage) **without traversing the public internet**, and must also expose a **single global anycast IP** for a web tier running in multiple regions. Which combination meets both requirements?",
+    "prompt": "A retailer runs latency-sensitive services on-premises that must call Google Cloud APIs (BigQuery, Cloud Storage) without traversing the public internet, and must also expose a single global anycast IP for a web tier running in multiple regions. Which combination meets both requirements?",
     "choices": [
       {
         "id": "a",
@@ -879,7 +879,7 @@
     "subObjective": "provision.1",
     "sourceUrl": "https://docs.cloud.google.com/vpc/docs/shared-vpc",
     "lastVerified": "2026-10-01",
-    "prompt": "An organization uses a **Shared VPC** to centralize network administration across many service projects. Which statements are TRUE? Choose two.",
+    "prompt": "An organization uses a Shared VPC to centralize network administration across many service projects. Which statements are TRUE? Choose two.",
     "choices": [
       {
         "id": "c",
@@ -963,7 +963,7 @@
     "subObjective": "provision.2",
     "sourceUrl": "https://docs.cloud.google.com/storage/docs/bucket-lock",
     "lastVerified": "2026-10-01",
-    "prompt": "A healthcare customer must guarantee that audit-log objects in Cloud Storage **cannot be deleted or overwritten for 7 years, even by project administrators**, to satisfy a regulatory retention mandate. What should you configure?",
+    "prompt": "A healthcare customer must guarantee that audit-log objects in Cloud Storage cannot be deleted or overwritten for 7 years, even by project administrators, to satisfy a regulatory retention mandate. What should you configure?",
     "choices": [
       {
         "id": "c",

@@ -10,7 +10,7 @@
     "subObjective": "security.1",
     "sourceUrl": "https://docs.cloud.google.com/billing/docs/how-to/billing-access",
     "lastVerified": "2026-10-01",
-    "prompt": "A platform team needs to let a billing analyst view spend across all projects in an organization **without** granting any ability to read application data or change resources. Which approach best follows least privilege and separation of duties?",
+    "prompt": "A platform team needs to let a billing analyst view spend across all projects in an organization without granting any ability to read application data or change resources. Which approach best follows least privilege and separation of duties?",
     "choices": [
       {
         "id": "d",
@@ -50,7 +50,7 @@
     "subObjective": "security.1",
     "sourceUrl": "https://docs.cloud.google.com/resource-manager/docs/organization-policy/org-policy-constraints",
     "lastVerified": "2026-10-01",
-    "prompt": "Your organization wants a guarantee that **no** Compute Engine VM in any current or future project can have an external IP address, and that this cannot be overridden by a project owner. What is the correct mechanism?",
+    "prompt": "Your organization wants a guarantee that no Compute Engine VM in any current or future project can have an external IP address, and that this cannot be overridden by a project owner. What is the correct mechanism?",
     "choices": [
       {
         "id": "b",
@@ -89,7 +89,7 @@
     "subObjective": "security.1",
     "sourceUrl": "https://docs.cloud.google.com/kms/docs/cmek",
     "lastVerified": "2026-10-01",
-    "prompt": "A regulated customer must control the encryption keys used for data at rest in Cloud Storage and BigQuery, including the ability to revoke access by disabling a key, but does **not** want to manage key material on their own hardware. Which option fits?",
+    "prompt": "A regulated customer must control the encryption keys used for data at rest in Cloud Storage and BigQuery, including the ability to revoke access by disabling a key, but does not want to manage key material on their own hardware. Which option fits?",
     "choices": [
       {
         "id": "b",

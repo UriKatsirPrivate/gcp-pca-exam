@@ -10,7 +10,7 @@
     "subObjective": "ops-excellence.4",
     "sourceUrl": "https://sre.google/workbook/error-budget-policy/",
     "lastVerified": "2026-10-01",
-    "prompt": "Your team commits to a **99.9% monthly availability SLO** for a checkout API. Over the first 18 days of a 30-day month, fast-moving feature releases have already consumed **90% of the monthly error budget**. According to Site Reliability Engineering practice, what is the most appropriate response for the rest of the month?",
+    "prompt": "Your team commits to a 99.9% monthly availability SLO for a checkout API. Over the first 18 days of a 30-day month, fast-moving feature releases have already consumed 90% of the monthly error budget. According to Site Reliability Engineering practice, what is the most appropriate response for the rest of the month?",
     "choices": [
       {
         "id": "a",
@@ -97,7 +97,7 @@
     "subObjective": "ops-excellence.3",
     "sourceUrl": "https://docs.cloud.google.com/deploy/docs/deployment-strategies/canary",
     "lastVerified": "2026-10-01",
-    "prompt": "You want to release a new revision of a stateless service to production so that **only 5% of live traffic** hits it first, automatically compare its error rate against the stable version, and promote to 100% only if it stays healthy. Which Google Cloud approach fits best?",
+    "prompt": "You want to release a new revision of a stateless service to production so that only 5% of live traffic hits it first, automatically compare its error rate against the stable version, and promote to 100% only if it stays healthy. Which Google Cloud approach fits best?",
     "choices": [
       {
         "id": "a",
@@ -137,7 +137,7 @@
     "subObjective": "ops-excellence.3",
     "sourceUrl": "https://docs.cloud.google.com/run/docs/rollouts-rollbacks-traffic-migration",
     "lastVerified": "2026-10-01",
-    "prompt": "A payments service cannot tolerate two versions serving traffic at the same time because of a strict database migration constraint, but the business requires **near-instant rollback** if the new version misbehaves. Which deployment strategy best satisfies both requirements?",
+    "prompt": "A payments service cannot tolerate two versions serving traffic at the same time because of a strict database migration constraint, but the business requires near-instant rollback if the new version misbehaves. Which deployment strategy best satisfies both requirements?",
     "choices": [
       {
         "id": "a",
@@ -176,7 +176,7 @@
     "subObjective": "ops-excellence.2",
     "sourceUrl": "https://docs.cloud.google.com/profiler/docs/about-profiler",
     "lastVerified": "2026-10-01",
-    "prompt": "A service running on GKE shows acceptable latency in load tests but consumes far more CPU in production than expected, raising cost. You need to find **which functions in the running code consume the most CPU and memory**, continuously and with negligible overhead. Which tool should you use?",
+    "prompt": "A service running on GKE shows acceptable latency in load tests but consumes far more CPU in production than expected, raising cost. You need to find which functions in the running code consume the most CPU and memory, continuously and with negligible overhead. Which tool should you use?",
     "choices": [
       {
         "id": "a",
@@ -215,7 +215,7 @@
     "subObjective": "ops-excellence.2",
     "sourceUrl": "https://docs.cloud.google.com/trace/docs/overview",
     "lastVerified": "2026-10-01",
-    "prompt": "A user reports that a single checkout request is slow, and you suspect one of a dozen downstream microservices is the bottleneck. Which Google Cloud Observability tool most directly shows **where time is spent across services for that request**?",
+    "prompt": "A user reports that a single checkout request is slow, and you suspect one of a dozen downstream microservices is the bottleneck. Which Google Cloud Observability tool most directly shows where time is spent across services for that request?",
     "choices": [
       {
         "id": "a",
@@ -254,7 +254,7 @@
     "subObjective": "ops-excellence.2",
     "sourceUrl": "https://docs.cloud.google.com/logging/docs/alerting/log-based-alerts",
     "lastVerified": "2026-10-01",
-    "prompt": "Your application writes structured JSON logs to Cloud Logging that include a field `payment.declined`. The business wants a Cloud Monitoring alert when the **rate of declined payments** spikes. What is the recommended way to make this measurable for alerting?",
+    "prompt": "Your application writes structured JSON logs to Cloud Logging that include a field `payment.declined`. The business wants a Cloud Monitoring alert when the rate of declined payments spikes. What is the recommended way to make this measurable for alerting?",
     "choices": [
       {
         "id": "a",
@@ -294,7 +294,7 @@
     "subObjective": "ops-excellence.2",
     "sourceUrl": "https://docs.cloud.google.com/stackdriver/docs/solutions/slo-monitoring/alerting-on-budget-burn-rate",
     "lastVerified": "2026-10-01",
-    "prompt": "You are configuring **SLO burn-rate alerting** in Cloud Monitoring. Which statements about a good burn-rate alerting strategy are correct? Choose three.",
+    "prompt": "You are configuring SLO burn-rate alerting in Cloud Monitoring. Which statements about a good burn-rate alerting strategy are correct? Choose three.",
     "choices": [
       {
         "id": "a",
@@ -335,7 +335,7 @@
     "subObjective": "ops-excellence.4",
     "sourceUrl": "https://docs.cloud.google.com/architecture/framework/reliability/perform-testing-for-recovery-from-failures",
     "lastVerified": "2026-10-01",
-    "prompt": "Your platform team wants to proactively validate that the system survives the loss of a zone and that auto-healing and failover actually work, **before** a real outage occurs. Which practice describes this?",
+    "prompt": "Your platform team wants to proactively validate that the system survives the loss of a zone and that auto-healing and failover actually work, before a real outage occurs. Which practice describes this?",
     "choices": [
       {
         "id": "a",
@@ -413,7 +413,7 @@
     "subObjective": "ops-excellence.4",
     "sourceUrl": "https://sre.google/sre-book/addressing-cascading-failures/",
     "lastVerified": "2026-10-01",
-    "prompt": "Before a major product launch, you must verify the system holds its latency SLO at **3x expected peak traffic** and identify the breaking point. Which activity directly addresses this requirement?",
+    "prompt": "Before a major product launch, you must verify the system holds its latency SLO at 3x expected peak traffic and identify the breaking point. Which activity directly addresses this requirement?",
     "choices": [
       {
         "id": "a",
@@ -452,7 +452,7 @@
     "subObjective": "ops-excellence.3",
     "sourceUrl": "https://docs.cloud.google.com/compute/docs/instance-groups/rolling-out-updates-to-managed-instance-groups",
     "lastVerified": "2026-10-01",
-    "prompt": "You run a stateless web app on a **Compute Engine managed instance group (MIG)** behind a load balancer. You need to roll out a new instance template gradually with **zero downtime**, controlling how many instances update at once and how many extra instances may be created during the update. Which mechanism should you use?",
+    "prompt": "You run a stateless web app on a Compute Engine managed instance group (MIG) behind a load balancer. You need to roll out a new instance template gradually with zero downtime, controlling how many instances update at once and how many extra instances may be created during the update. Which mechanism should you use?",
     "choices": [
       {
         "id": "a",
@@ -491,7 +491,7 @@
     "subObjective": "ops-excellence.1",
     "sourceUrl": "https://docs.cloud.google.com/architecture/framework/operational-excellence",
     "lastVerified": "2026-10-01",
-    "prompt": "Which practices align with the **Operational Excellence pillar** of the Google Cloud Well-Architected Framework? (Select all that apply.)",
+    "prompt": "Which practices align with the Operational Excellence pillar of the Google Cloud Well-Architected Framework? (Select all that apply.)",
     "choices": [
       {
         "id": "a",
@@ -532,7 +532,7 @@
     "subObjective": "ops-excellence.2",
     "sourceUrl": "https://docs.cloud.google.com/logging/docs/buckets",
     "lastVerified": "2026-10-01",
-    "prompt": "A compliance team requires that **all admin activity audit logs** from across the organization be retained immutably for 7 years and be queryable, while keeping them out of the projects that generate them. What is the recommended Cloud Logging design?",
+    "prompt": "A compliance team requires that all admin activity audit logs from across the organization be retained immutably for 7 years and be queryable, while keeping them out of the projects that generate them. What is the recommended Cloud Logging design?",
     "choices": [
       {
         "id": "a",
@@ -571,7 +571,7 @@
     "subObjective": "ops-excellence.4",
     "sourceUrl": "https://docs.cloud.google.com/stackdriver/docs/solutions/slo-monitoring",
     "lastVerified": "2026-10-01",
-    "prompt": "When defining reliability targets, what is the precise distinction between an **SLI** and an **SLO**?",
+    "prompt": "When defining reliability targets, what is the precise distinction between an SLI and an SLO?",
     "choices": [
       {
         "id": "a",
@@ -610,7 +610,7 @@
     "subObjective": "ops-excellence.4",
     "sourceUrl": "https://support.google.com/cloud/answer/6262505",
     "lastVerified": "2026-10-01",
-    "prompt": "Your security team wants to run a **penetration test** against your production Google Cloud environment. What is the correct expectation regarding Google Cloud's rules?",
+    "prompt": "Your security team wants to run a penetration test against your production Google Cloud environment. What is the correct expectation regarding Google Cloud's rules?",
     "choices": [
       {
         "id": "a",
@@ -692,7 +692,7 @@
     "subObjective": "ops-excellence.3",
     "sourceUrl": "https://sre.google/sre-book/managing-incidents/",
     "lastVerified": "2026-10-01",
-    "prompt": "Cymbal Retail's order API has a 99.95% availability SLO. During a flash sale, a partial outage is burning the error budget at roughly **20x the sustainable rate**. The on-call engineer is alone and overwhelmed. What is the most appropriate incident-management action?",
+    "prompt": "Cymbal Retail's order API has a 99.95% availability SLO. During a flash sale, a partial outage is burning the error budget at roughly 20x the sustainable rate. The on-call engineer is alone and overwhelmed. What is the most appropriate incident-management action?",
     "choices": [
       {
         "id": "a",
@@ -775,7 +775,7 @@
     "subObjective": "ops-excellence.2",
     "sourceUrl": "https://sre.google/workbook/alerting-on-slos/",
     "lastVerified": "2026-10-01",
-    "prompt": "Your service has a **99.9% availability SLO** measured over 30 days. You want alerts that page quickly on fast burn but avoid noise on slow burn. Which approach aligns with Google SRE guidance?",
+    "prompt": "Your service has a 99.9% availability SLO measured over 30 days. You want alerts that page quickly on fast burn but avoid noise on slow burn. Which approach aligns with Google SRE guidance?",
     "choices": [
       {
         "id": "a",
@@ -858,7 +858,7 @@
     "subObjective": "ops-excellence.2",
     "sourceUrl": "https://docs.cloud.google.com/trace/docs/overview",
     "lastVerified": "2026-10-01",
-    "prompt": "Users report intermittent high latency on a microservices app spanning ~12 services. You must pinpoint **which downstream call dominates p99 latency** for affected requests. Which Cloud Observability tool is the best fit?",
+    "prompt": "Users report intermittent high latency on a microservices app spanning ~12 services. You must pinpoint which downstream call dominates p99 latency for affected requests. Which Cloud Observability tool is the best fit?",
     "choices": [
       {
         "id": "a",
