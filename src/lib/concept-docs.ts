@@ -12,8 +12,12 @@ export interface ConceptDoc {
   url: string;
 }
 
-export const CONCEPT_DOCS: Record<string, ConceptDoc> = {
-  "spanner-vs-bigtable": { label: "Cloud Spanner docs", url: "https://cloud.google.com/spanner/docs" },
+export const CONCEPT_DOCS: Record<string, ConceptDoc | ConceptDoc[]> = {
+  // A comparison concept covers both products; a single link was wrong for half the questions.
+  "spanner-vs-bigtable": [
+    { label: "Cloud Spanner docs", url: "https://cloud.google.com/spanner/docs" },
+    { label: "Bigtable docs", url: "https://cloud.google.com/bigtable/docs" },
+  ],
   "gke-vs-cloudrun": { label: "Cloud Run docs", url: "https://cloud.google.com/run/docs" },
   cmek: { label: "Customer-managed encryption keys (CMEK)", url: "https://cloud.google.com/kms/docs/cmek" },
   "vpc-service-controls": { label: "VPC Service Controls docs", url: "https://cloud.google.com/vpc-service-controls/docs" },
@@ -45,10 +49,12 @@ export function docsForConcepts(concepts: string[]): ConceptDoc[] {
   const seen = new Set<string>();
   const out: ConceptDoc[] = [];
   for (const c of concepts) {
-    const doc = CONCEPT_DOCS[c];
-    if (doc && !seen.has(doc.url)) {
-      seen.add(doc.url);
-      out.push(doc);
+    const entry = CONCEPT_DOCS[c];
+    for (const doc of Array.isArray(entry) ? entry : entry ? [entry] : []) {
+      if (!seen.has(doc.url)) {
+        seen.add(doc.url);
+        out.push(doc);
+      }
     }
   }
   return out;
