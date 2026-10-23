@@ -1133,7 +1133,7 @@
     "sourceUrl": "https://docs.cloud.google.com/load-balancing/docs/proxy-only-subnets",
     "lastVerified": "2026-10-01",
     "examOnly": true,
-    "prompt": "A team deploys a regional internal Application Load Balancer in us-east1 and needs the network resource that its Envoy-based proxies run in. Which prerequisite must exist in that VPC network and region?",
+    "prompt": "A team is deploying a regional internal Application Load Balancer in us-east1. Google runs the load balancer's Envoy proxies inside the team's VPC network. Which prerequisite must exist in that VPC network and region?",
     "choices": [
       {
         "id": "b",
